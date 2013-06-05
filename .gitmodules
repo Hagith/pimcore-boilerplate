@@ -1,0 +1,3 @@
+[submodule "plugins/Blog"]
+	path = plugins/Blog
+	url = git@github.com:rafalgalka/pimcore-plugin-blog.git
