@@ -1,3 +1,6 @@
 [submodule "plugins/Blog"]
 	path = plugins/Blog
 	url = git@github.com:rafalgalka/pimcore-plugin-blog.git
+[submodule "plugins/Tagfield"]
+	path = plugins/Tagfield
+	url = git@github.com:rafalgalka/pimcore-plugin-tagfield.git
