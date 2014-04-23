@@ -1,0 +1,10 @@
+*.log
+var/cache
+var/tmp
+var/versions
+var/recyclebin
+var/assets
+var/config/portal
+var/config/system.xml
+var/system
+!.dummy
