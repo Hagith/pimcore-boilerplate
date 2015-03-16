@@ -14,4 +14,9 @@ class DefaultController extends Action
     public function defaultAction()
     {
     }
+
+    public function pageAction()
+    {
+    }
+
 }
