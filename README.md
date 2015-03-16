@@ -2,6 +2,8 @@
 
 [pimcore](http://www.pimcore.org) boilerplate on steroids for rapid project development.
 
+[![pimcore release](https://img.shields.io/packagist/v/rafalgalka/pimcore-boilerplate.svg?style=flat)](https://packagist.org/packages/rafalgalka/pimcore-boilerplate)
+
 ## Getting started
 
 ```sh
