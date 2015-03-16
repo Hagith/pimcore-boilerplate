@@ -1,6 +1,6 @@
 {
-    "name": "pimcore/pimcore",
-    "description": "The premier Open-Source Multi-Channel Experience and Engagement Management Platform",
+    "name": "rafalgalka/pimcore-boilerplate",
+    "description": "pimcore boilerplate on steroids for rapid project development",
     "keywords": ["CMS","PIM","DAM","E-Commerce","RAD","Product Information Management"],
     "homepage": "http://www.pimcore.org/",
     "type": "pimcore-core",
@@ -11,8 +11,17 @@
             "email": "info@pimcore.com",
             "homepage": "http://www.pimcore.org/",
             "role": "Developer"
+        },
+        {
+          "name": "Rafal Galka",
+          "email": "rafal.galka@modernweb.pl",
+          "homepage": "http://www.modernweb.pl/",
+          "role": "Developer"
         }
     ],
+    "config": {
+        "document-root-path": "./"
+    },
     "require": {
         "php": ">=5.4.0",
         "pimcore/installer-core": ">=1"

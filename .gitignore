@@ -1,0 +1,15 @@
+website/assets/build/*
+website/var/assets/*
+website/var/cache/*
+website/var/config/*.mmdb
+website/var/config/portal/*
+website/var/config/system.xml
+website/var/log/*
+website/var/recyclebin/*
+website/var/system/*
+website/var/tmp/*
+website/var/versions/*
+!.dummy
+
+node_modules
+vendor

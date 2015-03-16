@@ -1,0 +1,14 @@
+body {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+nav.main {
+  margin-bottom: 20px;
+
+  .navbar-brand {
+    @include text-hide();
+    @include sprite($sprite-logo-gray);
+    margin: 9px 0;
+  }
+}

@@ -1,43 +1,32 @@
-# pimcore
+# pimcore boilerplate
 
-THE PREMIER OPEN-SOURCE CMS/CMF, PIM, ECOMMERCE-SUITE
-
-[![Software License](https://img.shields.io/badge/license-BSD-brightgreen.svg?style=flat)](LICENSE.txt)
-[![Current Release](https://img.shields.io/packagist/v/pimcore/pimcore.svg?style=flat)](https://packagist.org/packages/pimcore/pimcore)
-[![Build Status](https://travis-ci.org/pimcore/pimcore.svg?branch=master)](https://travis-ci.org/pimcore/pimcore)
-[![HHVM Status](https://img.shields.io/hhvm/pimcore/pimcore.svg)](https://travis-ci.org/pimcore/pimcore)
-[![Gitter](https://img.shields.io/badge/gitter-join%20chat-brightgreen.svg?style=flat)](https://gitter.im/pimcore/pimcore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-
-
-![Editing Interface](website_demo/static/screenshots/1.png)
-
-* Homepage: [http://www.pimcore.org/](http://www.pimcore.org/) - Learn more about pimcore
-* Twitter: [@pimcore](https://twitter.com/pimcore) - Get the latest news
-* Issue Tracker: - [Issues](http://www.pimcore.org/issues) - Report bugs here
-* Forums: - http://www.pimcore.org/board/ - Get help
-
+[pimcore](http://www.pimcore.org) boilerplate on steroids for rapid project development.
 
 ## Getting started
 
-Download the [latest release](http://www.pimcore.org/download) and extract the archive in document root.
-Create a database for pimcore (charset: utf8). If you have a website_example (empty installation) or a website_demo (boilerplate) folder please rename one of them to website (only if cloning from git).
-Run the pimcore installation by accessing the URL where you uploaded the pimcore files in a browser.
-
-```
-cd /your/document/root
-wget https://www.pimcore.org/download/pimcore-latest.zip
-unzip pimcore-latest.zip
-
-mysql -u root -p -e "CREATE DATABASE pimcore charset=utf8;"
-
-# now launch http://yourhostname.tld/install
+```sh
+npm install
+gulp
+gulp publish
+gulp deploy
 ```
 
-[A detailed installation guide can be found here.](http://www.pimcore.org/wiki/pages/viewpage.action?pageId=12124463)
+Gulp tasks:
+ * ```gulp``` - build development files and start watching changes
+ * ```gulp publish``` - compress and optimize files (in progress)
+ * ```gulp deploy``` - rsync files with your server (in progress)
 
-
-## Copyright and license
-
-Copyright [pimcore](http://www.pimcore.org) GmbH under a modified [BSD license](LICENSE.txt).  
-For licensing details please visit http://www.pimcore.org/license
-
+## Steroids used (alphabetic order)
+ * [bootstrap-sass](https://github.com/twbs/bootstrap-sass)
+ * [browserify](https://github.com/substack/node-browserify)
+ * [font-awesome](https://github.com/FortAwesome/Font-Awesome)
+ * [gulp](https://github.com/gulpjs/gulp)
+ * [gulp-autoprefixer](https://github.com/sindresorhus/gulp-autoprefixer)
+ * [gulp-livereload](https://github.com/vohof/gulp-livereload)
+ * [gulp-sass](https://github.com/dlmanning/gulp-sass)
+ * [gulp-sourcemaps](https://github.com/floridoo/gulp-sourcemaps)
+ * [gulp-spritesmith](https://github.com/twolfson/gulp.spritesmith)
+ * [npm](https://www.npmjs.com/)
+ * [sass](http://sass-lang.com/)
+ * [spritesmith](https://github.com/Ensighten/spritesmith)
+ * [watchify](https://github.com/substack/watchify)
