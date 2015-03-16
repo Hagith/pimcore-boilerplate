@@ -6,6 +6,12 @@
 
 ## Getting started
 
+Clone this repo or use [composer](https://getcomposer.org/download/)
+```sh
+php composer.phar create-project rafalgalka/pimcore-boilerplate [my-project] dev-master
+```
+
+Inside project root:
 ```sh
 npm install
 gulp
@@ -32,3 +38,6 @@ Gulp tasks:
  * [sass](http://sass-lang.com/)
  * [spritesmith](https://github.com/Ensighten/spritesmith)
  * [watchify](https://github.com/substack/watchify)
+
+# TODO
+ * install script for ```composer create-project```
