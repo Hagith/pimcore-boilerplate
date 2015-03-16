@@ -1,5 +1,4 @@
 'use strict';
 
-var $ = require('jquery');
-
-console.log($('.navbar-toggle'));
+window.jQuery = window.$ = require('jquery');
+require('bootstrap-sass');
