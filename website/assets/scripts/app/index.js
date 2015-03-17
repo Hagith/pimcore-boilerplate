@@ -1,4 +1,12 @@
-var routes = require('../config/routes');
+var Viewport = require('../utils/viewport');
+var config = require('./config');
+
+console.log(config);
+
+var App = function() {
+  this.viewport = new Viewport(config.viewport);
+  console.log('app constructor');
+};
 
 //var router = require('director');
 
@@ -15,3 +23,5 @@ var routes = require('../config/routes');
 //  }
 //  this.router.setRoute(href);
 //}.bind(this));
+
+module.exports = new App();
