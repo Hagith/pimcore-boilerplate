@@ -1,41 +1,33 @@
 var eventbus = require('./eventbus');
 
-var defaults = {
-  mobileBreakpoint: 768
-};
+var isMobileState;
 
 var Viewport = function(options) {
   if (!(this instanceof Viewport)) return new Viewport(options);
 
-  this.opts = $.extend({}, defaults, options);
-
-  this.isMobile = undefined;
+  this.mobileBreakpoint = options.mobileBreakpoint || 768;
   this.$window = $(window);
 
   // check / listen width
-  console.log(this);
   this.onResize();
   this.$window.resize(this.onResize.bind(this));
 };
 
 Viewport.prototype = {
-  onResize: function() {
-    var isMobile = this.$window.width() < this.opts.mobileBreakpoint;
+  isMobile: function() {
+    return this.$window.width() < this.mobileBreakpoint;
+  },
 
-    if (this.isMobile === isMobile) {
+  onResize: function() {
+    var isMobile = this.isMobile();
+
+    if (isMobileState === isMobile) {
       return;
     }
 
-    $('body').toggleClass('mobile', isMobile);
-
-    this.isMobile = isMobile;
-    eventbus.emit('viewport', this.isMobile);
-    //$.publish('website.isMobile', [this.isMobile]);
+    isMobileState = isMobile;
+    eventbus.emit('viewport.isMobile', isMobile);
   }
 };
-
-//global.website = new Mobile({
-//  mobileBreakpoint: 768
-//});
 
 module.exports = Viewport;

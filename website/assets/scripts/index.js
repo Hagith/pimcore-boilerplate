@@ -3,10 +3,37 @@
 window.jQuery = window.$ = require('jquery');
 require('bootstrap-sass');
 
-
 var config = require('./app/config');
-var Viewport = require('./utils/viewport')(config.viewport);
-//var viewport = new Viewport(config.viewport);
+var viewport = require('./utils/viewport')(config.viewport);
+var Vue = require('vue');
+
+// vue components
+require('./components/snippet');
+
+var root = new Vue({
+  el: 'body',
+  data: {
+    title: 'Hello Browserify & Vue.js!'
+  },
+
+  beforeCompile: function() {
+    // load vue components found in page content
+    var components = $(this.$el).find('[data-component]');
+    var name, ctor, component;
+    $.each(components, function(i, el) {
+      name = $(el).data('component');
+      ctor = Vue.component(name);
+      if (ctor) {
+        component = new ctor({
+          data: {
+            isMobile: viewport.isMobile()
+          }
+        });
+      }
+    }.bind(this));
+  }
+});
+
 //var router = require('director');
 
 // bind all links beginning with "/" to be routed by director
