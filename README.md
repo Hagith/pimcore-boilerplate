@@ -3,14 +3,14 @@
 [pimcore](http://www.pimcore.org) boilerplate on steroids for rapid project development.
 
 [![pimcore release](https://img.shields.io/badge/pimcore-3.0.5-brightgreen.svg)](https://packagist.org/packages/rafalgalka/pimcore-boilerplate)
-[![Dependency Status](https://david-dm.org/rafalgalka/pimcore-boilerplate.svg)](https://david-dm.org/rafalgalka/pimcore-boilerplate)
-[![devDependency Status](https://david-dm.org/rafalgalka/pimcore-boilerplate/dev-status.svg)](https://david-dm.org/rafalgalka/pimcore-boilerplate#info=devDependencies)
+[![Dependency Status](https://david-dm.org/Hagith/pimcore-boilerplate.svg)](https://david-dm.org/Hagith/pimcore-boilerplate)
+[![devDependency Status](https://david-dm.org/Hagith/pimcore-boilerplate/dev-status.svg)](https://david-dm.org/Hagith/pimcore-boilerplate#info=devDependencies)
 
 ## Getting started
 
 Clone this repo or use [composer](https://getcomposer.org/download/)
 ```sh
-php composer.phar create-project rafalgalka/pimcore-boilerplate [my-project] dev-master
+php composer.phar create-project hagith/pimcore-boilerplate [my-project] dev-master
 ```
 
 Inside project root:
