@@ -1,33 +1,37 @@
-var eventbus = require('./eventbus');
+var EventEmitter = require('events').EventEmitter;
+var inherits = require('inherits');
+
+var config = require('../app/config').viewport;
+config = config || {};
 
 var isMobileState;
 
-var Viewport = function(options) {
-  if (!(this instanceof Viewport)) return new Viewport(options);
+inherits(Viewport, EventEmitter);
 
-  this.mobileBreakpoint = options.mobileBreakpoint || 768;
+function Viewport() {
+  EventEmitter.call(this);
+
+  this.mobileBreakpoint = config.mobileBreakpoint || 768;
   this.$window = $(window);
 
   // check / listen width
   this.onResize();
   this.$window.resize(this.onResize.bind(this));
+}
+
+Viewport.prototype.isMobile = function() {
+  return this.$window.width() < this.mobileBreakpoint;
 };
 
-Viewport.prototype = {
-  isMobile: function() {
-    return this.$window.width() < this.mobileBreakpoint;
-  },
+Viewport.prototype.onResize = function() {
+  var isMobile = this.isMobile();
 
-  onResize: function() {
-    var isMobile = this.isMobile();
-
-    if (isMobileState === isMobile) {
-      return;
-    }
-
-    isMobileState = isMobile;
-    eventbus.emit('viewport.isMobile', isMobile);
+  if (isMobileState === isMobile) {
+    return;
   }
+
+  isMobileState = isMobile;
+  this.emit('isMobile', isMobile);
 };
 
-module.exports = Viewport;
+module.exports = new Viewport();

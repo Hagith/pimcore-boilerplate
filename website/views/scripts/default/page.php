@@ -13,4 +13,6 @@ if ($route) {
         <p v-text="msg" v-style="background-color: background"></p>
     </div>
     <?= $this->wysiwyg('content') ?>
+
+    <a href="#" data-route="client">Client route</a>
 </div>

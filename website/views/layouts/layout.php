@@ -3,7 +3,7 @@
 <?= $this->template('partial/html-head.php') ?>
 <body>
 
-<div id="wrapper" class="page-<?= $this->getRequest()->getParam('action') ?>">
+<div id="wrapper">
     <?= $this->template('partial/header.php') ?>
 
     <?= $this->layout()->content; ?>

@@ -1,10 +1,10 @@
 module.exports = {
   viewport: {
-    mobileBreakpoint: 769,
-    foo: 'bar'
+    mobileBreakpoint: 768
   },
 
-  routes: {
-    example: require('../components/example')()
+  router: {
+    dispatch: false,
+    click: false
   }
 };
