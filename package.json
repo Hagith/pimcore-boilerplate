@@ -2,6 +2,7 @@
   "name": "pimcore",
   "dependencies": {
     "bootstrap-sass": "^3.3.3",
+    "director": "^1.2.8",
     "fiber": "^1.0.4",
     "font-awesome": "^4.3.0",
     "jquery": "^2.1.3",

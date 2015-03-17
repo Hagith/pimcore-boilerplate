@@ -1,7 +1,9 @@
-var app = require ('../app');
+var eventbus = require('../utils/eventbus');
 
-console.log(app.viewport);
-
-var Example = function() {};
+var Example = function() {
+  eventbus.on('viewport', function() {
+    console.log('example on viewport');
+  });
+};
 
 module.exports = Example;
