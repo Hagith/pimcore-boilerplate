@@ -2,7 +2,7 @@
 
 [pimcore](http://www.pimcore.org) boilerplate on steroids for rapid project development.
 
-[![pimcore release](https://img.shields.io/badge/pimcore-3.0.5-brightgreen.svg)](https://packagist.org/packages/rafalgalka/pimcore-boilerplate)
+[![pimcore release](https://img.shields.io/badge/pimcore-3.0.6-brightgreen.svg)](https://packagist.org/packages/rafalgalka/pimcore-boilerplate)
 [![Dependency Status](https://david-dm.org/Hagith/pimcore-boilerplate.svg)](https://david-dm.org/Hagith/pimcore-boilerplate)
 [![devDependency Status](https://david-dm.org/Hagith/pimcore-boilerplate/dev-status.svg)](https://david-dm.org/Hagith/pimcore-boilerplate#info=devDependencies)
 
