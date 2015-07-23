@@ -33,6 +33,7 @@ Gulp tasks:
  * [gulp](https://github.com/gulpjs/gulp)
  * [gulp-autoprefixer](https://github.com/sindresorhus/gulp-autoprefixer)
  * [gulp-livereload](https://github.com/vohof/gulp-livereload)
+ * [gulp-plumber](https://github.com/floatdrop/gulp-plumber)
  * [gulp-sass](https://github.com/dlmanning/gulp-sass)
  * [gulp-sourcemaps](https://github.com/floridoo/gulp-sourcemaps)
  * [gulp-spritesmith](https://github.com/twolfson/gulp.spritesmith)
