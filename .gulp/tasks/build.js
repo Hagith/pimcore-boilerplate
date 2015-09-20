@@ -4,5 +4,5 @@ var sequence = require('gulp-sequence');
 gulp.task('build', sequence(
     'clean',
     'sprites',
-    ['sass', 'browserify']
+    ['minify-css', 'uglify-js']
 ));

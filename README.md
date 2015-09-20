@@ -17,29 +17,35 @@ Inside project root:
 ```sh
 npm install
 gulp
-gulp publish
-gulp deploy
 ```
 
 Gulp tasks:
  * ```gulp``` - build development files and start watching changes
- * ```gulp publish``` - compress and optimize files (in progress)
- * ```gulp deploy``` - rsync files with your server (in progress)
+ * ```gulp build``` - compress and optimize files
 
 ## Steroids used (alphabetic order)
  * [bootstrap-sass](https://github.com/twbs/bootstrap-sass)
  * [browserify](https://github.com/substack/node-browserify)
+ * [del](https://github.com/sindresorhus/del)
  * [font-awesome](https://github.com/FortAwesome/Font-Awesome)
  * [gulp](https://github.com/gulpjs/gulp)
  * [gulp-autoprefixer](https://github.com/sindresorhus/gulp-autoprefixer)
  * [gulp-livereload](https://github.com/vohof/gulp-livereload)
+ * [gulp-minify-css](https://github.com/murphydanger/gulp-minify-css)
  * [gulp-plumber](https://github.com/floatdrop/gulp-plumber)
  * [gulp-sass](https://github.com/dlmanning/gulp-sass)
+ * [gulp-sequence](https://github.com/teambition/gulp-sequence)
+ * [gulp-size](https://github.com/sindresorhus/gulp-size)
  * [gulp-sourcemaps](https://github.com/floridoo/gulp-sourcemaps)
- * [gulp-spritesmith](https://github.com/twolfson/gulp.spritesmith)
+ * [gulp-uglify](https://github.com/terinjokes/gulp-uglify)
+ * [gulp-util](https://github.com/gulpjs/gulp-util)
+ * [gulp.spritesmith](https://github.com/twolfson/gulp.spritesmith)
+ * [pretty-hrtime](https://github.com/robrich/pretty-hrtime)
+ * [require-dir](https://github.com/aseemk/requireDir)
  * [npm](https://www.npmjs.com/)
  * [sass](http://sass-lang.com/)
  * [spritesmith](https://github.com/Ensighten/spritesmith)
+ * [vinyl-source-stream](https://github.com/hughsk/vinyl-source-stream)
  * [watchify](https://github.com/substack/watchify)
 
 # TODO

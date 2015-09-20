@@ -3,7 +3,7 @@ var gutil = require('gulp-util');
 var sequence = require('gulp-sequence');
 
 gulp.task('default', function() {
-  sequence('build', 'watch', function() {
+  sequence(['sass', 'browserify'], 'watch', function() {
     gutil.log(gutil.colors.green('Waiting for changes...'));
   });
 });
