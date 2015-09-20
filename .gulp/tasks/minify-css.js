@@ -7,6 +7,6 @@ gulp.task('minify-css', ['sass'], function() {
   return gulp.src(config.paths.build + '/*.css')
       .pipe(minify({keepBreaks: true}))
       .pipe(gulp.dest(config.paths.build))
-      .pipe(size())
-      .pipe(size({gzip: true}));
+      .pipe(size({title: 'css'}))
+      .pipe(size({title: 'css', gzip: true}));
 });

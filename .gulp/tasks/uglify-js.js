@@ -7,6 +7,6 @@ gulp.task('uglify-js', ['browserify'], function() {
   return gulp.src(config.paths.build + '/*.js')
       .pipe(uglify())
       .pipe(gulp.dest(config.paths.build))
-      .pipe(size())
-      .pipe(size({gzip: true}));
+      .pipe(size({title: 'js'}))
+      .pipe(size({title: 'js', gzip: true}));
 });
