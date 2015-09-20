@@ -40,6 +40,9 @@ Pimcore::initAutoloader();
 Pimcore::getEventManager()->attach("object.postUpdate", function ($event) {
     $object = $event->getTarget();
     // do something ...
+    // get a parameter from the event
+    $saveVersionOnly = $event->getParam("saveVersionOnly");
+    // ...
 });
 
 */

@@ -33,7 +33,7 @@ class Imagick extends Adapter {
     protected static $CMYKColorProfile;
 
     /**
-     * @var Imagick
+     * @var \Imagick
      */
     protected $resource;
 
@@ -82,7 +82,12 @@ class Imagick extends Adapter {
                 $i->setResolution($options["resolution"]["x"], $options["resolution"]["y"]);
             }
 
-            if(!$i->readImage($imagePath) || !filesize($imagePath)) {
+            $imagePathLoad = $imagePath;
+            if(!defined("HHVM_VERSION")) {
+                $imagePathLoad .= "[0]"; // not supported by HHVM implementation - selects the first layer/page in layered/pages file formats
+            }
+
+            if(!$i->readImage($imagePathLoad) || !filesize($imagePath)) {
                 return false;
             }
 
@@ -272,7 +277,12 @@ class Imagick extends Adapter {
             $profiles = $this->resource->getImageProfiles('*', false);
             $has_icc_profile = (array_search('icc', $profiles) !== false);
             if($has_icc_profile) {
-                $this->resource->profileImage('icc', self::getRGBColorProfile());
+                try {
+                    // if getImageColorspace() says SRGB but the embedded icc profile is CMYK profileImage() will throw an exception
+                    $this->resource->profileImage('icc', self::getRGBColorProfile());
+                } catch (\Exception $e) {
+                    \Logger::warn($e);
+                }
             }
         }
 
@@ -280,11 +290,16 @@ class Imagick extends Adapter {
         // thumbnails in PDF's because they do not support "real" grayscale JPEGs or PNGs
         // problem is described here: http://imagemagick.org/Usage/basics/#type
         // and here: http://www.imagemagick.org/discourse-server/viewtopic.php?f=2&t=6888#p31891
+        $currentLocale = setlocale(LC_ALL,"0"); // this locale hack thing is also a hack for imagick
+        setlocale(LC_ALL,"en"); // Set locale to "en" for ImagickDraw::point() to ensure the involved tostring() methods keep the decimal point
+
         $draw = new \ImagickDraw();
         $draw->setFillColor("#ff0000");
         $draw->setfillopacity(.01);
         $draw->point(floor($this->getWidth()/2),floor($this->getHeight()/2)); // place it in the middle of the image
         $this->resource->drawImage($draw);
+
+        setlocale(LC_ALL, $currentLocale); // see setlocale() above, for details ;-)
 
         return $this;
     }
@@ -708,6 +723,20 @@ class Imagick extends Adapter {
     public function gaussianBlur($radius = 0, $sigma = 1.0) {
         $this->preModify();
         $this->resource->gaussianBlurImage($radius, $sigma);
+        $this->postModify();
+
+        return $this;
+    }
+
+    /**
+     * @param int $brightness
+     * @param int $saturation
+     * @param int $hue
+     * @return $this
+     */
+    public function brightnessSaturation($brightness = 100, $saturation = 100, $hue = 100) {
+        $this->preModify();
+        $this->resource->modulateImage($brightness, $saturation, $hue);
         $this->postModify();
 
         return $this;

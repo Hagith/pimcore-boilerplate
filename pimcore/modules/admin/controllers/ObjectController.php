@@ -171,7 +171,7 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
 
         $tmpObject["allowChildren"] = true;
 
-        if (\Pimcore\Tool\Admin::isExtJS5()) {
+        if (\Pimcore\Tool\Admin::isExtJS6()) {
             $tmpObject["leaf"] = !$hasChildren;
         } else {
             $tmpObject["leaf"] = false;
@@ -380,7 +380,7 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
             }
 
             $objectData = $this->filterLocalizedFields($object, $objectData);
-            Object\Service::enrichLayoutDefinition($objectData["layout"]);
+            Object\Service::enrichLayoutDefinition($objectData["layout"], $object);
 
 
             //Hook for modifying return value - e.g. for changing permissions based on object data
@@ -471,7 +471,7 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
             $value = $fielddefinition->getDataForEditmode($fieldData, $object, $objectFromVersion);
 
             // following some exceptions for special data types (localizedfields, objectbricks)
-            if ($value && ($fieldData instanceof Object\Localizedfield)) {
+            if ($value && ($fieldData instanceof Object\Localizedfield || $fieldData instanceof Object\Classificationstore)) {
                 // make sure that the localized field participates in the inheritance detection process
                 $isInheritedValue = $value["inherited"];
             }
@@ -1195,9 +1195,13 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
 
     public function previewVersionAction()
     {
+        Pimcore\Model\Object\AbstractObject::setDoNotRestoreKeyAndPath(true);
+
         $id = intval($this->getParam("id"));
         $version = Model\Version::getById($id);
         $object = $version->loadData();
+
+        Pimcore\Model\Object\AbstractObject::setDoNotRestoreKeyAndPath(false);
 
         if($object) {
             if ($object->isAllowed("versions")) {
@@ -1213,6 +1217,8 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
     public function diffVersionsAction()
     {
 
+        Pimcore\Model\Object\AbstractObject::setDoNotRestoreKeyAndPath(true);
+
         $id1 = intval($this->getParam("from"));
         $id2 = intval($this->getParam("to"));
 
@@ -1221,6 +1227,8 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
 
         $version2 = Model\Version::getById($id2);
         $object2 = $version2->loadData();
+
+        Pimcore\Model\Object\AbstractObject::setDoNotRestoreKeyAndPath(false);
 
         if($object1 && $object2) {
             if ($object1->isAllowed("versions") && $object2->isAllowed("versions")) {
@@ -1378,36 +1386,18 @@ class Admin_ObjectController extends \Pimcore\Controller\Action\Admin\Element
                 $start = $this->getParam("start");
             }
 
-            $sortParam = $this->getParam("sort");
-            if (\Pimcore\Tool\Admin::isExtJS5()) {
-                if ($sortParam) {
-                    $sortParam = json_decode($sortParam, true);
-                    $sortParam = $sortParam[0];
-                    $orderKey = $sortParam["property"];
-                    $order = $sortParam["direction"];
 
-                    if (!(substr($orderKey, 0, 1) == "~")) {
-                        if (array_key_exists($orderKey, $colMappings)) {
-                            $orderKey = $colMappings[$orderKey];
-                        }
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+
+            if($sortingSettings['order']) {
+                $order = $sortingSettings['order'];
+            }
+            if (strlen($sortingSettings['orderKey']) > 0) {
+                $orderKey = $sortingSettings['orderKey'];
+                if (!(substr($orderKey, 0, 1) == "~")) {
+                    if (array_key_exists($orderKey, $colMappings)) {
+                        $orderKey = $colMappings[$orderKey];
                     }
-                }
-
-            } else {
-                if (strlen($sortParam) > 0) {
-                    if (!(substr($sortParam, 0, 1) == "~")) {
-                        if ($this->getParam("sort")) {
-                            if (array_key_exists($this->getParam("sort"), $colMappings)) {
-                                $orderKey = $colMappings[$this->getParam("sort")];
-                            } else {
-                                $orderKey = $this->getParam("sort");
-                            }
-                        }
-                    }
-                }
-
-                if ($this->getParam("dir")) {
-                    $order = $this->getParam("dir");
                 }
             }
 

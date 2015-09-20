@@ -44,21 +44,25 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
 
         $language = $this->getParam("language");
 
-        $languageFile = Tool\Admin::getLanguageFile($language);
-        if (!is_file($languageFile)) {
-            $languageFile = Tool\Admin::getLanguageFile("en");
-        }
+        $languageFiles = [
+            $language => Tool\Admin::getLanguageFile($language),
+            "en" => Tool\Admin::getLanguageFile("en")
+        ];
 
-        $row = 1;
-        $handle = fopen($languageFile, "r");
-        while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
-            $translations[$data[0]] = $data[1];
+        $translations = [];
+        foreach($languageFiles as $langKey => $languageFile) {
+            if(file_exists($languageFile)) {
+                $rawTranslations = json_decode(file_get_contents($languageFile), true);
+                foreach ($rawTranslations as $entry) {
+                    if(!isset($translations[$entry["term"]])) {
+                        $translations[$entry["term"]] = $entry["definition"];
+                    }
+                }
+            }
         }
-        fclose($handle);
 
         $broker = \Pimcore\API\Plugin\Broker::getInstance();
         $pluginTranslations = $broker->getTranslations($language);
-        //$pluginTranslations = $this->getApiPluginBroker()->getTranslations($language);
         $translations = array_merge($pluginTranslations, $translations);
 
         $this->view->translations = $translations;
@@ -294,7 +298,7 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
     private function getFileexplorerPath($paramName = 'node')
     {
         $path = preg_replace("/^\/fileexplorer/", "", $this->getParam($paramName));
-        $path = realpath(PIMCORE_DOCUMENT_ROOT . $path);
+        $path = resolvePath(PIMCORE_DOCUMENT_ROOT . $path);
 
         if (strpos($path, PIMCORE_DOCUMENT_ROOT) !== 0) {
             throw new \Exception('operation permitted, permission denied');
@@ -432,6 +436,20 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
         exit;
     }
 
+    public function getAvailableModulesAction() {
+        $system_modules = array(
+            "searchadmin", "reports", "webservice", "admin", "update", "install", "extensionmanager"
+        );
+        $modules = array();
+        $front = $this->getFrontController();
+        foreach ($front->getControllerDirectory() as $module => $path) {
+            if (in_array($module, $system_modules)) continue;
+            $modules[] = array("name" => $module);
+        }
+        $this->_helper->json(array(
+            "data" => $modules
+        ));
+    }
 
     /**
      * page & snippet controller/action/template selector store providers
@@ -440,7 +458,7 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
     public function getAvailableControllersAction() {
 
         $controllers = array();
-        $controllerDir = PIMCORE_WEBSITE_PATH . DIRECTORY_SEPARATOR . "controllers" . DIRECTORY_SEPARATOR;
+        $controllerDir = $this->getControllerDir();
         $controllerFiles = rscandir($controllerDir);
         foreach ($controllerFiles as $file) {
             $file = str_replace($controllerDir, "", $file);
@@ -468,7 +486,8 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
             return "/" . strtoupper($matches[2]);
         }, $controllerClass);
 
-        $controllerFile = PIMCORE_WEBSITE_PATH . "/controllers/" . $controllerClass . "Controller.php";
+        $controllerDir = $this->getControllerDir();
+        $controllerFile = $controllerDir . $controllerClass . "Controller.php";
         if(is_file($controllerFile)) {
             preg_match_all("/function[ ]+([a-zA-Z0-9]+)Action/i", file_get_contents($controllerFile), $matches);
             foreach ($matches[1] as $match) {
@@ -515,6 +534,28 @@ class Admin_MiscController extends \Pimcore\Controller\Action\Admin
     {
 
         die("done");
+    }
+
+    /**
+     * Determines by the moduleName GET-parameter which controller directory
+     * to use; the default (param empty or "website") or of the corresponding
+     * module or plugin
+     *
+     * @return string
+     * @throws Zend_Controller_Exception
+     */
+    private function getControllerDir() {
+        $controllerDir = PIMCORE_WEBSITE_PATH . DIRECTORY_SEPARATOR . "controllers" . DIRECTORY_SEPARATOR;
+        if ($module = $this->getParam("moduleName")) {
+            if ($module != "" && $module != "website") { // => not the default
+                $front   = $this->getFrontController();
+                $modules = $front->getControllerDirectory();
+                if (array_key_exists($module, $modules)) {
+                    $controllerDir = $modules[$module] . DIRECTORY_SEPARATOR;
+                }
+            }
+        }
+        return $controllerDir;
     }
 }
 

@@ -37,7 +37,7 @@ class Admin_RecyclebinController extends \Pimcore\Controller\Action\Admin {
     public function listAction () {
         
         if($this->getParam("xaction") == "destroy") {
-            $item = Recyclebin\Item::getById($this->getParam("data"));
+            $item = Recyclebin\Item::getById(\Pimcore\Admin\Helper\QueryParams::getRecordIdForGridRequest($this->getParam("data")));
             $item->delete();
  
             $this->_helper->json(array("success" => true, "data" => array()));
@@ -47,10 +47,15 @@ class Admin_RecyclebinController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $list->setOrderKey("date");
+            $list->setOrder("DESC");
+
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
             }
+
 
             $conditionFilters = array();
 

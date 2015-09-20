@@ -159,8 +159,8 @@ class Multihref extends Model\Object\ClassDefinition\Data\Relations\AbstractRela
     public function setDocumentTypes($documentTypes)
     {
         // this is the new method with Ext.form.MultiSelect
-        if((is_string($documentTypes) && !empty($documentTypes)) || (\Pimcore\Tool\Admin::isExtJS5() && is_array($documentTypes))) {
-            if (!\Pimcore\Tool\Admin::isExtJS5()) {
+        if((is_string($documentTypes) && !empty($documentTypes)) || (\Pimcore\Tool\Admin::isExtJS6() && is_array($documentTypes))) {
+            if (!\Pimcore\Tool\Admin::isExtJS6()) {
                 $parts = explode(",", $documentTypes);
             } else {
                 $parts = $documentTypes;
@@ -168,7 +168,9 @@ class Multihref extends Model\Object\ClassDefinition\Data\Relations\AbstractRela
 
             $documentTypes = array();
             foreach ($parts as $type) {
-                $documentTypes[] = array("documentTypes" => $type);
+                if($type) {
+                    $documentTypes[] = array("documentTypes" => $type);
+                }
             }
         }
 
@@ -211,8 +213,8 @@ class Multihref extends Model\Object\ClassDefinition\Data\Relations\AbstractRela
     public function setAssetTypes($assetTypes)
     {
         // this is the new method with Ext.form.MultiSelect
-        if((is_string($assetTypes) && !empty($assetTypes)) || (\Pimcore\Tool\Admin::isExtJS5() && is_array($assetTypes))) {
-            if (!\Pimcore\Tool\Admin::isExtJS5()) {
+        if((is_string($assetTypes) && !empty($assetTypes)) || (\Pimcore\Tool\Admin::isExtJS6() && is_array($assetTypes))) {
+            if (!\Pimcore\Tool\Admin::isExtJS6()) {
                 $parts = explode(",", $assetTypes);
             } else {
                 $parts = $assetTypes;
@@ -641,6 +643,8 @@ class Multihref extends Model\Object\ClassDefinition\Data\Relations\AbstractRela
                     if ($idMapper) {
                         $id = $idMapper->getMappedId($type, $id);
                     }
+
+                    $e = null;
                     if ($id) {
                         $e = Element\Service::getElementById($type, $id);
                     }

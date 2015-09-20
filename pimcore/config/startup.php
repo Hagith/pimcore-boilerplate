@@ -46,6 +46,7 @@ if (!defined("PIMCORE_VERSION_DIRECTORY"))  define("PIMCORE_VERSION_DIRECTORY", 
 if (!defined("PIMCORE_WEBDAV_TEMP"))  define("PIMCORE_WEBDAV_TEMP", PIMCORE_WEBSITE_VAR . "/webdav");
 if (!defined("PIMCORE_LOG_DIRECTORY"))  define("PIMCORE_LOG_DIRECTORY", PIMCORE_WEBSITE_VAR . "/log");
 if (!defined("PIMCORE_LOG_DEBUG"))  define("PIMCORE_LOG_DEBUG", PIMCORE_LOG_DIRECTORY . "/debug.log");
+if (!defined("PIMCORE_LOG_FILEOBJECT_DIRECTORY"))  define("PIMCORE_LOG_FILEOBJECT_DIRECTORY", PIMCORE_LOG_DIRECTORY . "/fileobjects");
 if (!defined("PIMCORE_LOG_MAIL_TEMP"))  define("PIMCORE_LOG_MAIL_TEMP", PIMCORE_LOG_DIRECTORY . "/mail");
 if (!defined("PIMCORE_TEMPORARY_DIRECTORY"))  define("PIMCORE_TEMPORARY_DIRECTORY", PIMCORE_WEBSITE_VAR . "/tmp");
 if (!defined("PIMCORE_CACHE_DIRECTORY"))  define("PIMCORE_CACHE_DIRECTORY", PIMCORE_WEBSITE_VAR . "/cache");
@@ -96,16 +97,15 @@ foreach ($autoloaderClassMapFiles as $autoloaderClassMapFile) {
     }
 }
 
+$composerStartup = PIMCORE_DOCUMENT_ROOT . "/vendor/autoload.php";
+if(@is_file($composerStartup)) {
+    include_once($composerStartup);
+}
 
 // do some general stuff
 $websiteStartup = PIMCORE_CONFIGURATION_DIRECTORY . "/startup.php";
 if(@is_file($websiteStartup)) {
     include_once($websiteStartup);
-}
-
-$composerStartup = PIMCORE_DOCUMENT_ROOT . "/vendor/autoload.php";
-if(@is_file($composerStartup)) {
-    include_once($composerStartup);
 }
 
 // on pimcore shutdown

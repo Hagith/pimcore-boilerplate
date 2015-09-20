@@ -412,6 +412,7 @@ class ObjectsMetadata extends Model\Object\ClassDefinition\Data\Objects {
                     $id = $idMapper->getMappedId("object", $id);
                 }
 
+                $dest = null;
                 if ($id) {
                     $dest = Object::getById($id);
                 }
@@ -572,6 +573,13 @@ class ObjectsMetadata extends Model\Object\ClassDefinition\Data\Objects {
      * @return $this
      */
     public function setVisibleFields($visibleFields) {
+        /**
+         * @extjs6
+         */
+        if(is_array($visibleFields)) {
+            $visibleFields = implode(",", $visibleFields);
+        }
+
         $this->visibleFields = $visibleFields;
         return $this;
     }
@@ -690,7 +698,7 @@ class ObjectsMetadata extends Model\Object\ClassDefinition\Data\Objects {
     /**
      *
      */
-    public function enrichLayoutDefinition() {
+    public function enrichLayoutDefinition($object) {
         $classId = $this->allowedClassId;
         $class = Object\ClassDefinition::getById($classId);
 

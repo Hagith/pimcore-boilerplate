@@ -18,14 +18,16 @@
 namespace Pimcore\Model\Object;
 
 use Pimcore\Model;
-use Pimcore\Model\Cache; 
-use Pimcore\Tool; 
+use Pimcore\Model\Cache;
+use Pimcore\Tool;
 
 class AbstractObject extends Model\Element\AbstractElement {
 
     const OBJECT_TYPE_FOLDER = "folder";
     const OBJECT_TYPE_OBJECT = "object";
     const OBJECT_TYPE_VARIANT = "variant";
+
+    static $doNotRestoreKeyAndPath = false;
 
     /**
      * possible types of a document
@@ -544,13 +546,13 @@ class AbstractObject extends Model\Element\AbstractElement {
         $maxRetries = 5;
         for($retries=0; $retries<$maxRetries; $retries++) {
 
+            // be sure that unpublished objects in relations are saved also in frontend mode, eg. in importers, ...
+            $hideUnpublishedBackup = self::getHideUnpublished();
+            self::setHideUnpublished(false);
+
             $this->beginTransaction();
 
             try {
-                // be sure that unpublished objects in relations are saved also in frontend mode, eg. in importers, ...
-                $hideUnpublishedBackup = self::getHideUnpublished();
-                self::setHideUnpublished(false);
-
                 if(!Tool::isValidKey($this->getKey()) && $this->getId() != 1){
                     throw new \Exception("invalid key for object with id [ ".$this->getId()." ] key is: [" . $this->getKey() . "]");
                 }
@@ -570,14 +572,16 @@ class AbstractObject extends Model\Element\AbstractElement {
                     $oldPath = $this->getResource()->getCurrentFullPath();
                 }
 
-                $this->update();
-
                 // if the old path is different from the new path, update all children
+                // we need to do the update of the children's path before $this->update() because the
+                // inheritance helper needs the correct paths of the children in InheritanceHelper::buildTree()
                 $updatedChildren = array();
                 if($oldPath && $oldPath != $this->getFullPath()) {
                     $this->getResource()->updateWorkspaces();
                     $updatedChildren = $this->getResource()->updateChildsPaths($oldPath);
                 }
+
+                $this->update();
 
                 self::setHideUnpublished($hideUnpublishedBackup);
 
@@ -591,6 +595,9 @@ class AbstractObject extends Model\Element\AbstractElement {
                     // PDO adapter throws exceptions if rollback fails
                     \Logger::info($er);
                 }
+
+                // set "HideUnpublished" back to the value it was originally
+                self::setHideUnpublished($hideUnpublishedBackup);
 
                 // we try to start the transaction $maxRetries times again (deadlocks, ...)
                 if($retries < ($maxRetries-1)) {
@@ -644,12 +651,14 @@ class AbstractObject extends Model\Element\AbstractElement {
                 // that is currently in the parent object (in memory), because this might have changed but wasn't not saved
                 $this->setPath(str_replace("//","/",$parent->getCurrentFullPath()."/"));
             } else {
-                // parent document doesn't exist anymore, so delete this document
-                //$this->delete();
-
                 // parent document doesn't exist anymore, set the parent to to root
                 $this->setParentId(1);
                 $this->setPath("/");
+            }
+
+            if (strlen($this->getKey()) < 1) {
+                $this->setKey("---no-valid-key---" . $this->getId());
+                throw new \Exception("Document requires key, generated key automatically");
             }
         } else if($this->getId() == 1) {
             // some data in root node should always be the same
@@ -675,11 +684,6 @@ class AbstractObject extends Model\Element\AbstractElement {
      * @throws \Exception
      */
     protected function update() {
-
-        if(is_null($this->getKey()) && $this->getId() != 1) {
-            $this->delete();
-            throw new \Exception("Object requires key, object with id " . $this->getId() . " deleted");
-        }
 
         // set mod date
         $this->setModificationDate(time());
@@ -845,7 +849,7 @@ class AbstractObject extends Model\Element\AbstractElement {
      */
     public function setParentId($o_parentId) {
         $this->o_parentId = (int) $o_parentId;
-        $this->o_parent = AbstractObject::getById($o_parentId);
+        $this->o_parent = null;
         return $this;
     }
 
@@ -1055,7 +1059,7 @@ class AbstractObject extends Model\Element\AbstractElement {
      *
      */
     public function __wakeup() {
-        if(isset($this->_fulldump)) {
+        if(isset($this->_fulldump) && !self::$doNotRestoreKeyAndPath) {
             // set current key and path this is necessary because the serialized data can have a different path than the original element ( element was renamed or moved )
             $originalElement = AbstractObject::getById($this->getId());
             if($originalElement) {
@@ -1127,4 +1131,22 @@ class AbstractObject extends Model\Element\AbstractElement {
 
         return parent::__call($method, $args);
     }
+
+    /**
+     * @return boolean
+     */
+    public static function doNotRestoreKeyAndPath()
+    {
+        return self::$doNotRestoreKeyAndPath;
+    }
+
+    /**
+     * @param boolean $doNotRestoreKeyAndPath
+     */
+    public static function setDoNotRestoreKeyAndPath($doNotRestoreKeyAndPath)
+    {
+        self::$doNotRestoreKeyAndPath = $doNotRestoreKeyAndPath;
+    }
+
+
 }

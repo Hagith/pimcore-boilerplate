@@ -38,7 +38,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             if ($this->getParam("xaction") == "destroy") {
 
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $id = $data["id"];
                 } else {
                     $id = $data;
@@ -58,7 +58,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
 
                 $metadata->setValues($data);
 
-                $existingItem = Metadata\Predefined\Listing::getByKeyAndLanguage($metadata->getName(), $metadata->getLanguage());
+                $existingItem = Metadata\Predefined\Listing::getByKeyAndLanguage($metadata->getName(), $metadata->getLanguage(), $metadata->getTargetSubtype());
                 if ($existingItem && $existingItem->getId() != $metadata->getId()) {
                     $this->_helper->json(array("message" => "rule_violation", "success" => false));
                 }
@@ -78,7 +78,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
 
                 $metadata->setValues($data);
 
-                $existingItem = Metadata\Predefined\Listing::getByKeyAndLanguage($metadata->getName(), $metadata->getLanguage());
+                $existingItem = Metadata\Predefined\Listing::getByKeyAndLanguage($metadata->getName(), $metadata->getLanguage(), $metadata->getTargetSubtype());
                 if ($existingItem) {
                     $this->_helper->json(array("message" => "rule_violation", "success" => false));
                 }
@@ -95,9 +95,12 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
+            } else {
+                $list->setOrderKey("name");
             }
 
             if($this->getParam("filter")) {
@@ -142,7 +145,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             if ($this->getParam("xaction") == "destroy") {
 
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $id = $data["id"];
                 } else {
                     $id = $data;
@@ -185,9 +188,12 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
+            } else {
+                $list->setOrderKey('name');
             }
 
             if($this->getParam("filter")) {
@@ -362,7 +368,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
                 "defaultLanguage" => $values["general.defaultLanguage"],
                 "theme" => $values["general.theme"],
                 "contactemail" => $values["general.contactemail"],
-                "extjs5" => $values["general.extjs5"],
+                "extjs6" => $values["general.extjs6"],
                 "loginscreencustomimage" => $values["general.loginscreencustomimage"],
                 "disableusagestatistics" => $values["general.disableusagestatistics"],
                 "debug" => $values["general.debug"],
@@ -455,6 +461,15 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
                 "proxy_port" => $values["httpclient.proxy_port"],
                 "proxy_user" => $values["httpclient.proxy_user"],
                 "proxy_pass" => $values["httpclient.proxy_pass"],
+            ),
+            "applicationlog" => array(
+                "mail_notification" => array(
+                    "send_log_summary" => $values['applicationlog.mail_notification.send_log_summary'],
+                    "filter_priority" => $values['applicationlog.mail_notification.filter_priority'],
+                    "mail_receiver" => $values['applicationlog.mail_notification.mail_receiver'],
+                ),
+                "archive_treshold" => $values['applicationlog.archive_treshold'],
+                "archive_alternative_database" => $values['applicationlog.archive_alternative_database'],
             )
         );
 
@@ -582,13 +597,15 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
 
             if(is_array($data)) {
                 foreach ($data as &$value) {
-                    $value = trim($value);
+                    if(is_string($value)) {
+                        $value = trim($value);
+                    }
                 }
             }
 
             if ($this->getParam("xaction") == "destroy") {
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $id = $data["id"];
                 } else {
                     $id = $data;
@@ -629,11 +646,12 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
             }
-
+            
             if($this->getParam("filter")) {
                 $list->setCondition("`name` LIKE " . $list->quote("%".$this->getParam("filter")."%") . " OR `pattern` LIKE " . $list->quote("%".$this->getParam("filter")."%") . " OR `reverse` LIKE " . $list->quote("%".$this->getParam("filter")."%") . " OR `controller` LIKE " . $list->quote("%".$this->getParam("filter")."%") . " OR `action` LIKE " . $list->quote("%".$this->getParam("filter")."%"));
             }
@@ -687,7 +705,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
 
             if ($this->getParam("xaction") == "destroy") {
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $id = $data["id"];
                 } else {
                     $id = $data;
@@ -756,9 +774,10 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
             }
 
             if($this->getParam("filter")) {
@@ -799,7 +818,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             if ($this->getParam("xaction") == "destroy") {
 
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $id = $data["id"];
                 } else {
                     $id = $data;
@@ -875,9 +894,10 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             $list->setLimit($this->getParam("limit"));
             $list->setOffset($this->getParam("start"));
 
-            if($this->getParam("sort")) {
-                $list->setOrderKey($this->getParam("sort"));
-                $list->setOrder($this->getParam("dir"));
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+                $list->setOrder($sortingSettings['order']);
             }
 
             if($this->getParam("filter")) {
@@ -1342,7 +1362,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
                 }
 
                 if ($this->getParam("xaction") == "destroy") {
-                    if (\Pimcore\Tool\Admin::isExtJS5()) {
+                    if (\Pimcore\Tool\Admin::isExtJS6()) {
                         $id = $data["id"];
                     } else {
                         $id = $data;
@@ -1398,9 +1418,10 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
                 $list->setLimit($this->getParam("limit"));
                 $list->setOffset($this->getParam("start"));
 
-                if($this->getParam("sort")) {
-                    $list->setOrderKey($this->getParam("sort"));
-                    $list->setOrder($this->getParam("dir"));
+                $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+                if($sortingSettings['orderKey']) {
+                    $list->setOrderKey($sortingSettings['orderKey']);
+                    $list->setOrder($sortingSettings['order']);
                 } else {
                     $list->setOrderKey("name");
                     $list->setOrder("asc");
@@ -1434,6 +1455,7 @@ class Admin_SettingsController extends \Pimcore\Controller\Action\Admin {
             "id" => $item->getId(),
             "name" => $item->getName(),
             "type" => $item->getType(),
+            "data" => null,
             "siteId" => $item->getSiteId(),
             "creationDate" => $item->getCreationDate(),
             "modificationDate" => $item->getModificationDate()

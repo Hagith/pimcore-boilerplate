@@ -25,6 +25,11 @@ class Tool {
     protected static $notFoundClassNames = [];
 
     /**
+     * @var array
+     */
+    protected static $validLanguages = [];
+
+    /**
      * @static
      * @param string $key
      * @return bool
@@ -69,21 +74,25 @@ class Tool {
      */
     public static function getValidLanguages() {
 
-        $config = Config::getSystemConfig();
-        $validLanguages = strval($config->general->validLanguages);
+        if(empty(self::$validLanguages)) {
+            $config = Config::getSystemConfig();
+            $validLanguages = strval($config->general->validLanguages);
 
-        if (empty($validLanguages)) {
-            return array();
+            if (empty($validLanguages)) {
+                return array();
+            }
+
+            $validLanguages = str_replace(" ", "", $validLanguages);
+            $languages = explode(",", $validLanguages);
+
+            if (!is_array($languages)) {
+                $languages = array();
+            }
+
+            self::$validLanguages = $languages;
         }
 
-        $validLanguages = str_replace(" ", "", $validLanguages);
-        $languages = explode(",", $validLanguages);
-
-        if (!is_array($languages)) {
-            $languages = array();
-        }
-
-        return $languages;
+        return self::$validLanguages;
     }
 
     /**
@@ -108,7 +117,7 @@ class Tool {
     }
 
     /**
-     * @return null
+     * @return null|string
      */
     public static function getDefaultLanguage() {
         $config = Config::getSystemConfig();
@@ -126,7 +135,8 @@ class Tool {
     }
 
     /**
-     * @static
+     * @return array|mixed
+     * @throws \Zend_Locale_Exception
      */
     public static function getSupportedLocales() {
 
@@ -320,40 +330,44 @@ class Tool {
     /**
      * Returns the host URL
      *
-     * @static
+     * @param string $useProtocol use a specific protocol
+     *
      * @return string
      */
-    public static function getHostUrl()
-        {
-            $protocol = "http";
-            $port = '';
+    public static function getHostUrl($useProtocol = null) {
+        $protocol = "http";
+        $port = '';
 
-            if(isset($_SERVER["SERVER_PROTOCOL"])) {
-                $protocol = strtolower($_SERVER["SERVER_PROTOCOL"]);
-                $protocol = substr($protocol, 0, strpos($protocol, "/"));
-                $protocol .= (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "s" : "";
-            }
-
-            if(isset($_SERVER["SERVER_PORT"])) {
-                if(!in_array((int) $_SERVER["SERVER_PORT"],array(443,80))){
-                    $port = ":" . $_SERVER["SERVER_PORT"];
-                }
-            }
-
-            $hostname = self::getHostname();
-
-            //get it from System settings
-            if (!$hostname) {
-                $systemConfig = Config::getSystemConfig()->toArray();
-                $hostname = $systemConfig['general']['domain'];
-                if (!$hostname) {
-                    \Logger::warn('Couldn\'t determine HTTP Host. No Domain set in "Settings" -> "System" -> "Website" -> "Domain"');
-                    return "";
-                }
-            }
-
-            return $protocol . "://" . $hostname . $port;
+        if(isset($_SERVER["SERVER_PROTOCOL"])) {
+            $protocol = strtolower($_SERVER["SERVER_PROTOCOL"]);
+            $protocol = substr($protocol, 0, strpos($protocol, "/"));
+            $protocol .= (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "s" : "";
         }
+
+        if(isset($_SERVER["SERVER_PORT"])) {
+            if(!in_array((int) $_SERVER["SERVER_PORT"],array(443,80))){
+                $port = ":" . $_SERVER["SERVER_PORT"];
+            }
+        }
+
+        $hostname = self::getHostname();
+
+        //get it from System settings
+        if (!$hostname) {
+            $systemConfig = Config::getSystemConfig()->toArray();
+            $hostname = $systemConfig['general']['domain'];
+            if (!$hostname) {
+                \Logger::warn('Couldn\'t determine HTTP Host. No Domain set in "Settings" -> "System" -> "Website" -> "Domain"');
+                return "";
+            }
+        }
+
+        if($useProtocol){
+            $protocol = $useProtocol;
+        }
+
+        return $protocol . "://" . $hostname . $port;
+    }
 
 
     /**
@@ -439,7 +453,7 @@ class Tool {
     /**
      * @param string $type
      * @param array $options
-     * @return mixed
+     * @return \Zend_Http_Client
      * @throws \Exception
      * @throws \Zend_Http_Client_Exception
      */

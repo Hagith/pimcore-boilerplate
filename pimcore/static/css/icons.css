@@ -243,6 +243,10 @@
     background: url(/pimcore/static/img/icon/plugin_edit.png) left center no-repeat !important;
 }
 
+.pimcore_icon_log_admin {
+    background: url(/pimcore/static/img/icon/text_signature.png) left center no-repeat !important;
+}
+
 .pimcore_icon_menu_plugin_download {
     background: url(/pimcore/static/img/icon/plugin_go.png) no-repeat !important;
 }
@@ -1388,4 +1392,28 @@
 
 .pimcore_icon_hourglass  {
     background: url(/pimcore/static/img/icon/hourglass.png) left center no-repeat !important;
+}
+
+.pimcore_icon_cancel  {
+    background: url(/pimcore/static/img/icon/cancel.png) left center no-repeat !important;
+}
+
+.pimcore_icon_classificationstore  {
+    background: url(/pimcore/static/img/icon/classificationstore.png) left center no-repeat !important;
+}
+
+.pimcore_icon_classificationstore_icon_group  {
+    background: url(/pimcore/static/img/icon/classificationstore-group.png) left center no-repeat !important;
+}
+
+.pimcore_icon_classificationstore_icon_subgroup  {
+    background: url(/pimcore/static/img/icon/classificationstore-subgroup.png) left center no-repeat !important;
+}
+
+.pimcore_icon_classificationstore_icon_cs_collections  {
+    background: url(/pimcore/static/img/icon/application_view_tile.png) left center no-repeat !important;
+}
+
+.pimcore_icon_white_flag  {
+    background: url(/pimcore/static/img/icon/white_flag.png) left center no-repeat !important;
 }

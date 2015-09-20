@@ -44,9 +44,12 @@ class Mysql {
 
     /**
      * @param bool $raw
+     * @param bool $writeOnly
      * @return Wrapper|\Zend_Db_Adapter_Abstract
+     * @throws \Exception
+     * @throws \Zend_Db_Profiler_Exception
      */
-    public static function getConnection ($raw = false) {
+    public static function getConnection ($raw = false, $writeOnly = false) {
 
         // just return the wrapper (for compatibility reasons)
         // the wrapper itself get's then the connection using $raw = true
@@ -57,11 +60,20 @@ class Mysql {
         $charset = "UTF8";
 
         // explicit set charset for connection (to the adapter)
-        $config = Config::getSystemConfig()->toArray();
-        $config["database"]["params"]["charset"] = $charset;
+        $config = Config::getSystemConfig()->database->toArray();
+
+        // write only handling
+        if($writeOnly && isset($config["writeOnly"])) {
+            // overwrite params with write only configuration
+            $config["params"] = $config["writeOnly"]["params"];
+        } else if ($writeOnly) {
+            throw new \Exception("writeOnly connection is requested but not configured");
+        }
+
+        $config["params"]["charset"] = $charset;
 
         try {
-            $db = \Zend_Db::factory($config["database"]["adapter"], $config["database"]["params"]);
+            $db = \Zend_Db::factory($config["adapter"], $config["params"]);
             $db->query("SET NAMES " . $charset);
         } catch (\Exception $e) {
             \Logger::emerg($e);
@@ -171,7 +183,7 @@ class Mysql {
                     // the following select causes an infinite loop (eg. when the connection is lost -> error handler)
                     //\Logger::debug("closing mysql connection with ID: " . $db->fetchOne("SELECT CONNECTION_ID()"));
                     $db->closeResource();
-                    //$db->closeDDLResource();
+                    $db->closeWriteResource();
                 }
             }
         } catch (\Exception $e) {
@@ -185,6 +197,14 @@ class Mysql {
      */
     public static function isDDLQuery($query) {
         return (bool) preg_match("/(ALTER|CREATE|DROP|RENAME|TRUNCATE)(.*)(DATABASE|EVENT|FUNCTION|PROCEDURE|TABLE|TABLESPACE|VIEW|INDEX|TRIGGER)/i", $query);
+    }
+
+    /**
+     * @param $query
+     * @return bool
+     */
+    public static function isDMSQuery($query) {
+        return (bool) preg_match("/^(INSERT|UPDATE|DELETE|CALL|LOAD|REPLACE) /i", trim($query));
     }
 
     /**
@@ -230,6 +250,25 @@ class Mysql {
         }
 
         self::$_logCaptureActive = false;
+    }
+
+    /**
+     * @param $method
+     * @param $args
+     * @return bool
+     */
+    public static function isWriteQuery($method, $args) {
+
+        $methodsToCheck = array("update","delete","insert","lastInsertId");
+        if(in_array($method, $methodsToCheck)) {
+            return true;
+        }
+
+        if($method == "query" && isset($args[0]) && (self::isDDLQuery($args[0]) || self::isDMSQuery($args[0]))) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

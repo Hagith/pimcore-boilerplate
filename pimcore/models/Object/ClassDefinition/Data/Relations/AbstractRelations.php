@@ -67,15 +67,23 @@ abstract class AbstractRelations extends Model\Object\ClassDefinition\Data {
     protected function correctClasses ($classes) {
 
         // this is the new method with Ext.form.MultiSelect
-        if((is_string($classes) && !empty($classes)) || (\Pimcore\Tool\Admin::isExtJS5() && is_array($classes))) {
-            if (!\Pimcore\Tool\Admin::isExtJS5()) {
+        /**
+         * @extjs6
+         * @todo this need to be refactored when extjs3 support is removed
+         */
+        if((is_string($classes) && !empty($classes)) || (\Pimcore\Tool\Admin::isExtJS6() && is_array($classes))) {
+            if (!\Pimcore\Tool\Admin::isExtJS6()) {
                 $classParts = explode(",", $classes);
             } else {
                 $classParts = $classes;
             }
             $classes = array();
             foreach ($classParts as $class) {
-                $classes[] = array("classes" => $class);
+                if(is_array($class)) {
+                    $classes[] = $class;
+                } else if($class) {
+                    $classes[] = array("classes" => $class);
+                }
             }
         }
 

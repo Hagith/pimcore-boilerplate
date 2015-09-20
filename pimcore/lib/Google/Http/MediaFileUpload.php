@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-// pimcore modification: removed autoloader include
+if (!class_exists('Google_Client')) {
+  require_once dirname(__FILE__) . '/../autoload.php';
+}
 
 /**
- * @author Chirag Shah <chirags@google.com>
- *
+ * Manage large file uploads, which may be media but can be any type
+ * of sizable data.
  */
 class Google_Http_MediaFileUpload
 {
@@ -285,7 +287,7 @@ class Google_Http_MediaFileUpload
     }
     $message = $code;
     $body = @json_decode($response->getResponseBody());
-    if (!empty( $body->error->errors ) ) {
+    if (!empty($body->error->errors) ) {
       $message .= ': ';
       foreach ($body->error->errors as $error) {
         $message .= "{$error->domain}, {$error->message};";

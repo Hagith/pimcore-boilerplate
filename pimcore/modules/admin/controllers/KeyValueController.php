@@ -81,12 +81,12 @@ class Admin_KeyValueController extends \Pimcore\Controller\Action\Admin
             $orderKey = "name";
             $order = "ASC";
 
-            if ($this->_getParam("dir")) {
-                $order = $this->_getParam("dir");
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $orderKey = $sortingSettings['orderKey'];
             }
-
-            if ($this->_getParam("sort")) {
-                $orderKey = $this->_getParam("sort");
+            if($sortingSettings['order']) {
+                $order  = $sortingSettings['order'];
             }
 
             if ($this->_getParam("limit")) {
@@ -122,7 +122,12 @@ class Admin_KeyValueController extends \Pimcore\Controller\Action\Admin
                         $condition .= " OR ";
                     }
                     $count++;
-                    $condition .= $db->getQuoteIdentifierSymbol() . $f->field . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+
+                    if (\Pimcore\Tool\Admin::isExtJS6()) {
+                        $condition .= $db->getQuoteIdentifierSymbol() . $f->property . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+                    } else {
+                        $condition .= $db->getQuoteIdentifierSymbol() . $f->field . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+                    }
                 }
                 $list->setCondition($condition);
             }
@@ -190,12 +195,12 @@ class Admin_KeyValueController extends \Pimcore\Controller\Action\Admin
             $orderKey = "name";
             $order = "ASC";
 
-            if ($this->_getParam("dir")) {
-                $order = $this->_getParam("dir");
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $orderKey = $sortingSettings['orderKey'];
             }
-
-            if ($this->_getParam("sort")) {
-                $orderKey = $this->_getParam("sort");
+            if($sortingSettings['order']) {
+                $order  = $sortingSettings['order'];
             }
 
             if ($this->_getParam("overrideSort") == "true") {
@@ -232,7 +237,11 @@ class Admin_KeyValueController extends \Pimcore\Controller\Action\Admin
                         $condition .= " OR ";
                     }
                     $count++;
-                    $condition .= $db->getQuoteIdentifierSymbol() . $f->field . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+                    if (\Pimcore\Tool\Admin::isExtJS6()) {
+                        $condition .= $db->getQuoteIdentifierSymbol() . $f->property . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+                    } else {
+                        $condition .= $db->getQuoteIdentifierSymbol() . $f->field . $db->getQuoteIdentifierSymbol() . " LIKE " . $db->quote("%" . $f->value . "%");
+                    }
                 }
 
 

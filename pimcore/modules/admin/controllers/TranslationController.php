@@ -222,7 +222,7 @@ class Admin_TranslationController extends \Pimcore\Controller\Action\Admin {
 
             if ($this->getParam("xaction") == "destroy") {
                 $data = \Zend_Json::decode($this->getParam("data"));
-                if (\Pimcore\Tool\Admin::isExtJS5()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $t = $class::getByKey($data["key"]);
                 } else {
                     $t = $class::getByKey($data);
@@ -293,27 +293,12 @@ class Admin_TranslationController extends \Pimcore\Controller\Action\Admin {
             $list->setOrder("asc");
             $list->setOrderKey("key");
 
-            if (\Pimcore\Tool\Admin::isExtJS5()) {
-                $sortParam = $this->getParam("sort");
-                if ($sortParam) {
-                    $sortParam = json_decode($sortParam, true);
-                    $sortParam = $sortParam[0];
-                    $orderKey = $sortParam["property"];
-                    $order = $sortParam["direction"];
-
-                    $list->setOrderKey($orderKey);
-                    $list->setOrder($order);
-
-                }
-            } else {
-
-                if($this->getParam("dir")) {
-                    $list->setOrder($this->getParam("dir"));
-                }
-
-                if($this->getParam("sort")) {
-                    $list->setOrderKey($this->getParam("sort"));
-                }
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if($sortingSettings['orderKey']) {
+                $list->setOrderKey($sortingSettings['orderKey']);
+            }
+            if($sortingSettings['order']) {
+                $list->setOrder($sortingSettings['order']);
             }
 
             $list->setLimit($this->getParam("limit"));
@@ -344,6 +329,14 @@ class Admin_TranslationController extends \Pimcore\Controller\Action\Admin {
 
         $filterJson = $this->getParam("filter");
         if ($filterJson) {
+            $isExtJs6 = \Pimcore\Tool\Admin::isExtJS6();
+            if ($isExtJs6) {
+                $propertyField = "property";
+                $operatorField = "operator";
+            } else {
+                $propertyField = "field";
+                $operatorField = "comparison";
+            }
 
             $filters = \Zend_Json::decode($filterJson);
             foreach ($filters as $filter) {
@@ -352,16 +345,20 @@ class Admin_TranslationController extends \Pimcore\Controller\Action\Admin {
                 $field = null;
                 $value = null;
 
-                if ($filter["type"] == "date") {
-                    if($filter["comparison"] == "lt") {
+                $fieldname = $filter[$propertyField];
+
+                if ($filter["type"] == "date" ||
+                    ($isExtJs6 && in_array($fieldname, array("modificationDate", "creationdate"))))
+                {
+                    if($filter[$operatorField] == "lt") {
                         $operator = "<";
-                    } else if($filter["comparison"] == "gt") {
+                    } else if($filter[$operatorField] == "gt") {
                         $operator = ">";
-                    } else if($filter["comparison"] == "eq") {
+                    } else if($filter[$operatorField] == "eq") {
                         $operator = "=";
                     }
                     $filter["value"] = strtotime($filter["value"]);
-                    $field = "`" . $filter["field"] . "` ";
+                    $field = "`" . $fieldname . "` ";
                     $value = $filter["value"];
                 }
 

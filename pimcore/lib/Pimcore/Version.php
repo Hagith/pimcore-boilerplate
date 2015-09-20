@@ -20,27 +20,13 @@ class Version {
     /**
      * @var string
      */
-    public static $version = "3.0.6";
+    public static $version = "3.1.1";
 
     /**
      * @var int
      */
-    public static $revision = 3496;
+    public static $revision = 3543;
 
-    /**
-     * @var array
-     */
-   public static $svnInfo = array (
-  'Path' => 'trunk',
-  'URL' => 'http',
-  'Repository Root' => 'http',
-  'Repository UUID' => '1f8fe7d8-47f0-464c-8d0a-336f4953ab05',
-  'Revision' => '6548',
-  'Node Kind' => 'directory',
-  'Last Changed Author' => 'pimcore-team',
-  'Last Changed Rev' => '6548',
-  'Last Changed Date' => '2015-05-29 11',
-);
 
     /**
      * @return string
@@ -55,13 +41,5 @@ class Version {
     public static function getRevision()
     {
         return self::$revision;
-    }
-
-    /**
-     * @return array
-     */
-    public static function getSvnInfo()
-    {
-        return self::$svnInfo;
     }
 }

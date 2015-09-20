@@ -23,6 +23,7 @@ use Pimcore\Tool\Session;
 use Pimcore\Model\Document;
 use Pimcore\Model\Object;
 use Pimcore\Model;
+use Pimcore\Translate;
 
 abstract class Frontend extends Action {
 
@@ -163,6 +164,9 @@ abstract class Frontend extends Action {
             // logged in users only
             if ($user) {
 
+                // set the user to registry so that it is available via \Pimcore\Tool\Admin::getCurrentUser();
+                \Zend_Registry::set("pimcore_admin_user", $user);
+
                 // document editmode
                 if ($this->getParam("pimcore_editmode")) {
                     \Zend_Registry::set("pimcore_editmode", true);
@@ -302,7 +306,9 @@ abstract class Frontend extends Action {
 
             if(\Zend_Registry::isRegistered("Zend_Translate")) {
                 $translator = \Zend_Registry::get("Zend_Translate");
-                $translator->setLocale($locale);
+                if($translator instanceof Translate) {
+                    $translator->setLocale($locale);
+                }
             }
         }
     }

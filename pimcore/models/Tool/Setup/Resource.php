@@ -144,6 +144,7 @@ class Resource extends Model\Resource\AbstractResource {
 
 
         $userPermissions = array(
+            array("key" => "application_logging"),
             array("key" => "assets"),
             array("key" => "classes"),
             array("key" => "clear_cache"),
@@ -163,7 +164,6 @@ class Resource extends Model\Resource\AbstractResource {
             array("key" => "reports"),
             array("key" => "document_style_editor"),
             array("key" => "recyclebin"),
-            array("key" => "sent_emails"),
             array("key" => "seo_document_editor"),
             array("key" => "robots.txt"),
             array("key" => "http_errors"),

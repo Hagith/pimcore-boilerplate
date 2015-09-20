@@ -208,11 +208,11 @@ pimcore.settings.system = Class.create({
                                 fieldLabel: t("extjs_version"),
                                 //xtype: "combo",
                                 xtype: "hidden",
-                                name: "general.extjs5",
-                                value: this.getValue("general.extjs5"),
+                                name: "general.extjs6",
+                                value: this.getValue("general.extjs6"),
                                 store: [
                                     ["0",t("extjs_34")],
-                                    ["1",t("extjs_5")]
+                                    ["1",t("extjs_6")]
                                 ],
                                 mode: "local",
                                 triggerAction: "all"
@@ -460,7 +460,69 @@ pimcore.settings.system = Class.create({
                                 width: 600,
                                 value: t('log_messages_user_mail_description'),
                                 cls: "pimcore_extra_label_bottom"
-                            },{
+                            },
+                            {
+                                xtype: "displayfield",
+                                hideLabel: true,
+                                width: 600,
+                                value: "<b>" + t("log_applicationlog") + "</b>"
+                            },
+                            {
+                                fieldLabel: t("log_config_send_summary_per_mail"),
+                                xtype: "checkbox",
+                                name: "applicationlog.mail_notification.send_log_summary",
+                                checked: this.getValue("applicationlog.mail_notification.send_log_summary")
+                            },
+                            {
+                                fieldLabel: t("log_config_filter_priority"),
+                                xtype: "combo",
+                                name: "applicationlog.mail_notification.filter_priority",
+                                value: this.getValue("applicationlog.mail_notification.filter_priority"),
+                                store: [
+                                    [7, "DEBUG"],
+                                    [6, "INFO"],
+                                    [5, "NOTICE"],
+                                    [4, "WARNING"],
+                                    [3, "ERROR"],
+                                    [2, "CRITICAL"],
+                                    [1, "ALERT"],
+                                    [0, "EMERG"]
+                                ],
+                                mode: "local",
+                                triggerAction: "all"
+                            },
+                            {
+                                fieldLabel: t('log_config_mail_receiver'),
+                                name: 'applicationlog.mail_notification.mail_receiver',
+                                width: 400,
+                                value: this.getValue("applicationlog.mail_notification.mail_receiver")
+                            },
+                            {
+                                xtype: "displayfield",
+                                hideLabel: true,
+                                width: 600,
+                                value: t('log_config_mail_receiver_description'),
+                                cls: "pimcore_extra_label_bottom"
+                            },
+                            {
+                                fieldLabel: t('log_config_archive_treshold'),
+                                name: 'applicationlog.archive_treshold',
+                                value: this.getValue("applicationlog.archive_treshold") ? this.getValue("applicationlog.archive_treshold") : '30'
+                            },
+                            {
+                                fieldLabel: t('log_config_archive_alternative_database'),
+                                name: 'applicationlog.archive_alternative_database',
+                                width: 400,
+                                value: this.getValue("applicationlog.archive_alternative_database")
+                            },
+                            {
+                                xtype: "displayfield",
+                                hideLabel: true,
+                                width: 600,
+                                value: t('log_config_archive_description'),
+                                cls: "pimcore_extra_label_bottom"
+                            },
+                            {
                                 fieldLabel: t("disable_whoops_error_handler"),
                                 xtype: "checkbox",
                                 name: "general.disable_whoops",
@@ -566,7 +628,7 @@ pimcore.settings.system = Class.create({
                                                 ["", t('no_authentication')],
                                                 ["login","LOGIN"],
                                                 ["plain","PLAIN"],
-                                                ["cram-md5", "CRAM-MD5"]
+                                                ["crammd5", "CRAM-MD5"]
                                             ],
                                             mode: "local",
                                             triggerAction: "all",

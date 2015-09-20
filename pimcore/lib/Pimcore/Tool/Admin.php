@@ -20,7 +20,7 @@ use Pimcore\File;
 class Admin {
 
     /**
-     * finds the translation file for a given language
+     * Finds the translation file for a given language
      *
      * @static
      * @param  string $language
@@ -29,9 +29,9 @@ class Admin {
     public static function getLanguageFile($language){
 
         //first try website languages dir, as fallback the core dir
-        $languageFile = PIMCORE_CONFIGURATION_DIRECTORY . "/texts/" . $language . ".csv";
+        $languageFile = PIMCORE_CONFIGURATION_DIRECTORY . "/texts/" . $language . ".json";
         if(!is_file($languageFile)){
-            $languageFile =  PIMCORE_PATH . "/config/texts/" . $language . ".csv";
+            $languageFile =  PIMCORE_PATH . "/config/texts/" . $language . ".json";
         }
         return $languageFile;
 
@@ -53,7 +53,7 @@ class Admin {
                 foreach ($files as $file) {
                     if (is_file($filesDir . $file)) {
                         $parts = explode(".", $file);
-                        if ($parts[1] == "csv") {
+                        if ($parts[1] == "json") {
                             if (\Zend_Locale::isLocale($parts[0])) {
                                 $languages[] = $parts[0];
                             }
@@ -209,18 +209,17 @@ class Admin {
     /**
      * @return true if in EXT JS5 mode
      */
-    public static function isExtJS5() {
-        if (isset($_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"]) && $_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"] == 5) {
+    public static function isExtJS6() {
+        if (isset($_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"]) && $_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"] == 6) {
             return true;
         }
 
-        $config = \Pimcore\Config::getSystemConfig();
-
-        if(isset($_REQUEST["extjs5"])) {
-            return (bool) $_REQUEST["extjs5"];
+        if(isset($_REQUEST["extjs6"])) {
+            return (bool) $_REQUEST["extjs6"];
         }
 
-        $mainSwitch = $config->general->extjs5;
+        $config = \Pimcore\Config::getSystemConfig();
+        $mainSwitch = $config->general->extjs6;
         if ($mainSwitch) {
             return true;
         }

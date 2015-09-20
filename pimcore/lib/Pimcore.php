@@ -287,6 +287,7 @@ class Pimcore {
                 if(!headers_sent()) {
                     header("HTTP/1.0 404 Not Found");
                 }
+                \Logger::err($e);
                 throw new \Zend_Controller_Router_Exception("No route, document, custom route or redirect is matching the request: " . $_SERVER["REQUEST_URI"] . " | \n" . "Specific ERROR: " . $e->getMessage());
             } catch (\Exception $e) {
                 if(!headers_sent()) {
@@ -556,16 +557,16 @@ class Pimcore {
                     }
 
                     $jsPaths = array();
-                    $isExtJs5 = \Pimcore\Tool\Admin::isExtJS5();
+                    $isExtJs6 = \Pimcore\Tool\Admin::isExtJS6();
 
-                    if ($isExtJs5 && is_array($p['plugin']['pluginJsPaths-extjs5'])
-                        && isset($p['plugin']['pluginJsPaths-extjs5']['path'])
-                        && is_array($p['plugin']['pluginJsPaths-extjs5']['path'])) {
-                        $jsPaths = $p['plugin']['pluginJsPaths-extjs5']['path'];
+                    if ($isExtJs6 && is_array($p['plugin']['pluginJsPaths-extjs6'])
+                        && isset($p['plugin']['pluginJsPaths-extjs6']['path'])
+                        && is_array($p['plugin']['pluginJsPaths-extjs6']['path'])) {
+                        $jsPaths = $p['plugin']['pluginJsPaths-extjs6']['path'];
                     }
-                    else if ($isExtJs5 && is_array($p['plugin']['pluginJsPaths-extjs5'])
-                        && $p['plugin']['pluginJsPaths-extjs5']['path'] != null) {
-                        $jsPaths[0] = $p['plugin']['pluginJsPaths-extjs5']['path'];
+                    else if ($isExtJs6 && is_array($p['plugin']['pluginJsPaths-extjs6'])
+                        && $p['plugin']['pluginJsPaths-extjs6']['path'] != null) {
+                        $jsPaths[0] = $p['plugin']['pluginJsPaths-extjs6']['path'];
                     } else  if (is_array($p['plugin']['pluginJsPaths'])
                         && isset($p['plugin']['pluginJsPaths']['path'])
                         && is_array($p['plugin']['pluginJsPaths']['path'])) {
@@ -585,14 +586,14 @@ class Pimcore {
                     }
 
                     $cssPaths = array();
-                    if ($isExtJs5 && is_array($p['plugin']['pluginCssPaths-extjs5'])
-                        && isset($p['plugin']['pluginCssPaths-extjs5']['path'])
-                        && is_array($p['plugin']['pluginCssPaths-extjs5']['path'])) {
-                        $cssPaths = $p['plugin']['pluginCssPaths-extjs5']['path'];
+                    if ($isExtJs6 && is_array($p['plugin']['pluginCssPaths-extjs6'])
+                        && isset($p['plugin']['pluginCssPaths-extjs6']['path'])
+                        && is_array($p['plugin']['pluginCssPaths-extjs6']['path'])) {
+                        $cssPaths = $p['plugin']['pluginCssPaths-extjs6']['path'];
                     }
-                    else if ($isExtJs5 && is_array($p['plugin']['pluginCssPaths-extjs5'])
-                        && $p['plugin']['pluginCssPaths-extjs5']['path'] != null) {
-                        $cssPaths[0] = $p['plugin']['pluginCssPaths-extjs5']['path'];
+                    else if ($isExtJs6 && is_array($p['plugin']['pluginCssPaths-extjs6'])
+                        && $p['plugin']['pluginCssPaths-extjs6']['path'] != null) {
+                        $cssPaths[0] = $p['plugin']['pluginCssPaths-extjs6']['path'];
                     } else  if (is_array($p['plugin']['pluginCssPaths'])
                         && isset($p['plugin']['pluginCssPaths']['path'])
                         && is_array($p['plugin']['pluginCssPaths']['path'])) {
@@ -686,7 +687,7 @@ class Pimcore {
 
         // init configuration
         try {
-            $conf = Config::getSystemConfig();
+            $conf = Config::getSystemConfig(true);
 
             // set timezone
             if ($conf instanceof \Zend_Config) {
@@ -699,13 +700,6 @@ class Pimcore {
 
             if (!defined("PIMCORE_DEBUG")) define("PIMCORE_DEBUG", $debug);
             if (!defined("PIMCORE_DEVMODE")) define("PIMCORE_DEVMODE", (bool) $conf->general->devmode);
-
-            // check for output-cache settings
-            // if a lifetime for the output cache is specified then the cache tag "output" will be ignored on clear
-            $cacheLifetime = (int) $conf->cache->lifetime;
-            if (!empty($cacheLifetime) && $conf->cache->enabled) {
-                Cache::addIgnoredTagOnClear("output");
-            }
 
             return true;
         }
