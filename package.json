@@ -22,6 +22,7 @@
     "gulp-uglify": "^1.4.1",
     "gulp-util": "^3.0.4",
     "gulp.spritesmith": "^4.1.0",
+    "merge-stream": "^1.0.0",
     "pretty-hrtime": "^1.0.0",
     "require-dir": "^0.3.0",
     "vinyl-source-stream": "^1.1.0",

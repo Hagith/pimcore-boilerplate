@@ -3,7 +3,12 @@ var gutil = require('gulp-util');
 var sequence = require('gulp-sequence');
 
 gulp.task('default', function() {
-  sequence('sprites', ['sass', 'browserify'], 'watch', function() {
-    gutil.log(gutil.colors.green('Waiting for changes...'));
-  });
+  sequence(
+      'clean',
+      ['sprites', 'fonts'],
+      'sass',
+      'watch',
+      function() {
+        gutil.log(gutil.colors.green('Waiting for changes...'));
+      });
 });

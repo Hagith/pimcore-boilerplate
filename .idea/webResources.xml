@@ -6,11 +6,10 @@
         <entryData>
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/pimcore/static" />
-            <path value="file://$PROJECT_DIR$/pimcore/static5" />
             <path value="file://$PROJECT_DIR$/website/assets" />
             <path value="file://$PROJECT_DIR$/node_modules/bootstrap-sass/assets/stylesheets" />
             <path value="file://$PROJECT_DIR$/node_modules/font-awesome/scss" />
-            <path value="file://$PROJECT_DIR$/website/assets/sass" />
+            <path value="file://$PROJECT_DIR$/website/assets/styles" />
           </resourceRoots>
         </entryData>
       </entry>

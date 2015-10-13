@@ -6,7 +6,9 @@
 <div id="wrapper" class="page-<?= $this->getRequest()->getParam('action') ?>">
     <?= $this->template('partial/header.php') ?>
 
-    <?= $this->layout()->content; ?>
+    <div class="container">
+        <?= $this->layout()->content; ?>
+    </div>
 
     <?= $this->template('partial/footer.php') ?>
 </div>

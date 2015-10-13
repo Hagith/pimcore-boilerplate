@@ -1,18 +1,23 @@
-var gutil = require('gulp-util');
+var path = require('path');
+
+var dirs = {};
+dirs.fonts = 'fonts';
+dirs.images = 'images';
+dirs.scripts = 'scripts';
+dirs.styles = 'styles';
+dirs.views = 'views';
 
 var paths = {};
 paths.base = 'website';
 paths.src = paths.base + '/assets';
 paths.build = paths.src + '/build';
-paths.images = paths.src + '/images';
-paths.sass = paths.src + '/sass';
-paths.scripts = paths.src + '/scripts';
-paths.views = paths.base + '/views/';
-paths.vendor = 'node_modules';
 
-//console.log(gutil.env);
-//if (gutil.env.dev === true) {
-//}
+paths.fonts = path.join(paths.src, dirs.fonts);
+paths.images = path.join(paths.src, dirs.images);
+paths.scripts = path.join(paths.src, dirs.scripts);
+paths.styles = path.join(paths.src, dirs.styles);
+paths.views = path.join(paths.base, dirs.views);
+paths.vendor = 'node_modules';
 
 module.exports = {
   paths: paths,
@@ -30,7 +35,7 @@ module.exports = {
   ],
 
   sass: {
-    src: paths.sass,
+    src: paths.styles,
     dest: paths.build,
     options: {
       includePaths: [
@@ -57,6 +62,14 @@ module.exports = {
       cssVarMap: function(sprite) {
         sprite.name = 'sprite-' + sprite.name;
       }
+    }
+  },
+
+  fonts: {
+    dest: path.join(paths.build, dirs.fonts),
+    vendors: {
+      'bootstrap': paths.vendor + '/bootstrap-sass/assets/fonts/bootstrap/*',
+      'font-awesome': paths.vendor + '/font-awesome/fonts/*'
     }
   }
 };
