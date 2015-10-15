@@ -4,6 +4,7 @@ website/var/cache/*
 website/var/config/*.mmdb
 website/var/config/portal/*
 website/var/config/system.xml
+website/var/email/*
 website/var/log/*
 website/var/recyclebin/*
 website/var/system/*
