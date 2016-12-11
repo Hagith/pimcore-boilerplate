@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.redirects");
@@ -55,7 +54,7 @@ pimcore.settings.redirects = Class.create({
 
     getRowEditor: function () {
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize();
         var url = '/admin/settings/redirects?';
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -70,6 +69,7 @@ pimcore.settings.redirects = Class.create({
                 {name: 'targetSite'},
                 {name: 'statusCode'},
                 {name: 'priority', type:'int'},
+                {name: 'active'},
                 {name: 'expiry', type: "date", convert: function (v, r) {
                     if(v && !(v instanceof Date)) {
                         var d = new Date(intval(v) * 1000);
@@ -83,7 +83,7 @@ pimcore.settings.redirects = Class.create({
             ],
             itemsPerPage
         );
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
 
         this.filterField = new Ext.form.TextField({
             xtype: "textfield",
@@ -108,6 +108,12 @@ pimcore.settings.redirects = Class.create({
             width: 70
         });
 
+        var activeCheck = new Ext.grid.column.Check({
+            header: t("active"),
+            dataIndex: "active",
+            width: 70
+        });
+
         var passThroughParametersCheck = new Ext.grid.column.Check({
             header: t("pass_through_params"),
             dataIndex: "passThroughParameters",
@@ -122,6 +128,7 @@ pimcore.settings.redirects = Class.create({
                 store: pimcore.globalmanager.get("sites"),
                 valueField: "id",
                 displayField: "domain",
+                editable: false,
                 triggerAction: "all"
             }), renderer: function (siteId) {
                 var store = pimcore.globalmanager.get("sites");
@@ -140,6 +147,7 @@ pimcore.settings.redirects = Class.create({
                 store: pimcore.globalmanager.get("sites"),
                 valueField: "id",
                 displayField: "domain",
+                editable: false,
                 triggerAction: "all"
             }), renderer: function (siteId) {
                 var store = pimcore.globalmanager.get("sites");
@@ -148,7 +156,7 @@ pimcore.settings.redirects = Class.create({
                     return store.getAt(pos).get("domain");
                 }
             }},
-            {header: t("type"), width: 50, sortable: true, dataIndex: 'statusCode', editor: new Ext.form.ComboBox({
+            {header: t("type"), width: 70, sortable: true, dataIndex: 'statusCode', editor: new Ext.form.ComboBox({
                 store: [
                     ["301", "Moved Permanently (301)"],
                     ["307", "Temporary Redirect (307)"],
@@ -159,10 +167,11 @@ pimcore.settings.redirects = Class.create({
                 mode: "local",
                 typeAhead: false,
                 editable: false,
+                listConfig: {minWidth: 200},
                 forceSelection: true,
                 triggerAction: "all"
             })},
-            {header: t("priority"), width: 50, sortable: true, dataIndex: 'priority', editor: new Ext.form.ComboBox({
+            {header: t("priority"), width: 60, sortable: true, dataIndex: 'priority', editor: new Ext.form.ComboBox({
                 store: [
                     [1, "1 - " + t("lowest")],
                     [2, 2],
@@ -178,10 +187,13 @@ pimcore.settings.redirects = Class.create({
                 ],
                 mode: "local",
                 typeAhead: false,
+                listConfig: {minWidth: 200},
                 editable: false,
                 forceSelection: true,
                 triggerAction: "all"
-            })}, {
+            })},
+            activeCheck,
+            {
                 header: t("expiry"),
                 width: 150, sortable:true, dataIndex: "expiry",
                 editor: {
@@ -224,7 +236,7 @@ pimcore.settings.redirects = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('delete'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         grid.getStore().removeAt(rowIndex);
                         this.updateRows();
@@ -270,6 +282,7 @@ pimcore.settings.redirects = Class.create({
 			columns : typesColumns,
             trackMouseOver: true,
             columnLines: true,
+            bodyCls: "pimcore_editable_grid",
             selModel: Ext.create('Ext.selection.RowModel', {}),
             plugins: [
                 this.cellEditing
@@ -354,35 +367,30 @@ pimcore.settings.redirects = Class.create({
 
         this.wizardForm = new Ext.form.FormPanel({
             bodyStyle: "padding:10px;",
+            layout: 'hbox',
             items: [{
-                xtype:"fieldset",
-                layout: 'hbox',
-                border: false,
-                padding: 0,
-                items: [{
-                    xtype: "combo",
-                    name: "mode",
-                    store: [
-                        ["begin", t("beginning_with")],
-                        ["exact", t("matching_exact")],
-                        ["contain", t("contain")],
-                        ["begin_end_slash", t("short_url")],
-                        ["domain", t("domain")]
-                    ],
-                    mode: "local",
-                    typeAhead: false,
-                    editable: false,
-                    forceSelection: true,
-                    triggerAction: "all",
-                    fieldLabel: t("pattern"),
-                    emptyText: t("select")
-                }, {
-                    xtype: "textfield",
-                    name: "pattern",
-                    margin: "0 0 0 20",
-                    width: 330,
-                    emptyText: "/some/example/path"
-                }]
+                xtype: "combo",
+                name: "mode",
+                store: [
+                    ["begin", t("beginning_with")],
+                    ["exact", t("matching_exact")],
+                    ["contain", t("contain")],
+                    ["begin_end_slash", t("short_url")],
+                    ["domain", t("domain")]
+                ],
+                mode: "local",
+                typeAhead: false,
+                editable: false,
+                forceSelection: true,
+                triggerAction: "all",
+                fieldLabel: t("pattern"),
+                emptyText: t("select")
+            }, {
+                xtype: "textfield",
+                name: "pattern",
+                margin: "0 0 0 20",
+                width: 330,
+                emptyText: "/some/example/path"
             }]
         });
 
@@ -414,12 +422,12 @@ pimcore.settings.redirects = Class.create({
         } else if (values.mode == "exact") {
             source = "@^" + pattern + "$@";
         } else if (values.mode == "contain") {
-            source = "@" + pattern + "@";
+            source = "@" + pattern + "@i";
         } else if (values.mode == "begin_end_slash") {
             if(pattern.charAt(0) != "/") {
                 pattern = "/" + pattern;
             }
-            source = "@^" + pattern + "[\\/]?$@";
+            source = "@^" + pattern + "[\\/]?$@i";
         } else if (values.mode == "domain") {
             if(values.pattern.indexOf("http") >= 0) {
                 pattern = parse_url(values.pattern, "host");
@@ -435,6 +443,7 @@ pimcore.settings.redirects = Class.create({
         var u = {
             source: source,
             sourceEntireUrl: sourceEntireUrl,
+            active: true,
             priority: priority
         };
         this.grid.store.insert(0, u);

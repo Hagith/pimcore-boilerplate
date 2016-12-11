@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.preview");
@@ -27,18 +26,18 @@ pimcore.object.preview = Class.create({
             var iframeOnLoad = "pimcore.globalmanager.get('object_"
                                         + this.object.data.general.o_id + "').preview.iFrameLoaded()";
 
-            this.layout = Ext.create('Ext.tab.Tab', {
+            this.layout = Ext.create('Ext.panel.Panel', {
                 title: t('preview'),
                 border: false,
                 autoScroll: true,
                 closable: false,
-                iconCls: "pimcore_icon_tab_preview",
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
-                html: '<iframe src="about:blank" width="100%" onload="' + iframeOnLoad
+                iconCls: "pimcore_icon_preview",
+                bodyCls: "pimcore_overflow_scrolling",
+                html: '<iframe src="about:blank" style="width: 100%;" onload="' + iframeOnLoad
                     + '" frameborder="0" id="object_preview_iframe_' + this.object.data.general.o_id + '"></iframe>'
             });
 
-            this.layout.on("resize", this.onLayoutResize.bind(this));
+            this.layout.on("resize", this.setLayoutFrameDimensions.bind(this));
             this.layout.on("activate", this.refresh.bind(this));
         }
 
@@ -59,13 +58,9 @@ pimcore.object.preview = Class.create({
         }
     },
 
-    onLayoutResize: function (el, width, height, rWidth, rHeight) {
-        this.setLayoutFrameDimensions(width, height);
-    },
-
-    setLayoutFrameDimensions: function (width, height) {
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
         Ext.get("object_preview_iframe_" + this.object.data.general.o_id).setStyle({
-            height: (height) + "px"
+            height: (height-7) + "px"
         });
     },
 

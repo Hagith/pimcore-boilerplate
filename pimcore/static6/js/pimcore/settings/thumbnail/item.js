@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.thumbnail.item");
@@ -56,7 +55,7 @@ pimcore.settings.thumbnail.item = Class.create({
             items: [{
                 xtype: 'button',
                 style: "float: right",
-                text: t("add_media_query") + " (<b>" + t("experimental") + "</b>)",
+                text: t("add_media_query"),
                 iconCls: "pimcore_icon_add",
                 handler: function () {
                     Ext.MessageBox.prompt("", t("please_enter_the_maximum_viewport_width_in_pixels_allowed_for_this_thumbnail"), function (button, value) {
@@ -91,7 +90,7 @@ pimcore.settings.thumbnail.item = Class.create({
                 value: this.data.description,
                 fieldLabel: t("description"),
                 width: 450,
-                height: 100
+                height: 50
             }, {
                 xtype: "combo",
                 name: "format",
@@ -99,22 +98,48 @@ pimcore.settings.thumbnail.item = Class.create({
                 value: this.data.format,
                 triggerAction: 'all',
                 editable: false,
-                store: [["SOURCE", "Auto (Web-optimized - recommended)"], ["PNG","PNG"],["GIF","GIF"], ["JPEG","JPEG"], ["PJPEG","JPEG (progressive)"],["TIFF","TIFF"],
+                store: [["SOURCE", "Auto (Web-optimized - recommended)"], ["ORIGINAL","ORIGINAL"], ["PNG","PNG"],["GIF","GIF"], ["JPEG","JPEG"], ["PJPEG","JPEG (progressive)"],["TIFF","TIFF"],
                         ["PRINT","Print (PNG,JPG,SVG,TIFF)"]],
                 width: 450
             }, {
-                xtype: "numberfield",
-                name: "quality",
-                value: this.data.quality,
-                fieldLabel: t("quality"),
-                width: 210
-            }, {
-                xtype: "numberfield",
-                name: "highResolution",
-                value: this.data.highResolution,
-                fieldLabel: t("high_resolution") + "<br /><small>(2x Retina, 3.2x Print, ...)</small>",
-                width: 210,
-                decimalPrecision: 1
+                xtype: "fieldset",
+                title: t("advanced_settings"),
+                collapsible: true,
+                collapsed: true,
+                items: [{
+                    xtype: "numberfield",
+                    name: "quality",
+                    value: this.data.quality,
+                    fieldLabel: t("quality") + " (JPEG)",
+                    width: 210
+                }, {
+                    xtype: "numberfield",
+                    name: "highResolution",
+                    value: this.data.highResolution,
+                    fieldLabel: t("high_resolution"),
+                    width: 210,
+                    decimalPrecision: 1
+                }, {
+                    xtype: "container",
+                    html: "<small>(" + t("high_resolution_info_text") + ")</small>",
+                    style: "margin-bottom: 20px"
+                }, {
+                    xtype: "checkbox",
+                    name: "preserveColor",
+                    labelWidth: 350,
+                    fieldLabel: t("preserve_color") + " (Imagick, ORIGINAL)",
+                    checked: this.data.preserveColor
+                }, {
+                    xtype: "checkbox",
+                    name: "preserveMetaData",
+                    labelWidth: 350,
+                    fieldLabel: t("preserve_meta_data") + " (Imagick, ORIGINAL)",
+                    checked: this.data.preserveMetaData
+                }, {
+                    xtype: "container",
+                    html: "<small>(" + t("thumbnail_preserve_info_text") + ")</small>",
+                    style: "margin-bottom: 20px"
+                }]
             }]
         });
 
@@ -238,7 +263,10 @@ pimcore.settings.thumbnail.item = Class.create({
     },
 
     saveOnComplete: function () {
-        this.parentPanel.tree.getRootNode().reload();
+        this.parentPanel.tree.getStore().load({
+            node: this.parentPanel.tree.getRootNode()
+        });
+
         pimcore.helpers.showNotification(t("success"), t("thumbnail_saved_successfully"), "success");
     },
 
@@ -254,20 +282,6 @@ pimcore.settings.thumbnail.item = Class.create({
 pimcore.registerNS("pimcore.settings.thumbnail.items");
 
 pimcore.settings.thumbnail.items = {
-
-    detectBlockIndex: function (blockElement, container) {
-        // detect index
-        var index;
-
-        for(var s=0; s<container.items.items.length; s++) {
-            if(container.items.items[s].getId() == blockElement.getId()) {
-                index = s;
-                break;
-            }
-        }
-        return index;
-    },
-
     getTopBar: function (name, index, parent) {
         return [{
             xtype: "tbtext",
@@ -278,19 +292,8 @@ pimcore.settings.thumbnail.items = {
 
                 var container = parent;
                 var blockElement = Ext.getCmp(blockId);
-                var index = pimcore.settings.thumbnail.items.detectBlockIndex(blockElement, container);
-                var tmpContainer = pimcore.viewport;
 
-                var newIndex = index-1;
-                if(newIndex < 0) {
-                    newIndex = 0;
-                }
-
-                container.remove(blockElement, false);
-                container.insert(newIndex, blockElement);
-                container.updateLayout();
-
-                pimcore.layout.refresh();
+                container.moveBefore(blockElement, blockElement.previousSibling());
             }.bind(window, index, parent)
         },{
             iconCls: "pimcore_icon_down",
@@ -298,14 +301,8 @@ pimcore.settings.thumbnail.items = {
 
                 var container = parent;
                 var blockElement = Ext.getCmp(blockId);
-                var index = pimcore.settings.thumbnail.items.detectBlockIndex(blockElement, container);
-                var tmpContainer = pimcore.viewport;
 
-                container.remove(blockElement, false);
-                container.insert(index+1, blockElement);
-                container.updateLayout();
-
-                pimcore.layout.refresh();
+                container.moveAfter(blockElement, blockElement.nextSibling());
             }.bind(window, index, parent)
         },"->",{
             iconCls: "pimcore_icon_delete",
@@ -813,7 +810,7 @@ pimcore.settings.thumbnail.items = {
 
     itemSetBackgroundImage: function (panel, data, getName) {
 
-        var niceName = t("setbackgroundimage") + " (Imagick)";
+        var niceName = t("setbackgroundimage");
         if(typeof getName != "undefined" && getName) {
             return niceName;
         }
@@ -834,8 +831,17 @@ pimcore.settings.thumbnail.items = {
                 fieldLabel: t("path") + " <br />(rel. to doc-root)",
                 name: "path",
                 value: data.path,
-                width: 350
+                width: 450
             },{
+                xtype: "combo",
+                name: "mode",
+                fieldLabel: t("mode"),
+                value: data.mode,
+                triggerAction: 'all',
+                editable: false,
+                store: [["", "fit"], ["cropTopLeft","cropTopLeft"]],
+                width: 300
+            }, {
                 xtype: "hidden",
                 name: "type",
                 value: "setBackgroundImage"
@@ -886,7 +892,7 @@ pimcore.settings.thumbnail.items = {
                 fieldLabel: t("path") + " <br />(rel. to doc-root)",
                 name: "path",
                 value: data.path,
-                width: 350
+                width: 450
             },{
                 xtype: 'fieldset',
                 layout: 'hbox',
@@ -916,7 +922,7 @@ pimcore.settings.thumbnail.items = {
                 triggerAction: 'all',
                 editable: false,
                 store: ["top-left", "top-right", "bottom-left", "bottom-right", "center"],
-                width: 200
+                width: 300
             },{
                 xtype: 'numberfield',
                 name: "alpha",
@@ -931,7 +937,7 @@ pimcore.settings.thumbnail.items = {
                 triggerAction: 'all',
                 editable: false,
                 store: ["COMPOSITE_DEFAULT", "COMPOSITE_HARDLIGHT", "COMPOSITE_EXCLUSION"],
-                width: 200
+                width: 300
             },{
                 xtype: "hidden",
                 name: "type",
@@ -971,7 +977,7 @@ pimcore.settings.thumbnail.items = {
                 fieldLabel: t("path") + " <br />(rel. to doc-root)",
                 name: "path",
                 value: data.path,
-                width: 350
+                width: 450
             },{
                 xtype: "combo",
                 name: "composite",
@@ -980,7 +986,7 @@ pimcore.settings.thumbnail.items = {
                 triggerAction: 'all',
                 editable: false,
                 store: ["COMPOSITE_DEFAULT", "COMPOSITE_HARDLIGHT", "COMPOSITE_EXCLUSION"],
-                width: 200
+                width: 300
             },{
                 xtype: "hidden",
                 name: "type",
@@ -1014,7 +1020,7 @@ pimcore.settings.thumbnail.items = {
                 fieldLabel: t("path") + " <br />(rel. to doc-root)",
                 name: "path",
                 value: data.path,
-                width: 350
+                width: 450
             },{
                 xtype: "hidden",
                 name: "type",
@@ -1145,6 +1151,106 @@ pimcore.settings.thumbnail.items = {
                 xtype: 'hidden',
                 name: 'type',
                 value: 'sharpen'
+            }]
+        });
+
+        return item;
+    },
+
+    itemGaussianBlur: function (panel, data, getName) {
+
+        var niceName = t("gaussianBlur") + " (Imagick)";
+        if(typeof getName != "undefined" && getName) {
+            return niceName;
+        }
+
+        if(typeof data == "undefined") {
+            data = {};
+        }
+        var myId = Ext.id();
+
+        var item =  new Ext.form.FormPanel({
+            id: myId,
+            style: "margin-top: 10px",
+            border: true,
+            bodyStyle: "padding: 10px;",
+            tbar: this.getTopBar(niceName, myId, panel),
+            items: [{
+                xtype: 'numberfield',
+                name: 'radius',
+                fieldLabel: t('radius'),
+                width: 210,
+                decimalPrecision: 1,
+                minValue: 0,
+                allowDecimals: true,
+                incrementValue: 0.1,
+                value: data.radius || 0
+            },{
+                xtype: 'numberfield',
+                name: 'sigma',
+                width: 210,
+                fieldLabel: t('sigma'),
+                decimalPrecision: 1,
+                minValue: 0,
+                allowDecimals: true,
+                incrementValue: 0.1,
+                value: data.sigma || 1
+            },{
+                xtype: 'hidden',
+                name: 'type',
+                value: 'gaussianBlur'
+            }]
+        });
+
+        return item;
+    },
+
+    itemBrightnessSaturation: function (panel, data, getName) {
+
+        var niceName = t("brightness") + " / " + t("saturation") + " / " + t("hue") + " (Imagick)";
+        if(typeof getName != "undefined" && getName) {
+            return niceName;
+        }
+
+        if(typeof data == "undefined") {
+            data = {};
+        }
+        var myId = Ext.id();
+
+        var item =  new Ext.form.FormPanel({
+            id: myId,
+            style: "margin-top: 10px",
+            border: true,
+            bodyStyle: "padding: 10px;",
+            tbar: this.getTopBar(niceName, myId, panel),
+            items: [{
+                xtype: 'numberfield',
+                name: 'brightness',
+                fieldLabel: t('brightness'),
+                width: 210,
+                allowDecimals: false,
+                incrementValue: 1,
+                value: data.brightness || 100
+            },{
+                xtype: 'numberfield',
+                name: 'saturation',
+                fieldLabel: t('saturation'),
+                width: 210,
+                allowDecimals: false,
+                incrementValue: 1,
+                value: data.saturation || 100
+            },{
+                xtype: 'numberfield',
+                name: 'hue',
+                fieldLabel: t('hue'),
+                width: 210,
+                allowDecimals: false,
+                incrementValue: 1,
+                value: data.hue || 100
+            },{
+                xtype: 'hidden',
+                name: 'type',
+                value: 'brightnessSaturation'
             }]
         });
 

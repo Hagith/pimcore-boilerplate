@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.area");
@@ -30,7 +29,9 @@ pimcore.document.tags.area = Class.create(pimcore.document.tag, {
                 iconCls: "pimcore_icon_edit",
                 handler: this.editmodeOpen.bind(this, Ext.get(id))
             });
-            editButton.render(editDiv);
+            if (editDiv) {
+                editButton.render(editDiv);
+            }
         } catch (e) {
             console.log(e);
         }
@@ -44,28 +45,30 @@ pimcore.document.tags.area = Class.create(pimcore.document.tag, {
 
     editmodeOpen: function (element) {
 
-        var content = Ext.get(element).query(".pimcore_area_editmode")[0];
+        var content = Ext.get(element).down(".pimcore_area_editmode");
 
         this.editmodeWindow = new Ext.Window({
             modal: true,
-            width: 500,
-            height: 330,
+            width: 550,
+            height: 370,
             title: "Edit Block",
             closeAction: "hide",
             bodyStyle: "padding: 10px;",
             closable: false,
             autoScroll: true,
             listeners: {
-                afterrender: function (content) {
-                    Ext.get(content).removeClass("pimcore_area_editmode_hidden");
+                afterrender: function (win) {
 
-                    var elements = Ext.get(content).query(".pimcore_editable");
+                    content.removeCls("pimcore_area_editmode_hidden");
+                    win.body.down(".x-autocontainer-innerCt").insertFirst(content);
+
+                    var elements = win.body.query(".pimcore_editable");
                     for (var i=0; i<elements.length; i++) {
                         var name = elements[i].getAttribute("id").split("pimcore_editable_").join("");
                         for (var e=0; e<editables.length; e++) {
                             if(editables[e].getName() == name) {
                                 if(editables[e].element) {
-                                    if(typeof editables[e].element.updateLayout == "function") {
+                                    if(typeof editables[e].element.doLayout == "function") {
                                         editables[e].element.updateLayout();
                                     }
                                 }
@@ -74,16 +77,15 @@ pimcore.document.tags.area = Class.create(pimcore.document.tag, {
                         }
                     }
 
-                }.bind(this, content)
+                }.bind(this)
             },
             buttons: [{
                 text: t("save"),
                 listeners: {
                     "click": this.editmodeSave.bind(this)
                 },
-                icon: "/pimcore/static6/img/icon/tick.png"
-            }],
-            contentEl: content
+                iconCls: "pimcore_icon_save"
+            }]
         });
         this.editmodeWindow.show();
     },

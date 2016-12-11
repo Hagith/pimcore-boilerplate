@@ -2,48 +2,53 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 use Pimcore\Model\Document;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Object;
 use Pimcore\Model\Site;
+use Pimcore\Logger;
 
-class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
+class Admin_PortalController extends \Pimcore\Controller\Action\Admin
+{
 
     /**
      * @var \\Pimcore\\Helper\\Dashboard
      */
     protected $dashboardHelper = null;
 
-    public function init() {
+    public function init()
+    {
         parent::init();
         $this->dashboardHelper = new \Pimcore\Helper\Dashboard($this->getUser());
     }
 
-    protected function getCurrentConfiguration () {
+    protected function getCurrentConfiguration()
+    {
         return $this->dashboardHelper->getDashboard($this->getParam("key"));
     }
 
-    protected function saveConfiguration ($config) {
+    protected function saveConfiguration($config)
+    {
         $this->dashboardHelper->saveDashboard($this->getParam("key"), $config);
     }
 
-    public function dashboardListAction() {
+    public function dashboardListAction()
+    {
         $dashboards = $this->dashboardHelper->getAllDashboards();
 
-        $data = array();
-        foreach($dashboards as $key => $config) {
-            if($key != "welcome") {
+        $data = [];
+        foreach ($dashboards as $key => $config) {
+            if ($key != "welcome") {
                 $data[] = $key;
             }
         }
@@ -51,42 +56,44 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
         $this->_helper->json($data);
     }
 
-    public function createDashboardAction() {
-
+    public function createDashboardAction()
+    {
         $this->protectCSRF();
 
         $dashboards = $this->dashboardHelper->getAllDashboards();
         $key = trim($this->getParam("key"));
 
-        if($dashboards[$key]) {
-            $this->_helper->json(array("success" => false, "message" => "dashboard_already_exists"));
-        } else if (!empty($key)) {
+        if ($dashboards[$key]) {
+            $this->_helper->json(["success" => false, "message" => "dashboard_already_exists"]);
+        } elseif (!empty($key)) {
             $this->dashboardHelper->saveDashboard($key);
-            $this->_helper->json(array("success" => true));
+            $this->_helper->json(["success" => true]);
         } else {
-            $this->_helper->json(array("success" => false, "message" => "empty"));
+            $this->_helper->json(["success" => false, "message" => "empty"]);
         }
     }
 
-    public function deleteDashboardAction() {
+    public function deleteDashboardAction()
+    {
         $key = $this->getParam("key");
         $this->dashboardHelper->deleteDashboard($key);
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
-    public function getConfigurationAction () {
+    public function getConfigurationAction()
+    {
         $this->_helper->json($this->getCurrentConfiguration());
     }
 
-    public function removeWidgetAction () {
-
+    public function removeWidgetAction()
+    {
         $config = $this->getCurrentConfiguration();
-        $newConfig = array(array(),array());
+        $newConfig = [[], []];
         $colCount = 0;
 
         foreach ($config["positions"] as $col) {
             foreach ($col as $row) {
-                if($row['id'] != $this->getParam("id")) {
+                if ($row['id'] != $this->getParam("id")) {
                     $newConfig[$colCount][] = $row;
                 }
             }
@@ -96,56 +103,56 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
         $config["positions"] = $newConfig;
         $this->saveConfiguration($config);
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
-    public function addWidgetAction () {
-
+    public function addWidgetAction()
+    {
         $config = $this->getCurrentConfiguration();
 
         $nextId = 0;
-        foreach($config['positions'] as $col) {
-            foreach($col as $row) {
+        foreach ($config['positions'] as $col) {
+            foreach ($col as $row) {
                 $nextId = ($row['id'] > $nextId ? $row['id'] : $nextId);
             }
         }
 
         $nextId = $nextId+1;
-        $config["positions"][0][] = array("id" => $nextId, "type" => $this->getParam("type"), "config" => null);
+        $config["positions"][0][] = ["id" => $nextId, "type" => $this->getParam("type"), "config" => null];
 
         $this->saveConfiguration($config);
 
-        $this->_helper->json(array("success" => true, "id" => $nextId));
+        $this->_helper->json(["success" => true, "id" => $nextId]);
     }
 
-    public function reorderWidgetAction () {
-
+    public function reorderWidgetAction()
+    {
         $config = $this->getCurrentConfiguration();
-        $newConfig = array(array(),array());
+        $newConfig = [[], []];
         $colCount = 0;
 
         foreach ($config["positions"] as $col) {
             foreach ($col as $row) {
-                if($row['id'] != $this->getParam("id")) {
+                if ($row['id'] != $this->getParam("id")) {
                     $newConfig[$colCount][] = $row;
                 } else {
-                   $toMove = $row;
+                    $toMove = $row;
                 }
             }
             $colCount++;
         }
 
-        array_splice($newConfig[$this->getParam("column")],$this->getParam("row"),0,array($toMove));
+        array_splice($newConfig[$this->getParam("column")], $this->getParam("row"), 0, [$toMove]);
 
         $config["positions"] = $newConfig;
         $this->saveConfiguration($config);
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
 
-    public function updatePortletConfigAction() {
-
+    public function updatePortletConfigAction()
+    {
         $key = $this->getParam("key");
         $id = $this->getParam("id");
         $configuration = $this->getParam("config");
@@ -153,7 +160,7 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
         $dashboard = $this->dashboardHelper->getDashboard($key);
         foreach ($dashboard["positions"] as &$col) {
             foreach ($col as &$portlet) {
-                if($portlet['id'] == $id) {
+                if ($portlet['id'] == $id) {
                     $portlet['config'] = $configuration;
                     break;
                 }
@@ -161,24 +168,25 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
         }
         $this->dashboardHelper->saveDashboard($key, $dashboard);
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
 
-    public function portletFeedAction () {
+    public function portletFeedAction()
+    {
         $dashboard = $this->getCurrentConfiguration();
         $id = $this->getParam("id");
 
-        $cache = \Pimcore\Model\Cache::getInstance();
-        if($cache) {
+        $cache = \Pimcore\Cache::getInstance();
+        if ($cache) {
             $cache->setLifetime(10);
             \Zend_Feed_Reader::setCache($cache);
         }
 
-        $portlet = array();
+        $portlet = [];
         foreach ($dashboard["positions"] as $col) {
             foreach ($col as $row) {
-                if($row['id'] == $id) {
+                if ($row['id'] == $id) {
                     $portlet = $row;
                 }
             }
@@ -187,35 +195,35 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
         $feedUrl = $portlet['config'];
 
         $feed = null;
-        if(!empty($feedUrl)) {
+        if (!empty($feedUrl)) {
             try {
                 $feed = \Zend_Feed_Reader::import($feedUrl);
             } catch (\Exception $e) {
-                \Logger::error($e);
+                Logger::error($e);
             }
         }
 
         $count = 0;
-        $entries = array();
+        $entries = [];
 
-        if($feed) {
+        if ($feed) {
             foreach ($feed as $entry) {
 
                 // display only the latest 11 entries
                 $count++;
-                if($count > 10) {
+                if ($count > 10) {
                     break;
                 }
 
-                $entry = array(
+                $entry = [
                     "title" => $entry->getTitle(),
                     "description" => $entry->getDescription(),
                     'authors' => $entry->getAuthors(),
                     'link' => $entry->getLink(),
                     'content' => $entry->getContent()
-                );
+                ];
 
-                foreach($entry as &$content) {
+                foreach ($entry as &$content) {
                     $content = strip_tags($content, "<h1><h2><h3><h4><h5><p><br><a><img><div><b><strong><i>");
                     $content = preg_replace('/on([a-z]+)([ ]+)?=/i', "data-on$1=", $content);
                 }
@@ -224,95 +232,95 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
             }
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "entries" => $entries
-        ));
+        ]);
     }
 
-    public function portletModifiedDocumentsAction () {
-
-        $list = Document::getList(array(
+    public function portletModifiedDocumentsAction()
+    {
+        $list = Document::getList([
             "limit" => 10,
             "order" => "DESC",
             "orderKey" => "modificationDate"
-        ));
+        ]);
 
 
-        $response = array();
-        $response["documents"] = array();
+        $response = [];
+        $response["documents"] = [];
 
         foreach ($list as $doc) {
-            $response["documents"][] = array(
+            $response["documents"][] = [
                 "id" => $doc->getId(),
                 "type" => $doc->getType(),
-                "path" => $doc->getFullPath(),
+                "path" => $doc->getRealFullPath(),
                 "date" => $doc->getModificationDate(),
                 "condition" => "userModification = '".$this->getUser()->getId()."'"
-            );
+            ];
         }
 
         $this->_helper->json($response);
     }
 
-    public function portletModifiedAssetsAction () {
-
-        $list = Asset::getList(array(
+    public function portletModifiedAssetsAction()
+    {
+        $list = Asset::getList([
             "limit" => 10,
             "order" => "DESC",
             "orderKey" => "modificationDate"
-        ));
+        ]);
 
 
-        $response = array();
-        $response["assets"] = array();
+        $response = [];
+        $response["assets"] = [];
 
         foreach ($list as $doc) {
-            $response["assets"][] = array(
+            $response["assets"][] = [
                 "id" => $doc->getId(),
                 "type" => $doc->getType(),
-                "path" => $doc->getFullPath(),
+                "path" => $doc->getRealFullPath(),
                 "date" => $doc->getModificationDate(),
                 "condition" => "userModification = '".$this->getUser()->getId()."'"
-            );
+            ];
         }
 
         $this->_helper->json($response);
     }
 
-    public function portletModifiedObjectsAction () {
-
-        $list = Object::getList(array(
+    public function portletModifiedObjectsAction()
+    {
+        $list = Object::getList([
             "limit" => 10,
             "order" => "DESC",
             "orderKey" => "o_modificationDate",
             "condition" => "o_userModification = '".$this->getUser()->getId()."'"
-        ));
+        ]);
 
 
-        $response = array();
-        $response["objects"] = array();
+        $response = [];
+        $response["objects"] = [];
 
         foreach ($list as $object) {
-            $response["objects"][] = array(
+            $response["objects"][] = [
                 "id" => $object->getId(),
                 "type" => $object->getType(),
-                "path" => $object->getFullPath(),
+                "path" => $object->getRealFullPath(),
                 "date" => $object->getModificationDate()
-            );
+            ];
         }
 
         $this->_helper->json($response);
     }
 
-    public function portletModificationStatisticsAction () {
-
-        $db = \Pimcore\Resource::get();
+    public function portletModificationStatisticsAction()
+    {
+        $db = \Pimcore\Db::get();
 
         $days = 31;
-        $startDate = mktime(23,59,59,date("m"),date("d"),date("Y"));
+        $startDate = mktime(23, 59, 59, date("m"), date("d"), date("Y"));
         $currentDate = $startDate;
 
-        $data = array();
+        $data = [];
 
         for ($i=0; $i<$days; $i++) {
             // documents
@@ -323,45 +331,44 @@ class Admin_PortalController extends \Pimcore\Controller\Action\Admin {
             $a = $db->fetchOne("SELECT COUNT(*) AS count FROM assets WHERE modificationDate > ".$start . " AND modificationDate < ".$end);
             $d = $db->fetchOne("SELECT COUNT(*) AS count FROM documents WHERE modificationDate > ".$start . " AND modificationDate < ".$end);
 
-            $date = new \Zend_Date($start);
+            $date = new \DateTime();
+            $date->setTimestamp($start);
 
-            $data[] = array(
+            $data[] = [
                 "timestamp" => $start,
-                "datetext" => $date->get(\Zend_Date::DATE_LONG),
+                "datetext" => $date->format("Y-m-d"),
                 "objects" => (int) $o,
                 "documents" => (int) $d,
                 "assets" => (int) $a
-            );
+            ];
         }
 
         $data = array_reverse($data);
 
-        $this->_helper->json(array("data" => $data));
+        $this->_helper->json(["data" => $data]);
     }
 
-    public function portletAnalyticsSitesAction() {
-
+    public function portletAnalyticsSitesAction()
+    {
         $t = \Zend_Registry::get("Zend_Translate");
 
         $sites = new Site\Listing();
-        $data = array(
-            array (
+        $data = [
+            [
                 "id" => 0,
                 "site" => $t->translate("main_site")
-            )
-        );
+            ]
+        ];
 
         foreach ($sites->load() as $site) {
             if (\Pimcore\Google\Analytics::isConfigured($site)) {
-                $data[] = array(
+                $data[] = [
                     "id" => $site->getId(),
                     "site" => $site->getMainDomain()
-                );
+                ];
             }
-
         }
 
-        $this->_helper->json(array("data" => $data));
+        $this->_helper->json(["data" => $data]);
     }
-
 }

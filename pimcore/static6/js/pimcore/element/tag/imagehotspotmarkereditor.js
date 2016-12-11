@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.element.tag.imagehotspotmarkereditor");
@@ -23,7 +22,7 @@ pimcore.element.tag.imagehotspotmarkereditor = Class.create({
 
         // we need some space for the surrounding area (button, dialog frame, etc...)
         this.width = Math.min(1000, window.innerWidth - 100);
-        this.height = Math.min(800, window.innerHeight - 100);
+        this.height = Math.min(800, window.innerHeight - 180);
 
     },
 
@@ -49,7 +48,7 @@ pimcore.element.tag.imagehotspotmarkereditor = Class.create({
             tbar: [{
                 xtype: "button",
                 text: t("add_marker"),
-                iconCls: "pimcore_icon_add_marker",
+                iconCls: "pimcore_icon_marker pimcore_icon_overlay_add",
                 handler: function () {
                     this.addMarker();
 
@@ -57,7 +56,7 @@ pimcore.element.tag.imagehotspotmarkereditor = Class.create({
             }, {
                 xtype: "button",
                 text: t("add_hotspot"),
-                iconCls: "pimcore_icon_add_hotspot",
+                iconCls: "pimcore_icon_image_region pimcore_icon_overlay_add",
                 handler: function () {
                     this.addHotspot();
                 }.bind(this)
@@ -282,7 +281,7 @@ pimcore.element.tag.imagehotspotmarkereditor = Class.create({
 
             menu.add(new Ext.menu.Item({
                 text: t("add_data"),
-                iconCls: "pimcore_icon_add_data",
+                iconCls: "pimcore_icon_metadata pimcore_icon_overlay_add",
                 handler: function (id, item) {
                     item.parentMenu.destroy();
 

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.keyvalue.selectionwindow");
@@ -48,7 +47,7 @@ pimcore.object.keyvalue.selectionwindow = Class.create({
                 "->",{
                     xtype: "button",
                     text: t("cancel"),
-                    icon: "/pimcore/static6/img/icon/cancel.png",
+                    iconCls: "pimcore_icon_cancel",
                     handler: function () {
                         this.searchWindow.close();
                     }.bind(this)
@@ -168,7 +167,7 @@ pimcore.object.keyvalue.selectionwindow = Class.create({
         items.push({
             xtype: "button",
             text: t("search"),
-            icon: "/pimcore/static6/img/icon/magnifier.png",
+            iconCls: "pimcore_icon_search",
             handler: function () {
                 var formValue = this.searchfield.getValue();
 
@@ -306,13 +305,8 @@ pimcore.object.keyvalue.selectionwindow = Class.create({
             emptyMsg = "keyvalue_no_keys";
         }
 
-        this.pagingtoolbar = new Ext.PagingToolbar({
-            pageSize: 15,
-            store: this.store,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: t(emptyMsg)
-        });
+        var pageSize = pimcore.helpers.grid.getDefaultPageSize(-1);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, {pageSize: pageSize});
 
         this.gridPanel = new Ext.grid.GridPanel({
             store: this.store,

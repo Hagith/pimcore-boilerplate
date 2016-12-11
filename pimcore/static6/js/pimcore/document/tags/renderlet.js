@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.renderlet");
@@ -51,7 +50,7 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
         this.element = new Ext.Panel(this.options);
 
         this.element.on("render", function (el) {
-            
+
             // register at global DnD manager
             dndManager.addDropTarget(el.getEl(), this.onNodeOver.bind(this), this.onNodeDrop.bind(this));
 
@@ -67,7 +66,7 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
         }.bind(this));
 
         this.element.render(id);
-        
+
         // insert snippet content
         if (data) {
             this.data = data;
@@ -87,6 +86,18 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
         this.data.type = data.elementType;
         this.data.subtype = data.type;
 
+        if (this.options.type) {
+            if (this.options.type != data.elementType) {
+                return false;
+            }
+        }
+
+        if (this.options.className) {
+            if (this.options.className != data.className) {
+                return false;
+            }
+        }
+
         if (this.options.reload) {
             this.reloadDocument();
         } else {
@@ -97,9 +108,20 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
     },
 
     onNodeOver: function(target, dd, e, data) {
+        data = data.records[0].data;
+        if (this.options.type) {
+            if (this.options.type != data.elementType) {
+                return false;
+            }
+        }
+
+        if (this.options.className) {
+            if (this.options.className != data.className) {
+                return false;
+            }
+        }
 
         return Ext.dd.DropZone.prototype.dropAllowed;
-
     },
 
     getBody: function () {
@@ -180,37 +202,50 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
                 }.bind(this)
             }));
 
-            menu.add(new Ext.menu.Item({
-                text: t('show_in_tree'),
-                iconCls: "pimcore_icon_fileexplorer",
-                handler: function (item) {
-                    item.parentMenu.destroy();
-                    pimcore.helpers.selectElementInTree(this.data.type, this.data.id);
-                }.bind(this)
-            }));
+            if (pimcore.elementservice.showLocateInTreeButton("document")) {
+                menu.add(new Ext.menu.Item({
+                    text: t('show_in_tree'),
+                    iconCls: "pimcore_icon_show_in_tree",
+                    handler: function (item) {
+                        item.parentMenu.destroy();
+                        pimcore.treenodelocator.showInTree(this.data.id, this.data.type);
+                    }.bind(this)
+                }));
+            }
         }
-        
+
         menu.add(new Ext.menu.Item({
             text: t('search'),
             iconCls: "pimcore_icon_search",
             handler: function (item) {
                 item.parentMenu.destroy();
-                
+
                 this.openSearchEditor();
             }.bind(this)
         }));
-        
+
 
         menu.showAt(e.getXY());
 
         e.stopEvent();
     },
-    
+
     openSearchEditor: function () {
-        pimcore.helpers.itemselector(false, this.addDataFromSelector.bind(this), {});
+        var restrictions = {};
+
+        if (this.options.type) {
+            restrictions.type = [this.options.type];
+        }
+        if (this.options.className) {
+            restrictions.specific = {
+                classes: [this.options.className]
+            };
+        }
+
+        pimcore.helpers.itemselector(false, this.addDataFromSelector.bind(this), restrictions);
     },
-    
-    addDataFromSelector: function (item) {        
+
+    addDataFromSelector: function (item) {
         if(item) {
             // get path from nodes data
             this.data.id = item.id;
@@ -224,7 +259,7 @@ pimcore.document.tags.renderlet = Class.create(pimcore.document.tag, {
             }
         }
     },
-    
+
     getValue: function () {
         return this.data;
     },

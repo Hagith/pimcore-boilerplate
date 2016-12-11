@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object\Objectbrick
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Objectbrick\Data;
@@ -20,7 +19,11 @@ namespace Pimcore\Model\Object\Objectbrick\Data;
 use Pimcore\Model;
 use Pimcore\Model\Object;
 
-class AbstractData extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Object\Objectbrick\Data\Dao getDao()
+ */
+class AbstractData extends Model\AbstractModel
+{
 
     /**
      * @var string
@@ -41,48 +44,56 @@ class AbstractData extends Model\AbstractModel {
     /**
      * @param Object\Concrete $object
      */
-    public function __construct(Object\Concrete $object) {
+    public function __construct(Object\Concrete $object)
+    {
         $this->setObject($object);
     }
 
     /**
      * @return string
      */
-    public function getFieldname () {
+    public function getFieldname()
+    {
         return $this->fieldname;
     }
 
     /**
      * @param $fieldname
-     * @return void
+     * @return $this
      */
-    public function setFieldname ($fieldname) {
+    public function setFieldname($fieldname)
+    {
         $this->fieldname = $fieldname;
+
         return $this;
     }
 
     /**
-     * @return 
+     * @return
      */
-    public function getType () {
+    public function getType()
+    {
         return $this->type;
     }
 
     /**
      * @return mixed
      */
-    public function getDefinition () {
+    public function getDefinition()
+    {
         $definition = Object\Objectbrick\Definition::getByKey($this->getType());
+
         return $definition;
     }
 
     /**
      * @param $doDelete
-     * @return void
+     * @return $this
      */
     public function setDoDelete($doDelete)
     {
         $this->doDelete = $doDelete;
+
         return $this;
     }
 
@@ -97,7 +108,8 @@ class AbstractData extends Model\AbstractModel {
     /**
      * @return Object\Concrete
      */
-    public function getBaseObject() {
+    public function getBaseObject()
+    {
         return $this->getObject();
     }
 
@@ -105,27 +117,27 @@ class AbstractData extends Model\AbstractModel {
      * @param $object
      * @return void
      */
-    public function delete($object) {
+    public function delete($object)
+    {
         $this->doDelete = true;
-        parent::delete($object);
+        $this->getDao()->delete($object);
     }
 
     /**
      * @return mixed
      */
-    public function getValueFromParent($key) {
-
+    public function getValueFromParent($key)
+    {
         $parent = Object\Service::hasInheritableParentObject($this->getObject());
 
-        if(!empty($parent)) {
+        if (!empty($parent)) {
             $containerGetter = "get" . ucfirst($this->fieldname);
             $brickGetter = "get" . ucfirst($this->getType());
             $getter = "get" . ucfirst($key);
 
-            if($parent->$containerGetter()->$brickGetter()) {
+            if ($parent->$containerGetter()->$brickGetter()) {
                 return $parent->$containerGetter()->$brickGetter()->$getter();
             }
-
         }
 
         return null;
@@ -138,6 +150,7 @@ class AbstractData extends Model\AbstractModel {
     public function setObject($object)
     {
         $this->object = $object;
+
         return $this;
     }
 
@@ -153,11 +166,12 @@ class AbstractData extends Model\AbstractModel {
      * @param string $key
      * @return void
      */
-    public function getValueForFieldName($key) {
+    public function getValueForFieldName($key)
+    {
         if ($this->$key) {
             return $this->$key;
         }
+
         return false;
     }
-
 }

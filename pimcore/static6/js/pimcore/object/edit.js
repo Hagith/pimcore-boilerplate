@@ -8,8 +8,8 @@
  * It is also available through the world-wide-web at this URL:
  * http://www.pimcore.org/license
  *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.edit");
@@ -36,7 +36,7 @@ pimcore.object.edit = Class.create({
                 border: false,
                 //layout: 'border',
                 layout: "fit",
-                iconCls: "pimcore_icon_tab_edit",
+                iconCls: "pimcore_icon_edit",
                 cls: "pimcore_object_panel_edit",
                 items: items,
                 listeners: {

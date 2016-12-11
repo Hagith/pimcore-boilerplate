@@ -2,24 +2,33 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document;
 
 use Pimcore\Model;
+use Pimcore\Model\Document;
 
-class Listing extends Model\Listing\AbstractListing implements \Zend_Paginator_Adapter_Interface, \Zend_Paginator_AdapterAggregate, \Iterator {
+/**
+ * @method int getTotalCount()
+ * @method int getCount()
+ * @method int loadIdList()
+ */
+/**
+ * @method \Pimcore\Model\Document\Listing\Dao getDao()
+ */
+class Listing extends Model\Listing\AbstractListing implements \Zend_Paginator_Adapter_Interface, \Zend_Paginator_AdapterAggregate, \Iterator
+{
 
     /**
      * Return all documents as Type Document. eg. for trees an so on there isn't the whole data required
@@ -34,118 +43,205 @@ class Listing extends Model\Listing\AbstractListing implements \Zend_Paginator_A
      * @var array
      */
     public $documents = null;
-    
+
     /**
      * @var boolean
      */
     public $unpublished = false;
-    
+
     /**
      * Valid order keys
      *
      * @var array
      */
-    public $validOrderKeys = array(
+    public $validOrderKeys = [
         "creationDate",
         "modificationDate",
         "id",
         "key",
         "index"
-    );
+    ];
 
     /**
      * Tests if the given key is an valid order key to sort the results
      *
      * @return boolean
      */
-    public function isValidOrderKey($key) {
+    public function isValidOrderKey($key)
+    {
         return true;
     }
 
     /**
+     * Returns documents, also loads the rows if these aren't loaded.
+     *
      * @return array
      */
-    public function getDocuments() {
+    public function getDocuments()
+    {
         if ($this->documents === null) {
             $this->load();
         }
+
         return $this->documents;
     }
 
     /**
+     * Assign documents to the listing.
+     *
      * @param array $documents
-     * @return void
+     * @return Listing
      */
-    public function setDocuments($documents) {
+    public function setDocuments($documents)
+    {
         $this->documents = $documents;
+
         return $this;
     }
-    
+
     /**
+     * Checks if the document is unpublished.
+     *
      * @return bool
      */
-    public function getUnpublished() {
+    public function getUnpublished()
+    {
         return $this->unpublished;
     }
-    
+
     /**
+     * Set the unpublished flag for the document.
+     *
      * @return bool
      */
-    public function setUnpublished($unpublished) {
+    public function setUnpublished($unpublished)
+    {
         $this->unpublished = (bool) $unpublished;
+
         return $this;
     }
-    
+
+    /**
+     * Returns the SQL condition value.
+     *
+     * @return string
+     */
+    public function getCondition()
+    {
+        $condition = parent::getCondition();
+
+        if ($condition) {
+            if (Document::doHideUnpublished() && !$this->getUnpublished()) {
+                $condition = " (" . $condition . ") AND published = 1";
+            }
+        } elseif (Document::doHideUnpublished() && !$this->getUnpublished()) {
+            $condition = "published = 1";
+        }
+
+        return $condition;
+    }
+
     /**
      *
      * Methods for \Zend_Paginator_Adapter_Interface
      */
 
-    public function count() {
+    /**
+     * Returns the total items count.
+     *
+     * @return int
+     */
+    public function count()
+    {
         return $this->getTotalCount();
     }
 
-    public function getItems($offset, $itemCountPerPage) {
+    /**
+     * Returns the listing based on defined offset and limit as parameters.
+     *
+     * @param int $offset
+     * @param int $itemCountPerPage
+     * @return Listing
+     */
+    public function getItems($offset, $itemCountPerPage)
+    {
         $this->setOffset($offset);
         $this->setLimit($itemCountPerPage);
+
         return $this->load();
     }
 
-    public function getPaginatorAdapter() {
+    /**
+     * @return Listing
+     */
+    public function getPaginatorAdapter()
+    {
         return $this;
     }
-    
+
 
     /**
      * Methods for Iterator
      */
 
-    public function rewind() {
+    /**
+     * Rewind the listing back to te start.
+     */
+    public function rewind()
+    {
         $this->getDocuments();
         reset($this->documents);
     }
 
-    public function current() {
+    /**
+     * Returns the current listing row.
+     *
+     * @return Document
+     */
+    public function current()
+    {
         $this->getDocuments();
         $var = current($this->documents);
+
         return $var;
     }
 
-    public function key() {
+    /**
+     * Returns the current listing row key.
+     *
+     * @return mixed
+     */
+    public function key()
+    {
         $this->getDocuments();
         $var = key($this->documents);
+
         return $var;
     }
 
-    public function next() {
+    /**
+     * Returns the next listing row key.
+     *
+     * @return mixed
+     */
+    public function next()
+    {
         $this->getDocuments();
         $var = next($this->documents);
+
         return $var;
     }
 
-    public function valid() {
+    /**
+     * Checks whether the listing contains more entries.
+     *
+     * @return bool
+     */
+    public function valid()
+    {
         $this->getDocuments();
         $var = $this->current() !== false;
+
         return $var;
     }
 }

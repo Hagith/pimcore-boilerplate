@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tree");
@@ -282,7 +281,7 @@ pimcore.object.tree = Class.create({
         var classGroups = {};
         var currentClass = '', nextClass = '', count = 0, group = '', lastGroup = '';
 
-        var object_types = pimcore.globalmanager.get("object_types_store");
+        var object_types = pimcore.globalmanager.get("object_types_store_create");
         for (var i = 0; i < object_types.getCount(); i++) {
             //
             currentClass = object_types.getAt(i);
@@ -733,7 +732,7 @@ pimcore.object.tree = Class.create({
 //                    classId: this.element.data.general.o_classId,
                     parentId: this.attributes.id,
                     objecttype: "variant",
-                    key: pimcore.helpers.getValidFilename(value)
+                    key: pimcore.helpers.getValidFilename(value, "object")
                 },
                 success: this.attributes.reference.addVariantComplete.bind(this)
             });
@@ -906,7 +905,7 @@ pimcore.object.tree = Class.create({
                     className: className,
                     classId: classId,
                     parentId: this.id,
-                    key: pimcore.helpers.getValidFilename(value)
+                    key: pimcore.helpers.getValidFilename(value, "object")
                 },
                 success: this.attributes.reference.addObjectComplete.bind(this)
             });
@@ -931,7 +930,7 @@ pimcore.object.tree = Class.create({
                 url: "/admin/object/add-folder",
                 params: {
                     parentId: this.id,
-                    key: pimcore.helpers.getValidFilename(value)
+                    key: pimcore.helpers.getValidFilename(value, "object")
                 },
                 success: this.attributes.reference.addObjectComplete.bind(this)
             });
@@ -963,7 +962,7 @@ pimcore.object.tree = Class.create({
 
     isExistingKeyInLevel: function (parentNode, key, node) {
 
-        key = pimcore.helpers.getValidFilename(key);
+        key = pimcore.helpers.getValidFilename(key, "object");
         var parentChilds = parentNode.childNodes;
         for (var i = 0; i < parentChilds.length; i++) {
             if (parentChilds[i].text == key && node != parentChilds[i]) {
@@ -1008,7 +1007,7 @@ pimcore.object.tree = Class.create({
              return;
              }*/
 
-            value = pimcore.helpers.getValidFilename(value);
+            value = pimcore.helpers.getValidFilename(value, "object");
 
             this.setText(value);
             this.attributes.path = this.attributes.basePath + value;

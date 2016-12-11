@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
 
 use Pimcore\Model;
 
-class Countrymultiselect extends Model\Object\ClassDefinition\Data\Multiselect {
+class Countrymultiselect extends Model\Object\ClassDefinition\Data\Multiselect
+{
 
     /**
      * Static type of this element
@@ -34,17 +34,18 @@ class Countrymultiselect extends Model\Object\ClassDefinition\Data\Multiselect {
     public $restrictTo = null;
 
 
-    public function __construct() {
+    public function __construct()
+    {
         $countries = \Zend_Locale::getTranslationList('territory');
         asort($countries);
-        $options = array();
+        $options = [];
 
         foreach ($countries as $short => $translation) {
             if (strlen($short) == 2) {
-                $options[] = array(
+                $options[] = [
                     "key" => $translation,
                     "value" => $short
-                );
+                ];
             }
         }
 
@@ -59,7 +60,7 @@ class Countrymultiselect extends Model\Object\ClassDefinition\Data\Multiselect {
         /**
          * @extjs6
          */
-        if(is_array($restrictTo)) {
+        if (is_array($restrictTo)) {
             $restrictTo = implode(",", $restrictTo);
         }
 
@@ -77,7 +78,8 @@ class Countrymultiselect extends Model\Object\ClassDefinition\Data\Multiselect {
     /**
      * @return array
      */
-    public function getOptions() {
+    public function getOptions()
+    {
         return $this->options;
     }
 }

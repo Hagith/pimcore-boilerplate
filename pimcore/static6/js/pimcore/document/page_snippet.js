@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.page_snippet");
@@ -109,8 +108,8 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
 
             this.toolbarButtons.save = new Ext.SplitButton({
                 text: t('save'),
-                iconCls: "pimcore_icon_save_medium",
-                scale: "small",
+                iconCls: "pimcore_icon_save",
+                scale: "medium",
                 handler: this.unpublish.bind(this),
                 menu: [{
                     text: t('save_close'),
@@ -122,8 +121,8 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
 
             this.toolbarButtons.publish = new Ext.SplitButton({
                 text: t('save_and_publish'),
-                iconCls: "pimcore_icon_publish_medium",
-                scale: "small",
+                iconCls: "pimcore_icon_publish",
+                scale: "medium",
                 handler: this.publish.bind(this),
                 menu: [
                     {
@@ -146,66 +145,31 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
 
             this.toolbarButtons.unpublish = new Ext.Button({
                 text: t('unpublish'),
-                iconCls: "pimcore_icon_unpublish_medium",
-                scale: "small",
+                iconCls: "pimcore_icon_unpublish",
+                scale: "medium",
                 handler: this.unpublish.bind(this)
             });
 
-            this.toolbarButtons.reload = new Ext.Button({
-                text: t('reload'),
-                iconCls: "pimcore_icon_reload_medium",
-                scale: "small",
-                handler: this.reload.bind(this)
+            this.toolbarButtons.remove = new Ext.Button({
+                tooltip: t('delete'),
+                iconCls: "pimcore_icon_delete",
+                scale: "medium",
+                handler: this.remove.bind(this)
             });
 
-            // extras menu
-            var extrasMenu = [];
-
-            // translation menu
-            if(pimcore.settings.google_translate_api_key) {
-                var translationMenu = [];
-                for (var p=0; p<pimcore.settings.websiteLanguages.length; p++) {
-
-                    translationMenu.push({
-                        text: pimcore.available_languages[pimcore.settings.websiteLanguages[p]],
-                        handler: function (lang) {
-                            Ext.Ajax.request({
-                                url: this.urlprefix + this.getType() + '/translate/language/' + lang,
-                                method: "post",
-                                params: this.getSaveData(),
-                                success: function () {
-                                    this.edit.reload(true);
-                                }.bind(this)
-                            });
-                        }.bind(this, pimcore.settings.websiteLanguages[p])
-                    });
-                }
-
-                if(translationMenu.length > 0) {
-                    extrasMenu.push({
-                        text: t("translate_content_to"),
-                        iconCls: "pimcore_icon_translations",
-                        hideOnClick: false,
-                        menu: translationMenu
-                    });
-                }
-            }
-
-            if(extrasMenu.length > 0) {
-                this.toolbarButtons.extras = new Ext.Button({
-                    text: t('extras'),
-                    iconCls: "pimcore_icon_extras_medium",
-                    scale: "small",
-                    hideOnClick: false,
-                    menu: extrasMenu
-                });
-            }
-
-            this.toolbarButtons.remove = new Ext.Button({
-                text: t('delete'),
-                iconCls: "pimcore_icon_delete_medium",
-                scale: "small",
-                handler: this.remove.bind(this)
+            this.toolbarButtons.rename = new Ext.Button({
+                tooltip: t('rename'),
+                iconCls: "pimcore_icon_key pimcore_icon_overlay_go",
+                scale: "medium",
+                handler: function () {
+                    var options = {
+                        elementType: "document",
+                        elementSubType: this.getType(),
+                        id: this.id,
+                        default: this.data.key
+                    };
+                    pimcore.elementservice.editElementKey(options);
+                }.bind(this)
             });
 
 
@@ -221,68 +185,91 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
                 buttons.push(this.toolbarButtons.unpublish);
             }
 
+            buttons.push("-");
+
             if(this.isAllowed("delete") && !this.data.locked && this.data.id != 1) {
                 buttons.push(this.toolbarButtons.remove);
             }
-
-            buttons.push("-");
-
-            buttons.push(this.toolbarButtons.reload);
-
-            buttons.push({
-                text: t('show_in_tree'),
-                iconCls: "pimcore_icon_download_showintree",
-                scale: "small",
-                handler: this.selectInTree.bind(this)
-            });
-
-            buttons.push({
-                text: t("show_metainfo"),
-                scale: "small",
-                iconCls: "pimcore_icon_info_large",
-                handler: this.showMetaInfo.bind(this)
-            });
-
-
-
-            if(typeof this.toolbarButtons.extras != "undefined") {
-                buttons.push("-");
-                buttons.push(this.toolbarButtons.extras);
+            if(this.isAllowed("rename") && !this.data.locked && this.data.id != 1) {
+                buttons.push(this.toolbarButtons.rename);
             }
 
 
+            buttons.push({
+                tooltip: t('reload'),
+                iconCls: "pimcore_icon_reload",
+                scale: "medium",
+                handler: this.reload.bind(this)
+            });
+
+            if (pimcore.elementservice.showLocateInTreeButton("document")) {
+                buttons.push({
+                    tooltip: t('show_in_tree'),
+                    iconCls: "pimcore_icon_show_in_tree",
+                    scale: "medium",
+                    handler: this.selectInTree.bind(this)
+                });
+            }
+
+            buttons.push({
+                tooltip: t("show_metainfo"),
+                iconCls: "pimcore_icon_info",
+                scale: "medium",
+                handler: this.showMetaInfo.bind(this)
+            });
+
+            buttons.push(this.getTranslationButtons());
+
             buttons.push("-");
             buttons.push({
-                text: t("open"),
-                iconCls: "pimcore_icon_cursor_medium",
-                scale: "small",
+                tooltip: t("open"),
+                iconCls: "pimcore_icon_cursor",
+                scale: "medium",
                 handler: function () {
                     var date = new Date();
-                    var link = this.data.path + this.data.key + "?pimcore_preview=true&time=" + date.getTime();
+                    var link = this.data.path + this.data.key;
+                    var linkParams = [];
+
+                    linkParams.push("pimcore_preview=true");
+                    linkParams.push("_dc=" + date.getTime());
 
                     // add persona parameter if available
                     if(this["edit"] && this.edit["persona"]) {
                         if(this.edit.persona && this.edit.persona.getValue()) {
-                            link += "&_ptp=" + this.edit.persona.getValue();
+                            linkParams.push("_ptp=" + this.edit.persona.getValue());
                         }
                     }
 
-                    window.open(link);
+                    if(linkParams.length) {
+                        link += "?" + linkParams.join("&");
+                    }
+
+                    if(this.isDirty()) {
+                        this.saveToSession(function () {
+                            window.open(link);
+                        });
+                    } else {
+                        window.open(link);
+                    }
                 }.bind(this)
             });
             buttons.push("-");
             buttons.push({
                 xtype: 'tbtext',
                 text: this.data.id,
-                scale: "small"
+                scale: "medium"
             });
+
+            //workflow management
+            pimcore.elementservice.integrateWorkflowManagement('document', this.data.id, this, buttons);
+
 
             // version notification
             this.newerVersionNotification = new Ext.Toolbar.TextItem({
                 xtype: 'tbtext',
-                text: '&nbsp;&nbsp;<img src="/pimcore/static6/img/icon/error.png" align="absbottom" />&nbsp;&nbsp;'
+                text: '&nbsp;&nbsp;<img src="/pimcore/static6/img/flat-color-icons/medium_priority.svg" style="height: 16px;" align="absbottom" />&nbsp;&nbsp;'
                     + t("this_is_a_newer_not_published_version"),
-                scale: "small",
+                scale: "medium",
                 hidden: true
             });
 
@@ -301,7 +288,8 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
                 region: "north",
                 border: false,
                 cls: "main-toolbar",
-                items: buttons
+                items: buttons,
+                overflowHandler: 'scroller'
             });
 
             this.toolbar.on("afterrender", function () {

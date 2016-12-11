@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -57,9 +56,8 @@ pimcore.settings.user.role.panel = Class.create(pimcore.settings.user.panels.abs
                 id: "pimcore_panel_roles_tree",
                 store: store,
                 region: "west",
-                useArrows:true,
                 autoScroll:true,
-                animate:true,
+                animate:false,
                 containerScroll: true,
                 border: true,
                 split:true,
@@ -77,6 +75,11 @@ pimcore.settings.user.role.panel = Class.create(pimcore.settings.user.panels.abs
                         ptype: 'treeviewdragdrop',
                         appendOnly: true,
                         ddGroup: "roles"
+                    },
+                    listeners: {
+                        drop: function(node, data, overModel) {
+                            this.update(data.records[0].id, {parentId: overModel.id})
+                        }.bind(this)
                     }
                 }
                 ,
@@ -109,14 +112,14 @@ pimcore.settings.user.role.panel = Class.create(pimcore.settings.user.panels.abs
         if (record.data.allowChildren) {
             menu.add(new Ext.menu.Item({
                 text: t('add_folder'),
-                iconCls: "pimcore_icon_folder_add",
+                iconCls: "pimcore_icon_folder pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "rolefolder", null, record)
                 }
             }));
             menu.add(new Ext.menu.Item({
                 text: t('add_role'),
-                iconCls: "pimcore_icon_role_add",
+                iconCls: "pimcore_icon_roles pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "role", null, record)
                 }
@@ -124,20 +127,22 @@ pimcore.settings.user.role.panel = Class.create(pimcore.settings.user.panels.abs
         } else if (record.data.elementType == "role") {
             menu.add(new Ext.menu.Item({
                 text: t('clone_role'),
-                iconCls: "pimcore_icon_role_add",
+                iconCls: "pimcore_icon_roles pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "role", record, record)
                 }
             }));
         }
 
-        menu.add(new Ext.menu.Item({
-            text: t('delete'),
-            iconCls: "pimcore_icon_delete",
-            listeners: {
-                "click": this.remove.bind(this, tree, record)
-            }
-        }));
+        if (record.data.id > 0) {
+            menu.add(new Ext.menu.Item({
+                text: t('delete'),
+                iconCls: "pimcore_icon_delete",
+                listeners: {
+                    "click": this.remove.bind(this, tree, record)
+                }
+            }));
+        }
 
         if(typeof menu.items != "undefined" && typeof menu.items.items != "undefined"
                                                                     && menu.items.items.length > 0) {

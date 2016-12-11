@@ -2,29 +2,32 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object\Fieldcollection
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object;
 
 use Pimcore\Model;
 
-class Fieldcollection extends Model\AbstractModel implements \Iterator {
+/**
+ * @method \Pimcore\Model\Object\Fieldcollection\Dao getDao()
+ */
+class Fieldcollection extends Model\AbstractModel implements \Iterator
+{
 
     /**
      * @var array
      */
-    public $items = array();
+    public $items = [];
 
     /**
      * @var
@@ -35,11 +38,12 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
      * @param array $items
      * @param null $fieldname
      */
-    public function __construct ($items = array(), $fieldname = null) {
-        if(!empty($items)) {
+    public function __construct($items = [], $fieldname = null)
+    {
+        if (!empty($items)) {
             $this->setItems($items);
         }
-        if($fieldname) {
+        if ($fieldname) {
             $this->setFieldname($fieldname);
         }
     }
@@ -47,40 +51,47 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
     /**
      * @return array
      */
-    public function getItems () {
+    public function getItems()
+    {
         return $this->items;
     }
 
     /**
      * @param $items
-     * @return void
+     * @return $this
      */
-    public function setItems ($items) {
+    public function setItems($items)
+    {
         $this->items = $items;
+
         return $this;
     }
 
     /**
      * @return
      */
-    public function getFieldname () {
+    public function getFieldname()
+    {
         return $this->fieldname;
     }
 
     /**
      * @param $fieldname
-     * @return void
+     * @return $this
      */
-    public function setFieldname ($fieldname) {
+    public function setFieldname($fieldname)
+    {
         $this->fieldname = $fieldname;
+
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getItemDefinitions () {
-        $definitions = array();
+    public function getItemDefinitions()
+    {
+        $definitions = [];
         foreach ($this->getItems() as $item) {
             $definitions[$item->getType()] = $item->getDefinition();
         }
@@ -93,16 +104,17 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
      * @param $object
      * @return void
      */
-    public function save ($object) {
-
-        $this->getResource()->save($object);
+    public function save($object)
+    {
+        $this->getDao()->save($object);
         $allowedTypes = $object->getClass()->getFieldDefinition($this->getFieldname())->getAllowedTypes();
 
-        if(is_array($this->getItems())) {
+        $collectionItems = $this->getItems();
+        if (is_array($collectionItems)) {
             $index = 0;
-            foreach ($this->getItems() as $collection) {
-                if($collection instanceof Fieldcollection\Data\AbstractData) {
-                    if(in_array($collection->getType(),$allowedTypes)) {
+            foreach ($collectionItems as $collection) {
+                if ($collection instanceof Fieldcollection\Data\AbstractData) {
+                    if (in_array($collection->getType(), $allowedTypes)) {
                         $collection->setFieldname($this->getFieldname());
                         $collection->setIndex($index++);
 
@@ -120,10 +132,12 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
     /**
      * @return bool
      */
-    public function isEmpty () {
-        if(count($this->getItems()) < 1) {
+    public function isEmpty()
+    {
+        if (count($this->getItems()) < 1) {
             return true;
         }
+
         return false;
     }
 
@@ -131,7 +145,8 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
      * @param $item
      * @return void
      */
-    public function add ($item) {
+    public function add($item)
+    {
         $this->items[] = $item;
     }
 
@@ -139,18 +154,20 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
      * @param $index
      * @return void
      */
-    public function remove ($index) {
-        if($this->items[$index]) {
-            array_splice($this->items,$index,1);
+    public function remove($index)
+    {
+        if ($this->items[$index]) {
+            array_splice($this->items, $index, 1);
         }
     }
 
     /**
      * @param $index
-     * @return 
+     * @return
      */
-    public function get ($index) {
-        if($this->items[$index]) {
+    public function get($index)
+    {
+        if ($this->items[$index]) {
             return $this->items[$index];
         }
     }
@@ -158,7 +175,8 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
     /**
      * @return int
      */
-    public function getCount() {
+    public function getCount()
+    {
         return count($this->getItems());
     }
     
@@ -171,39 +189,48 @@ class Fieldcollection extends Model\AbstractModel implements \Iterator {
     /*
      *
      */
-    public function rewind() {
+    public function rewind()
+    {
         reset($this->items);
     }
 
     /**
      * @return mixed
      */
-    public function current() {
+    public function current()
+    {
         $var = current($this->items);
+
         return $var;
     }
 
     /**
      * @return mixed
      */
-    public function key() {
+    public function key()
+    {
         $var = key($this->items);
+
         return $var;
     }
 
     /**
      * @return mixed
      */
-    public function next() {
+    public function next()
+    {
         $var = next($this->items);
+
         return $var;
     }
 
     /**
      * @return bool
      */
-    public function valid() {
+    public function valid()
+    {
         $var = $this->current() !== false;
+
         return $var;
     }
 }

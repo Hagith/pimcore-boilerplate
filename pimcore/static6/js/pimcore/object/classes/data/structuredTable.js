@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.structuredTable");
@@ -23,7 +22,9 @@ pimcore.object.classes.data.structuredTable = Class.create(pimcore.object.classe
         object: true,
         objectbrick: true,
         fieldcollection: true,
-        localizedfield: true
+        localizedfield: true,
+        classificationstore : false,
+        block: true
     },
 
     initialize: function (treeNode, initData) {
@@ -96,13 +97,13 @@ pimcore.object.classes.data.structuredTable = Class.create(pimcore.object.classe
            'key',
            'label'
         ];
-        
+
         if(hasType) {
             fields.push('type');
             fields.push('length');
             fields.push('width');
         }
-        
+
         this.stores[title] = new Ext.data.JsonStore({
             autoDestroy: false,
             autoSave: false,
@@ -135,7 +136,7 @@ pimcore.object.classes.data.structuredTable = Class.create(pimcore.object.classe
                                      "modificationdate","usermodification","byid","bypath","data","versions",
                                      "properties","permissions","permissionsforuser","childamount","apipluginbroker",
                                      "resource","parentClass","definition","locked","language"]) == false) {
-                    return true; 
+                    return true;
                 } else {
                     return t("structuredtable_invalid_key");
                 }
@@ -144,7 +145,7 @@ pimcore.object.classes.data.structuredTable = Class.create(pimcore.object.classe
 
 
         var typesColumns = [
-            {header: t("position"), flex: 10, sortable: true, dataIndex: 'position',
+            {header: t("position"), width: 100, sortable: true, dataIndex: 'position',
                                     editor: new Ext.form.NumberField({})},
             {header: t("key"), flex: 50, sortable: true, dataIndex: 'key',
                                     editor: keyTextField},
@@ -164,6 +165,7 @@ pimcore.object.classes.data.structuredTable = Class.create(pimcore.object.classe
                 allowBlank: false,
                 lazyRender: true,
                 mode: 'local',
+                editable: false,
                 store: new Ext.data.ArrayStore({
                     id: 'value',
                     fields: [

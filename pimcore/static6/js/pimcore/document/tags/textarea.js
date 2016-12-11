@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.textarea");
@@ -32,9 +31,15 @@ pimcore.document.tags.textarea = Class.create(pimcore.document.tag, {
 
         // set min height for IE, as he isn't able to update :after css selector
         this.element.update("|"); // dummy content to get appropriate height
-        this.element.applyStyles({
-            "min-height": this.element.getHeight() + "px"
-        });
+        if(this.element.getHeight()) {
+            this.element.applyStyles({
+                "min-height": this.element.getHeight() + "px"
+            });
+        } else {
+            this.element.applyStyles({
+                "min-height": this.element.getStyle("font-size")
+            });
+        }
 
         this.element.update(data);
 
@@ -77,10 +82,9 @@ pimcore.document.tags.textarea = Class.create(pimcore.document.tag, {
             text = htmlentities(text, null, null, false);
 
             try {
-                document.execCommand("insertHTML", false, text);
+                pimcore.edithelpers.pasteHtmlAtCaret(text);
             } catch (e) {
-                // IE <= 10
-                document.selection.createRange().pasteHTML(text);
+                console.log(e);
             }
         }.bind(this));
 
@@ -99,6 +103,9 @@ pimcore.document.tags.textarea = Class.create(pimcore.document.tag, {
             this.element.applyStyles({
                 height: options["height"] + "px"
             })
+        }
+        if (options["placeholder"]) {
+            this.element.dom.setAttribute('data-placeholder', options["placeholder"]);
         }
     },
 

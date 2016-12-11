@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.fieldcollection");
@@ -26,7 +25,7 @@ pimcore.object.fieldcollection = Class.create({
             this.panel = new Ext.Panel({
                 id: "pimcore_fieldcollections",
                 title: t("field_collections"),
-                iconCls: "pimcore_icon_fieldcollections",
+                iconCls: "pimcore_icon_fieldcollection",
                 border: false,
                 layout: "border",
                 closable:true,
@@ -74,9 +73,8 @@ pimcore.object.fieldcollection = Class.create({
                 id: "pimcore_panel_fieldcollections_tree",
                 store: this.store,
                 region: "west",
-                useArrows:true,
                 autoScroll:true,
-                animate:true,
+                animate:false,
                 containerScroll: true,
                 width: 200,
                 split: true,
@@ -89,7 +87,7 @@ pimcore.object.fieldcollection = Class.create({
                     items: [
                         {
                             text: t("add_fieldcollection"),
-                            iconCls: "pimcore_icon_fieldcollection_add",
+                            iconCls: "pimcore_icon_fieldcollection pimcore_icon_overlay_add",
                             handler: this.addField.bind(this)
                         }
                     ]
@@ -143,7 +141,8 @@ pimcore.object.fieldcollection = Class.create({
     openFieldcollection: function (id) {
 
         if(Ext.getCmp("pimcore_fieldcollection_editor_panel_" + id)) {
-            this.getEditPanel().setActiveTab(Ext.getCmp("pimcore_class_editor_panel_" + id));
+
+            this.getEditPanel().setActiveTab(Ext.getCmp("pimcore_fieldcollection_editor_panel_" + id));
             return;
         }
 
@@ -165,7 +164,7 @@ pimcore.object.fieldcollection = Class.create({
             delete this.fieldPanel;
         }*/
 
-        var fieldPanel = new pimcore.object.fieldcollections.field(data, this, this.openFieldcollection.bind(this, data.key));
+        var fieldPanel = new pimcore.object.fieldcollections.field(data, this, this.openFieldcollection.bind(this, data.key), "pimcore_fieldcollection_editor_panel_");
         pimcore.layout.refresh();
         
     },

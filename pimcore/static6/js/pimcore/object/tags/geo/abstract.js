@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 /*global google */
 pimcore.registerNS('pimcore.object.tags.geo.abstract');
@@ -20,7 +19,7 @@ pimcore.object.tags.geo.abstract = Class.create(pimcore.object.tags.abstract, {
         this.fieldConfig = fieldConfig;
 
         // extend google maps to support the getBounds() method
-        if (!google.maps.Polygon.prototype.getBounds) {
+        if (this.isMapsAvailable() && !google.maps.Polygon.prototype.getBounds) {
 
             google.maps.Polygon.prototype.getBounds = function(latLng) {
 
@@ -40,6 +39,25 @@ pimcore.object.tags.geo.abstract = Class.create(pimcore.object.tags.abstract, {
         }
     },
 
+    isMapsAvailable: function() {
+        if(pimcore.settings.google_maps_api_key) {
+            return true;
+        }
+        return false;
+    },
+
+    getErrorLayout: function() {
+        this.component = new Ext.Panel({
+            title: t("geo_error_title"),
+            height: 370,
+            width: 650,
+            border: true,
+            bodyStyle: "padding: 10px",
+            html: '<span style="color:red">' + t("geo_error_message") + '</span>'
+        });
+
+        return this.component;
+    },
 
     getGridColumnConfig: function(field) {
         return {

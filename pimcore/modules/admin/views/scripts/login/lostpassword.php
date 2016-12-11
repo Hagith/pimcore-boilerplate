@@ -2,12 +2,14 @@
 <html>
 <head>
 
-    <title>Welcome to pimcore!</title>
+    <title>Welcome to Pimcore!</title>
 
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="UTF-8">
     <meta name="robots" content="noindex, follow" />
 
-    <link rel="stylesheet" href="/pimcore/static/css/login.css" type="text/css" />
+    <link rel="icon" type="image/png" href="/pimcore/static6/img/favicon/favicon-32x32.png" />
+
+    <link rel="stylesheet" href="/pimcore/static6/css/login.css" type="text/css" />
 
     <?php
     // load plugin scripts
@@ -51,7 +53,7 @@
                     <br />
                     <br />
 
-                    <a href="/admin/login/"><?= $this->translate("Back to login"); ?></a>
+                    <a href="/admin/login/"><?= $this->translate("Back to Login"); ?></a>
                 </div>
             <?php } else { ?>
                 <div class="body info">
@@ -73,15 +75,13 @@
             <?php } ?>
 
             <div class="body lostpassword" style="padding-top: 30px;">
-                <a href="/admin/login/"><?= $this->translate("Back to login"); ?></a>
+                <a href="/admin/login/"><?= $this->translate("Back to Login"); ?></a>
             </div>
         </div>
     </div>
 </div>
 
 <div id="footer">
-    <a href="http://www.pimcore.org/">pimcore. Open Source Multichannel Experience and Engagement Platform</a>
-    <br />
     &copy; 2009-<?= date("Y") ?> <a href="http://www.pimcore.org/">pimcore GmbH</a>, a proud member of the <a href="http://www.elements.at/">elements group</a>
 </div>
 

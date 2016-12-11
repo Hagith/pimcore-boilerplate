@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.objectbricks");
@@ -34,6 +33,7 @@ pimcore.object.tags.objectbricks = Class.create(pimcore.object.tags.abstract, {
         if (data) {
             this.data = data;
         }
+        fieldConfig.noteditable = typeof fieldConfig.noteditable != 'undefined' ? fieldConfig.noteditable : false;
         this.fieldConfig = fieldConfig;
     },
 
@@ -128,23 +128,21 @@ pimcore.object.tags.objectbricks = Class.create(pimcore.object.tags.abstract, {
 
         var items = [];
 
-        if(collectionMenu.length == 1) {
-            items.push({
-                cls: "pimcore_block_button_plus",
-                iconCls: "pimcore_icon_plus",
-                handler: collectionMenu[0].handler
-            });
-        } else if (collectionMenu.length > 1) {
-            items.push({
-                cls: "pimcore_block_button_plus",
-                iconCls: "pimcore_icon_plus",
-                menu: collectionMenu
-            });
-        } else {
-            items.push({
-                xtype: "tbtext",
-                text: t("no_further_objectbricks_allowed")
-            });
+        if(!this.fieldConfig.noteditable) {
+
+            if(collectionMenu.length == 1) {
+                items.push({
+                    cls: "pimcore_block_button_plus",
+                    iconCls: "pimcore_icon_plus",
+                    handler: collectionMenu[0].handler
+                });
+            } else if (collectionMenu.length > 1) {
+                items.push({
+                    cls: "pimcore_block_button_plus",
+                    iconCls: "pimcore_icon_plus",
+                    menu: collectionMenu
+                });
+            }
         }
 
         var toolbar = new Ext.Toolbar({
@@ -221,23 +219,40 @@ pimcore.object.tags.objectbricks = Class.create(pimcore.object.tags.abstract, {
             this.currentMetaData = blockData.metaData;
         }
 
+        var items = this.getRecursiveLayout(
+            this.layoutDefinitions[type],
+            null,
+            {
+                containerType: "objectbrick",
+                containerKey: type,
+                ownerName: this.fieldConfig.name
+            }
+        ).items;
+
+        if(this.fieldConfig.noteditable && items) {
+            items.forEach(function (record) {
+                record.disabled = true;
+            });
+        }
+
         var blockElement = new Ext.Panel({
             //bodyStyle: "padding:10px;",
             style: "margin: 0 0 10px 0;",
             autoHeight: true,
             border: false,
             title: ts(type),
-            items: this.getRecursiveLayout(this.layoutDefinitions[type]).items
+            items: items
         });
-
 
         this.component.remove(this.component.getComponent(0));
 
         this.addedTypes[type] = true;
 
-        var control = this.getDeleteControl(type, blockElement);
-        if(control) {
-            blockElement.insert(0, control);
+        if(!this.fieldConfig.noteditable) {
+            var control = this.getDeleteControl(type, blockElement);
+            if(control) {
+                blockElement.insert(0, control);
+            }
         }
 
         blockElement.key = type;
@@ -282,7 +297,6 @@ pimcore.object.tags.objectbricks = Class.create(pimcore.object.tags.abstract, {
     getLayoutShow: function () {
 
         this.component = this.getLayoutEdit();
-        this.component.disable();
 
         return this.component;
     },
@@ -303,10 +317,17 @@ pimcore.object.tags.objectbricks = Class.create(pimcore.object.tags.abstract, {
                     elementData = "deleted";
                 } else {
                     for (var u=0; u<element.fields.length; u++) {
-                        if(element.fields[u].isDirty()) {
-                            element.fields[u].unmarkInherited();
-                            elementData[element.fields[u].getName()] = element.fields[u].getValue();
+
+                        try {
+                            if(element.fields[u].isDirty()) {
+                                element.fields[u].unmarkInherited();
+                                elementData[element.fields[u].getName()] = element.fields[u].getValue();
+                            }
+                        } catch (e) {
+                            console.log(e);
+                            elementData[element.fields[u].getName()] = "";
                         }
+
                     }
                 }
 

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.profile.panel");
@@ -53,16 +52,7 @@ pimcore.settings.profile.panel = Class.create({
         this.forceReloadOnSave = false;
         this.currentUser = pimcore.currentuser;
 
-        var generalItems = [];
-        generalItems.push({
-            xtype:"textfield",
-            fieldLabel:t("old_password"),
-            name:"old_password",
-            inputType:"password",
-            width:400
-        });
-
-        passwordCheck = function (el) {
+        var passwordCheck = function (el) {
             if(/^(?=.*\d)(?=.*[a-zA-Z]).{6,100}$/.test(el.getValue())) {
                 el.getEl().addCls("password_valid");
                 el.getEl().removeCls("password_invalid");
@@ -72,29 +62,7 @@ pimcore.settings.profile.panel = Class.create({
             }
         };
 
-        generalItems.push({
-            xtype:"textfield",
-            fieldLabel:t("new_password"),
-            name:"new_password",
-            inputType:"password",
-            width:400,
-            enableKeyEvents: true,
-            listeners: {
-                keyup: passwordCheck
-            }
-        });
-        generalItems.push({
-            xtype:"textfield",
-            fieldLabel:t("retype_password"),
-            name:"retype_password",
-            inputType:"password",
-            width:400,
-            style:"margin-bottom: 20px;",
-            enableKeyEvents: true,
-            listeners: {
-                keyup: passwordCheck
-            }
-        });
+        var generalItems = [];
 
         generalItems.push({
             xtype:"textfield",
@@ -111,33 +79,6 @@ pimcore.settings.profile.panel = Class.create({
             width:400
         });
 
-        var date = new Date();
-        var image = "/admin/user/get-image?id=" + this.currentUser.id + "&_dc=" + date.getTime();
-        generalItems.push({
-            xtype: "fieldset",
-            title: t("image"),
-            width: '100%',
-            items: [{
-                xtype: "container",
-                id: "pimcore_user_image_" + this.currentUser.id,
-                html: '<img src="' + image + '" />',
-                width: 45,
-                height: 45,
-                style: "float:left; margin-right: 10px;"
-            },{
-                xtype:"button",
-                text: t("upload"),
-                handler: function () {
-                    pimcore.helpers.uploadDialog("/admin/user/upload-current-user-image?id="
-                                    + this.currentUser.id, null, function () {
-                        var cont = Ext.getCmp("pimcore_user_image_" + this.currentUser.id);
-                        var date = new Date();
-                        cont.update('<img src="/admin/user/get-image?id=' + this.currentUser.id + '&_dc='
-                                    + date.getTime() + '" />');
-                    }.bind(this));
-                }.bind(this)
-            }]
-        });
 
         generalItems.push({
             xtype:"textfield",
@@ -154,6 +95,7 @@ pimcore.settings.profile.panel = Class.create({
             typeAhead:true,
             value:this.currentUser.language,
             mode:'local',
+            name: "language",
             listWidth:100,
             store:pimcore.globalmanager.get("pimcorelanguages"),
             displayField:'display',
@@ -185,9 +127,72 @@ pimcore.settings.profile.panel = Class.create({
             checked:this.currentUser.memorizeTabs
         });
 
+        generalItems.push({
+            xtype: "fieldset",
+            title: t("change_password"),
+            items: [{
+                xtype:"textfield",
+                fieldLabel:t("old_password"),
+                name:"old_password",
+                inputType:"password",
+                width:400
+            }, {
+                xtype:"textfield",
+                fieldLabel:t("new_password"),
+                name:"new_password",
+                inputType:"password",
+                width:400,
+                enableKeyEvents: true,
+                listeners: {
+                    keyup: passwordCheck
+                }
+            }, {
+                xtype:"textfield",
+                fieldLabel:t("retype_password"),
+                name:"retype_password",
+                inputType:"password",
+                width:400,
+                style:"margin-bottom: 20px;",
+                enableKeyEvents: true,
+                listeners: {
+                    keyup: passwordCheck
+                }
+            }]
+        });
+
+        var date = new Date();
+        var image = "/admin/user/get-image?id=" + this.currentUser.id + "&_dc=" + date.getTime();
+        generalItems.push({
+            xtype: "fieldset",
+            title: t("image"),
+            width: '100%',
+            items: [{
+                xtype: "container",
+                id: "pimcore_user_image_" + this.currentUser.id,
+                html: '<img src="' + image + '" />',
+                width: 45,
+                height: 45,
+                style: "float:left; margin-right: 10px;"
+            },{
+                xtype:"button",
+                text: t("upload"),
+                handler: function () {
+                    pimcore.helpers.uploadDialog("/admin/user/upload-current-user-image?id="
+                                    + this.currentUser.id, null, function () {
+                        var cont = Ext.getCmp("pimcore_user_image_" + this.currentUser.id);
+                        var date = new Date();
+                        cont.update('<img src="/admin/user/get-image?id=' + this.currentUser.id + '&_dc='
+                                    + date.getTime() + '" />');
+                    }.bind(this));
+                }.bind(this)
+            }]
+        });
+
+        this.editorSettings = new pimcore.settings.user.editorSettings(this, this.currentUser.contentLanguages);
+
         this.userPanel = new Ext.form.FormPanel({
             border:false,
-            items:generalItems,
+            items: [{ items: generalItems}, this.editorSettings.getPanel()],
             labelWidth:130,
             buttons:[
                 {
@@ -204,8 +209,11 @@ pimcore.settings.profile.panel = Class.create({
 
     saveCurrentUser:function () {
         var values = this.userPanel.getForm().getFieldValues();
+        var contentLanguages = this.editorSettings.getContentLanguages();
+        values.contentLanguages = contentLanguages;
+
         if(values["new_password"]) {
-            if(!/^(?=.*\d)(?=.*[a-zA-Z]).{6,100}$/.test(values["new_password"]) || values["new_password"] != values["retype_password"]) {
+            if(!pimcore.helpers.isValidPassword(values["new_password"]) || values["new_password"] != values["retype_password"]) {
                 delete values["new_password"];
                 delete values["retype_password"];
                 Ext.MessageBox.alert(t('error'), t("password_was_not_changed"));
@@ -235,6 +243,10 @@ pimcore.settings.profile.panel = Class.create({
                         }
 
                         pimcore.helpers.showNotification(t("success"), t("user_save_success"), "success");
+                        if (contentLanguages) {
+                            pimcore.settings.websiteLanguages = contentLanguages;
+                            pimcore.currentuser.contentLanguages = contentLanguages.join(',');
+                        }
                     } else {
                         pimcore.helpers.showNotification(t("error"), t("user_save_error"), "error", t(res.message));
                     }

@@ -2,22 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Asset
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Asset\Video\Thumbnail;
 
-class Config {
+use Pimcore\Model;
+
+/**
+ * @method \Pimcore\Model\Asset\Video\Thumbnail\Config\Dao getDao()
+ */
+class Config extends Model\AbstractModel
+{
 
     /**
      * format of array:
@@ -34,7 +39,7 @@ class Config {
      *
      * @var array
      */
-    public $items = array();
+    public $items = [];
 
     /**
      * @var string
@@ -57,128 +62,76 @@ class Config {
     public $audioBitrate;
 
     /**
+     * @var int
+     */
+    public $modificationDate;
+
+    /**
+     * @var int
+     */
+    public $creationDate;
+
+    /**
      * @param $name
-     * @return Config
-     * @throws \Exception
+     * @return null|Config
      */
-    public static function getByName ($name) {
-        $pipe = new self();
-        $pipe->setName($name);
-        if(!is_readable($pipe->getConfigFile()) || !$pipe->load()) {
-            throw new \Exception("video thumbnail definition : " . $name . " does not exist");
+    public static function getByName($name)
+    {
+        $cacheKey = "videothumb_" . crc32($name);
+
+        try {
+            $thumbnail = \Zend_Registry::get($cacheKey);
+            if (!$thumbnail) {
+                throw new \Exception("Thumbnail in registry is null");
+            }
+        } catch (\Exception $e) {
+            try {
+                $thumbnail = new self();
+                $thumbnail->getDao()->getByName($name);
+
+                \Zend_Registry::set($cacheKey, $thumbnail);
+            } catch (\Exception $e) {
+                return null;
+            }
         }
 
-        return $pipe;
+        return $thumbnail;
     }
 
     /**
-     * @static
-     * @return string
-     */
-    public static function getWorkingDir () {
-        $dir = PIMCORE_CONFIGURATION_DIRECTORY . "/videopipelines";
-        if(!is_dir($dir)) {
-            \Pimcore\File::mkdir($dir);
-        }
-
-        return $dir;
-    }
-
-    /**
      * @return Config
      */
-    public static function getPreviewConfig () {
+    public static function getPreviewConfig()
+    {
         $config = new self();
         $config->setName("pimcore-system-treepreview");
         $config->setAudioBitrate(128);
         $config->setVideoBitrate(700);
 
-        $config->setItems(array(
-            array(
+        $config->setItems([
+            [
                 "method" => "scaleByWidth",
                 "arguments" =>
-                array(
+                [
                     "width" => 500
-                )
-            )
-        ));
+                ]
+            ]
+        ]);
 
         return $config;
     }
 
     /**
-     * @return void
-     */
-    public function save () {
-
-        $arrayConfig = object2array($this);
-        $items = $arrayConfig["items"];
-        $arrayConfig["items"] = array("item" => $items);
-        
-        $config = new \Zend_Config($arrayConfig);
-        $writer = new \Zend_Config_Writer_Xml(array(
-            "config" => $config,
-            "filename" => $this->getConfigFile()
-        ));
-        $writer->write();
-
-        return true;
-    }
-
-    /**
-     * @return void
-     */
-    public function load () {
-
-        $configXml = new \Zend_Config_Xml($this->getConfigFile());
-        $configArray = $configXml->toArray();
-
-        if(array_key_exists("items",$configArray) && is_array($configArray["items"]["item"])) {
-            if(array_key_exists("method",$configArray["items"]["item"])) {
-                $configArray["items"] = array($configArray["items"]["item"]);
-            } else {
-                $configArray["items"] = $configArray["items"]["item"];
-            }
-        } else {
-            $configArray["items"] = array("item" => array());
-        }
-
-        foreach ($configArray as $key => $value) {
-            $setter = "set" . ucfirst($key);
-            if(method_exists($this, $setter)) {
-                $this->$setter($value);
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @return void
-     */
-    public function delete() {
-        if(is_file($this->getConfigFile())) {
-            unlink($this->getConfigFile());
-        }
-    }
-
-    /**
-     * @return string
-     */
-    protected function getConfigFile () {
-        return self::getWorkingDir() . "/" . $this->getName() . ".xml";
-    }
-
-    /**
      * @param  $name
      * @param  $parameters
      * @return bool
      */
-    public function addItem ($name, $parameters) {
-        $this->items[] = array(
+    public function addItem($name, $parameters)
+    {
+        $this->items[] = [
             "method" => $name,
             "arguments" => $parameters
-        );
+        ];
 
         return true;
     }
@@ -188,12 +141,12 @@ class Config {
      * @param  $parameters
      * @return bool
      */
-    public function addItemAt ($position, $name, $parameters) {
-
-        array_splice($this->items, $position, 0, array(array(
+    public function addItemAt($position, $name, $parameters)
+    {
+        array_splice($this->items, $position, 0, [[
             "method" => $name,
             "arguments" => $parameters
-        )));
+        ]]);
 
         return true;
     }
@@ -202,8 +155,9 @@ class Config {
     /**
      * @return void
      */
-    public function resetItems () {
-        $this->items = array();
+    public function resetItems()
+    {
+        $this->items = [];
     }
 
     /**
@@ -213,6 +167,7 @@ class Config {
     public function setDescription($description)
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -231,6 +186,7 @@ class Config {
     public function setItems($items)
     {
         $this->items = $items;
+
         return $this;
     }
 
@@ -249,6 +205,7 @@ class Config {
     public function setName($name)
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -267,6 +224,7 @@ class Config {
     public function setAudioBitrate($audioBitrate)
     {
         $this->audioBitrate = (int) $audioBitrate;
+
         return $this;
     }
 
@@ -285,6 +243,7 @@ class Config {
     public function setVideoBitrate($videoBitrate)
     {
         $this->videoBitrate = (int) $videoBitrate;
+
         return $this;
     }
 
@@ -299,16 +258,16 @@ class Config {
     /**
      * @return array
      */
-    public function getEstimatedDimensions() {
-
-        $dimensions = array();
+    public function getEstimatedDimensions()
+    {
+        $dimensions = [];
         $transformations = $this->getItems();
-        if(is_array($transformations) && count($transformations) > 0) {
+        if (is_array($transformations) && count($transformations) > 0) {
             foreach ($transformations as $transformation) {
-                if(!empty($transformation)) {
-                    if(is_array($transformation["arguments"])) {
+                if (!empty($transformation)) {
+                    if (is_array($transformation["arguments"])) {
                         foreach ($transformation["arguments"] as $key => $value) {
-                            if($key == "width" || $key == "height") {
+                            if ($key == "width" || $key == "height") {
                                 $dimensions[$key] = $value;
                             }
                         }
@@ -318,5 +277,37 @@ class Config {
         }
 
         return $dimensions;
+    }
+
+    /**
+     * @return int
+     */
+    public function getModificationDate()
+    {
+        return $this->modificationDate;
+    }
+
+    /**
+     * @param int $modificationDate
+     */
+    public function setModificationDate($modificationDate)
+    {
+        $this->modificationDate = $modificationDate;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCreationDate()
+    {
+        return $this->creationDate;
+    }
+
+    /**
+     * @param int $creationDate
+     */
+    public function setCreationDate($creationDate)
+    {
+        $this->creationDate = $creationDate;
     }
 }

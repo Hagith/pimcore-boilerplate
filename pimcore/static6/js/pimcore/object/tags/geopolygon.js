@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 /*global google */
@@ -21,6 +20,10 @@ pimcore.object.tags.geopolygon = Class.create(pimcore.object.tags.geo.abstract, 
 
     getLayoutEdit: function () {
 
+        if(!this.isMapsAvailable()) {
+            return this.getErrorLayout();
+        }
+
         this.mapImageID = uniqid();
 
         this.component = new Ext.Panel({
@@ -30,12 +33,11 @@ pimcore.object.tags.geopolygon = Class.create(pimcore.object.tags.geo.abstract, 
             border: true,
             style: "margin-bottom: 10px",
             componentCls: 'object_field object_geo_field',
-            html: '<div id="google_maps_container_' + this.mapImageID + '" align="center">'
-                        + '<img align="center" width="300" height="300" src="' + this.getMapUrl(this.fieldConfig, this.data) + '" /></div>',
+            html: '<div id="google_maps_container_' + this.mapImageID + '" align="center"></div>',
             bbar: [{
                 xtype: 'button',
                 text: t('empty'),
-                icon: '/pimcore/static6/img/icon/bin.png',
+                iconCls: "pimcore_icon_empty",
                 handler: function () {
                     this.data = null;
                     this.updatePreviewImage();
@@ -44,7 +46,7 @@ pimcore.object.tags.geopolygon = Class.create(pimcore.object.tags.geo.abstract, 
             }, '->', {
                 xtype: 'button',
                 text: t('open_select_editor'),
-                icon: '/pimcore/static6/img/icon/magnifier.png',
+                iconCls: "pimcore_icon_search",
                 handler: this.openPicker.bind(this)
             }]
         });
@@ -93,13 +95,13 @@ pimcore.object.tags.geopolygon = Class.create(pimcore.object.tags.geo.abstract, 
                 var path = 'weight:0|fillcolor:0x00000073|' + pointConfig.join('|');
                 mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?center=' + center.lat() + ','
                     + center.lng() + '&zoom=' + mapZoom + '&size=' + px + 'x' + py
-                    + '&path=' + path + '&sensor=false&maptype=' + fieldConfig.mapType;
+                    + '&path=' + path + '&maptype=' + fieldConfig.mapType;
             }
             else {
                 mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?center='
                     + fieldConfig.lat + ',' + fieldConfig.lng
                     + '&zoom=' + mapZoom + '&size='
-                    + px + 'x' + py + '&sensor=false&maptype=' + fieldConfig.mapType;
+                    + px + 'x' + py + '&maptype=' + fieldConfig.mapType;
             }
 
             if (pimcore.settings.google_maps_api_key) {
@@ -135,25 +137,25 @@ pimcore.object.tags.geopolygon = Class.create(pimcore.object.tags.geo.abstract, 
             tbar: [{
                 xtype: 'button',
                 text: t('empty'),
-                icon: '/pimcore/static6/img/icon/bin.png',
+                iconCls: "pimcore_icon_empty",
                 handler: this.removePolygon.bind(this)
             }],
             bbar: [this.searchfield, {
                 xtype: 'button',
                 text: t('search'),
-                icon: '/pimcore/static6/img/icon/magnifier.png',
+                iconCls: "pimcore_icon_search",
                 handler: this.geocode.bind(this)
             }, '->', {
                 xtype: 'button',
                 text: t('cancel'),
-                icon: '/pimcore/static6/img/icon/cancel.png',
+                iconCls: "pimcore_icon_cancel",
                 handler: function () {
                     this.searchWindow.close();
                 }.bind(this)
             },{
                 xtype: 'button',
                 text: 'OK',
-                icon: '/pimcore/static6/img/icon/tick.png',
+                iconCls: "pimcore_icon_save",
                 handler: function () {
 
                     this.data = null;

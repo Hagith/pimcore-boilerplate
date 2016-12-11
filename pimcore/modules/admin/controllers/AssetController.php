@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license dsf sdaf asdf asdf
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 use Pimcore\File;
@@ -18,6 +17,7 @@ use Pimcore\Tool;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Element;
 use Pimcore\Model;
+use Pimcore\Logger;
 
 class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 {
@@ -32,7 +32,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         parent::init();
 
         // check permissions
-        $notRestrictedActions = array("get-image-thumbnail", "get-video-thumbnail", "get-document-thumbnail");
+        $notRestrictedActions = ["get-image-thumbnail", "get-video-thumbnail", "get-document-thumbnail"];
         if (!in_array($this->getParam("action"), $notRestrictedActions)) {
             $this->checkPermission("assets");
         }
@@ -45,16 +45,17 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
         // check for lock
         if (Element\Editlock::isLocked($this->getParam("id"), "asset")) {
-            $this->_helper->json(array(
+            $this->_helper->json([
                 "editlock" => Element\Editlock::getByElement($this->getParam("id"), "asset")
-            ));
+            ]);
         }
         Element\Editlock::lock($this->getParam("id"), "asset");
 
         $asset = Asset::getById(intval($this->getParam("id")));
+        $asset = clone $asset;
 
         if (!$asset instanceof Asset) {
-            $this->_helper->json(array("success" => false, "message" => "asset doesn't exist"));
+            $this->_helper->json(["success" => false, "message" => "asset doesn't exist"]);
         }
 
         $asset->setMetadata(Asset\Service::expandMetadataForEditmode($asset->getMetadata()));
@@ -71,58 +72,64 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         }
 
         if ($asset instanceof Asset\Image) {
-            $imageInfo = array();
+            $imageInfo = [];
 
             if ($asset->getWidth() && $asset->getHeight()) {
-                $imageInfo["dimensions"] = array();
+                $imageInfo["dimensions"] = [];
                 $imageInfo["dimensions"]["width"] = $asset->getWidth();
                 $imageInfo["dimensions"]["height"] = $asset->getHeight();
             }
 
-            if (function_exists("exif_read_data") && is_file($asset->getFileSystemPath())) {
-                $supportedTypes = array(IMAGETYPE_JPEG, IMAGETYPE_TIFF_II, IMAGETYPE_TIFF_MM);
-
-                if (in_array(exif_imagetype($asset->getFileSystemPath()), $supportedTypes)) {
-                    $exif = @exif_read_data($asset->getFileSystemPath());
-                    if (is_array($exif)) {
-                        $imageInfo["exif"] = array();
-                        foreach ($exif as $name => $value) {
-                            if ((is_string($value) && strlen($value) < 50) || is_numeric($value)) {
-                                // this is to ensure that the data can be converted to json (must be utf8)
-                                if (mb_check_encoding($value, "UTF-8")) {
-                                    $imageInfo["exif"][$name] = $value;
-                                }
-                            }
-                        }
-                    }
-                }
+            $exifData = $asset->getEXIFData();
+            if (!empty($exifData)) {
+                $imageInfo["exif"] = $exifData;
             }
+
+            $iptcData = $asset->getIPTCData();
+            if (!empty($exifData)) {
+                $imageInfo["iptc"] = $iptcData;
+            }
+
+            $imageInfo["exiftoolAvailable"] = (bool) \Pimcore\Tool\Console::getExecutable("exiftool");
 
             $asset->imageInfo = $imageInfo;
         }
 
         $asset->setStream(null);
+
+        //Hook for modifying return value - e.g. for changing permissions based on object data
+        //data need to wrapped into a container in order to pass parameter to event listeners by reference so that they can change the values
+        $returnValueContainer = new Model\Tool\Admin\EventDataContainer(object2array($asset));
+        \Pimcore::getEventManager()->trigger("admin.asset.get.preSendData", $this, [
+            "asset" => $asset,
+            "returnValueContainer" => $returnValueContainer
+        ]);
+
+
         if ($asset->isAllowed("view")) {
-            $this->_helper->json($asset);
+            $this->_helper->json($returnValueContainer->getData());
         }
 
-        $this->_helper->json(array("success" => false, "message" => "missing_permission"));
+        $this->_helper->json(["success" => false, "message" => "missing_permission"]);
     }
 
     public function treeGetChildsByIdAction()
     {
-
-        $assets = array();
+        $assets = [];
+        $cv = false;
         $asset = Asset::getById($this->getParam("node"));
 
         if ($asset->hasChilds()) {
-
             $limit = intval($this->getParam("limit"));
             if (!$this->getParam("limit")) {
                 $limit = 100000000;
             }
             $offset = intval($this->getParam("start"));
 
+
+            if ($this->getParam("view")) {
+                $cv = \Pimcore\Model\Element\Service::getCustomViewById($this->getParam("view"));
+            }
 
             // get assets
             $childsList = new Asset\Listing();
@@ -140,8 +147,9 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             }
             $childsList->setLimit($limit);
             $childsList->setOffset($offset);
-            $childsList->setOrderKey("FIELD(type, 'folder') DESC, filename ASC", false);
+            $childsList->setOrderKey("FIELD(assets.type, 'folder') DESC, assets.filename ASC", false);
 
+            \Pimcore\Model\Element\Service::addTreeFilterJoins($cv, $childsList);
             $childs = $childsList->load();
 
             foreach ($childs as $childAsset) {
@@ -153,12 +161,12 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
 
         if ($this->getParam("limit")) {
-            $this->_helper->json(array(
+            $this->_helper->json([
                 "offset" => $offset,
                 "limit" => $limit,
                 "total" => $asset->getChildAmount($this->getUser()),
                 "nodes" => $assets
-            ));
+            ]);
         } else {
             $this->_helper->json($assets);
         }
@@ -169,7 +177,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
     public function addAssetAction()
     {
         $res = $this->addAsset();
-        $this->_helper->json(array("success" => $res["success"], "msg" => "Success"));
+        $this->_helper->json(["success" => $res["success"], "msg" => "Success"]);
     }
 
     public function addAssetCompatibilityAction()
@@ -181,13 +189,13 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         // Content-Type: application/json which fires a download window in most browsers, because this is a normal POST
         // request and not XHR where the content-type doesn't matter
         $this->disableViewAutoRender();
-        echo \Zend_Json::encode(array(
+        echo \Zend_Json::encode([
             "success" => $res["success"],
             "msg" => $res["success"] ? "Success" : "Error",
             "id" => $res["asset"] ? $res["asset"]->getId() : null,
-            "fullpath" => $res["asset"] ? $res["asset"]->getFullPath() : null,
+            "fullpath" => $res["asset"] ? $res["asset"]->getRealFullPath() : null,
             "type" => $res["asset"] ? $res["asset"]->getType() : null
-        ));
+        ]);
     }
 
     protected function addAsset()
@@ -197,18 +205,18 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         if (array_key_exists("Filedata", $_FILES)) {
             $filename = $_FILES["Filedata"]["name"];
             $sourcePath = $_FILES["Filedata"]["tmp_name"];
-        } else if ($this->getParam("type") == "base64") {
+        } elseif ($this->getParam("type") == "base64") {
             $filename = $this->getParam("filename");
             $sourcePath = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/upload-base64" . uniqid() . ".tmp";
             $data = preg_replace("@^data:[^,]+;base64,@", "", $this->getParam("data"));
             File::put($sourcePath, base64_decode($data));
         }
 
-        if($this->getParam("dir") && $this->getParam("parentId")) {
+        if ($this->getParam("dir") && $this->getParam("parentId")) {
             // this is for uploading folders with Drag&Drop
             // param "dir" contains the relative path of the file
             $parent = Asset::getById($this->getParam("parentId"));
-            $newPath = $parent->getFullPath() . "/" . trim($this->getParam("dir"), "/ ");
+            $newPath = $parent->getRealFullPath() . "/" . trim($this->getParam("dir"), "/ ");
 
             // check if the path is outside of the asset directory
             $newRealPath = PIMCORE_ASSET_DIRECTORY . $newPath;
@@ -223,7 +231,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     $newParent = Asset\Service::createFolderByPath($newPath);
                     break;
                 } catch (\Exception $e) {
-                    if($retries < ($maxRetries-1)) {
+                    if ($retries < ($maxRetries-1)) {
                         $waitTime = rand(100000, 900000); // microseconds
                         usleep($waitTime); // wait specified time until we restart the transaction
                     } else {
@@ -234,19 +242,19 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             }
 
             $this->setParam("parentId", $newParent->getId());
-        } else if (!$this->getParam("parentId") && $this->getParam("parentPath")) {
+        } elseif (!$this->getParam("parentId") && $this->getParam("parentPath")) {
             $parent = Asset::getByPath($this->getParam("parentPath"));
             if ($parent instanceof Asset\Folder) {
                 $this->setParam("parentId", $parent->getId());
             } else {
                 $this->setParam("parentId", 1);
             }
-        } else if (!$this->getParam("parentId")) {
+        } elseif (!$this->getParam("parentId")) {
             // set the parent to the root folder
             $this->setParam("parentId", 1);
         }
 
-        $filename = File::getValidFilename($filename);
+        $filename = Element\Service::getValidKey($filename, "asset");
         if (empty($filename)) {
             throw new \Exception("The filename of the asset is empty");
         }
@@ -254,36 +262,34 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $parentAsset = Asset::getById(intval($this->getParam("parentId")));
 
         // check for duplicate filename
-        $filename = $this->getSafeFilename($parentAsset->getFullPath(), $filename);
+        $filename = $this->getSafeFilename($parentAsset->getRealFullPath(), $filename);
 
         if ($parentAsset->isAllowed("create")) {
-
-            if(!is_file($sourcePath) || filesize($sourcePath) < 1) {
+            if (!is_file($sourcePath) || filesize($sourcePath) < 1) {
                 throw new \Exception("Something went wrong, please check upload_max_filesize and post_max_size in your php.ini and write permissions of /website/var/");
             }
 
-            $asset = Asset::create($this->getParam("parentId"), array(
+            $asset = Asset::create($this->getParam("parentId"), [
                 "filename" => $filename,
                 "sourcePath" => $sourcePath,
                 "userOwner" => $this->user->getId(),
                 "userModification" => $this->user->getId()
-            ));
+            ]);
             $success = true;
 
             @unlink($sourcePath);
         } else {
-            \Logger::debug("prevented creating asset because of missing permissions, parent asset is " . $parentAsset->getFullPath());
+            Logger::debug("prevented creating asset because of missing permissions, parent asset is " . $parentAsset->getRealFullPath());
         }
 
-        return array(
+        return [
             "success" => $success,
             "asset" => $asset
-        );
+        ];
     }
 
     protected function getSafeFilename($targetPath, $filename)
     {
-
         $originalFilename = $filename;
         $count = 1;
 
@@ -313,16 +319,15 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         if ($asset->isAllowed("publish")) {
             $asset->save();
 
-            $this->_helper->json(array(
+            $this->_helper->json([
                 "id" => $asset->getId(),
-                "path" => $asset->getPath() . $asset->getFilename(),
+                "path" => $asset->getRealFullPath(),
                 "success" => true
-            ), false);
+            ], false);
 
             // set content-type to text/html, otherwise (when application/json is sent) chrome will complain in
             // Ext.form.Action.Submit and mark the submission as failed
             $this->getResponse()->setHeader("Content-Type", "text/html", true);
-
         } else {
             throw new \Exception("missing permission");
         }
@@ -330,71 +335,67 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function addFolderAction()
     {
-
         $success = false;
         $parentAsset = Asset::getById(intval($this->getParam("parentId")));
-        $equalAsset = Asset::getByPath($parentAsset->getFullPath() . "/" . $this->getParam("name"));
+        $equalAsset = Asset::getByPath($parentAsset->getRealFullPath() . "/" . $this->getParam("name"));
 
         if ($parentAsset->isAllowed("create")) {
-
             if (!$equalAsset) {
-                $asset = Asset::create($this->getParam("parentId"), array(
+                $asset = Asset::create($this->getParam("parentId"), [
                     "filename" => $this->getParam("name"),
                     "type" => "folder",
                     "userOwner" => $this->user->getId(),
                     "userModification" => $this->user->getId()
-                ));
+                ]);
                 $success = true;
             }
         } else {
-            \Logger::debug("prevented creating asset because of missing permissions");
+            Logger::debug("prevented creating asset because of missing permissions");
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
     public function deleteAction()
     {
         if ($this->getParam("type") == "childs") {
-
             $parentAsset = Asset::getById($this->getParam("id"));
 
             $list = new Asset\Listing();
-            $list->setCondition("path LIKE '" . $parentAsset->getFullPath() . "/%'");
+            $list->setCondition("path LIKE '" . $parentAsset->getRealFullPath() . "/%'");
             $list->setLimit(intval($this->getParam("amount")));
             $list->setOrderKey("LENGTH(path)", false);
             $list->setOrder("DESC");
 
             $assets = $list->load();
 
-            $deletedItems = array();
+            $deletedItems = [];
             foreach ($assets as $asset) {
-                $deletedItems[] = $asset->getFullPath();
+                $deletedItems[] = $asset->getRealFullPath();
                 if ($asset->isAllowed("delete")) {
                     $asset->delete();
                 }
             }
 
-            $this->_helper->json(array("success" => true, "deleted" => $deletedItems));
-
-        } else if ($this->getParam("id")) {
+            $this->_helper->json(["success" => true, "deleted" => $deletedItems]);
+        } elseif ($this->getParam("id")) {
             $asset = Asset::getById($this->getParam("id"));
 
             if ($asset->isAllowed("delete")) {
                 $asset->delete();
 
-                $this->_helper->json(array("success" => true));
+                $this->_helper->json(["success" => true]);
             }
         }
 
-        $this->_helper->json(array("success" => false, "message" => "missing_permission"));
+        $this->_helper->json(["success" => false, "message" => "missing_permission"]);
     }
 
     public function deleteInfoAction()
     {
         $hasDependency = false;
-        $deleteJobs = array();
-        $recycleJobs = array();
+        $deleteJobs = [];
+        $recycleJobs = [];
 
         $totalChilds = 0;
 
@@ -409,21 +410,20 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 }
                 $hasDependency = $asset->getDependencies()->isRequired();
             } catch (\Exception $e) {
-                \Logger::err("failed to access asset with id: " . $id);
+                Logger::err("failed to access asset with id: " . $id);
                 continue;
             }
 
 
             // check for childs
             if ($asset instanceof Asset) {
-
-                $recycleJobs[] = array(array(
+                $recycleJobs[] = [[
                     "url" => "/admin/recyclebin/add",
-                    "params" => array(
+                    "params" => [
                         "type" => "asset",
                         "id" => $asset->getId()
-                    )
-                ));
+                    ]
+                ]];
 
 
                 $hasChilds = $asset->hasChilds();
@@ -435,43 +435,50 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 if ($hasChilds) {
                     // get amount of childs
                     $list = new Asset\Listing();
-                    $list->setCondition("path LIKE '" . $asset->getFullPath() . "/%'");
+                    $list->setCondition("path LIKE '" . $asset->getRealFullPath() . "/%'");
                     $childs = $list->getTotalCount();
                     $totalChilds += $childs;
 
                     if ($childs > 0) {
                         $deleteObjectsPerRequest = 5;
                         for ($i = 0; $i < ceil($childs / $deleteObjectsPerRequest); $i++) {
-                            $deleteJobs[] = array(array(
+                            $deleteJobs[] = [[
                                 "url" => "/admin/asset/delete",
-                                "params" => array(
+                                "params" => [
                                     "step" => $i,
                                     "amount" => $deleteObjectsPerRequest,
                                     "type" => "childs",
                                     "id" => $asset->getId()
-                                )
-                            ));
+                                ]
+                            ]];
                         }
                     }
                 }
 
                 // the asset itself is the last one
-                $deleteJobs[] = array(array(
+                $deleteJobs[] = [[
                     "url" => "/admin/asset/delete",
-                    "params" => array(
+                    "params" => [
                         "id" => $asset->getId()
-                    )
-                ));
+                    ]
+                ]];
             }
         }
 
+        // get the element key in case of just one
+        $elementKey = false;
+        if (count($ids) === 1) {
+            $elementKey = Asset::getById($id)->getKey();
+        }
+
         $deleteJobs = array_merge($recycleJobs, $deleteJobs);
-        $this->_helper->json(array(
+        $this->_helper->json([
             "hasDependencies" => $hasDependency,
             "childs" => $totalChilds,
             "deletejobs" => $deleteJobs,
-            "batchDelete" => count($ids) > 1
-        ));
+            "batchDelete" => count($ids) > 1,
+            "elementKey" => $elementKey
+        ]);
     }
 
     /**
@@ -482,38 +489,39 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
     {
         $asset = $element;
 
-        $tmpAsset = array(
+        $tmpAsset = [
             "id" => $asset->getId(),
             "text" => $asset->getFilename(),
             "type" => $asset->getType(),
-            "path" => $asset->getFullPath(),
-            "basePath" => $asset->getPath(),
+            "path" => $asset->getRealFullPath(),
+            "basePath" => $asset->getRealPath(),
             "locked" => $asset->isLocked(),
             "lockOwner" => $asset->getLocked() ? true : false,
             "elementType" => "asset",
-            "permissions" => array(
+            "permissions" => [
                 "remove" => $asset->isAllowed("delete"),
                 "settings" => $asset->isAllowed("settings"),
                 "rename" => $asset->isAllowed("rename"),
                 "publish" => $asset->isAllowed("publish"),
                 "view" => $asset->isAllowed("view")
-            )
-        );
+            ]
+        ];
 
         // set type specific settings
         if ($asset->getType() == "folder") {
             $tmpAsset["leaf"] = false;
             $tmpAsset["expanded"] = $asset->hasNoChilds();
+            $tmpAsset["loaded"] = $asset->hasNoChilds();
             $tmpAsset["iconCls"] = "pimcore_icon_folder";
             $tmpAsset["permissions"]["create"] = $asset->isAllowed("create");
 
-            $folderThumbs = array();
+            $folderThumbs = [];
             $children = new Asset\Listing();
-            $children->setCondition("path LIKE ?", [$asset->getFullPath() . "/%"]);
+            $children->setCondition("path LIKE ?", [$asset->getRealFullPath() . "/%"]);
             $children->setLimit(35);
 
             foreach ($children as $child) {
-                if($child->isAllowed("list")) {
+                if ($child->isAllowed("view")) {
                     if ($thumbnailUrl = $this->getThumbnailUrl($child)) {
                         $folderThumbs[] = $thumbnailUrl;
                     }
@@ -525,12 +533,20 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             }
         } else {
             $tmpAsset["leaf"] = true;
-            $tmpAsset["iconCls"] = "pimcore_icon_" . File::getFileExtension($asset->getFilename());
+            $tmpAsset["expandable"] = false;
+            $tmpAsset["expanded"] = false;
+
+            $tmpAsset["iconCls"] = "pimcore_icon_asset_default";
+
+            $fileExt = File::getFileExtension($asset->getFilename());
+            if ($fileExt) {
+                $tmpAsset["iconCls"] .= " pimcore_icon_" . File::getFileExtension($asset->getFilename());
+            }
         }
 
-        $tmpAsset["qtipCfg"] = array(
+        $tmpAsset["qtipCfg"] = [
             "title" => "ID: " . $asset->getId()
-        );
+        ];
 
         if ($asset->getType() == "image") {
             try {
@@ -546,26 +562,25 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     $tmpAsset["imageWidth"] = $asset->getCustomSetting("imageWidth");
                     $tmpAsset["imageHeight"] = $asset->getCustomSetting("imageHeight");
                 }
-
             } catch (\Exception $e) {
-                \Logger::debug("Cannot get dimensions of image, seems to be broken.");
+                Logger::debug("Cannot get dimensions of image, seems to be broken.");
             }
-        } else if ($asset->getType() == "video") {
+        } elseif ($asset->getType() == "video") {
             try {
                 if (\Pimcore\Video::isAvailable()) {
                     $tmpAsset["thumbnail"] = $this->getThumbnailUrl($asset);
                 }
             } catch (\Exception $e) {
-                \Logger::debug("Cannot get dimensions of video, seems to be broken.");
+                Logger::debug("Cannot get dimensions of video, seems to be broken.");
             }
-        } else if ($asset->getType() == "document") {
+        } elseif ($asset->getType() == "document") {
             try {
                 // add the PDF check here, otherwise the preview layer in admin is shown without content
                 if (\Pimcore\Document::isAvailable() && \Pimcore\Document::isFileTypeSupported($asset->getFilename())) {
                     $tmpAsset["thumbnail"] = $this->getThumbnailUrl($asset);
                 }
             } catch (\Exception $e) {
-                \Logger::debug("Cannot get dimensions of video, seems to be broken.");
+                Logger::debug("Cannot get dimensions of video, seems to be broken.");
             }
         }
 
@@ -584,17 +599,17 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
     {
         if ($asset instanceof Asset\Image) {
             return "/admin/asset/get-image-thumbnail/id/" . $asset->getId() . "/treepreview/true";
-        } else if ($asset instanceof Asset\Video && \Pimcore\Video::isAvailable()) {
+        } elseif ($asset instanceof Asset\Video && \Pimcore\Video::isAvailable()) {
             return "/admin/asset/get-video-thumbnail/id/" . $asset->getId() . "/treepreview/true";
-        } else if ($asset instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
+        } elseif ($asset instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
             return "/admin/asset/get-document-thumbnail/id/" . $asset->getId() . "/treepreview/true";
         }
+
         return null;
     }
 
     public function updateAction()
     {
-
         $success = false;
         $allowUpdate = true;
 
@@ -602,7 +617,6 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
         $asset = Asset::getById($this->getParam("id"));
         if ($asset->isAllowed("settings")) {
-
             $asset->setUserModification($this->getUser()->getId());
 
             // if the position is changed the path must be changed || also from the childs
@@ -611,12 +625,11 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
                 //check if parent is changed i.e. asset is moved
                 if ($asset->getParentId() != $parentAsset->getId()) {
-
                     if (!$parentAsset->isAllowed("create")) {
                         throw new \Exception("Prevented moving asset - no create permission on new parent ");
                     }
 
-                    $intendedPath = $parentAsset->getPath();
+                    $intendedPath = $parentAsset->getRealPath();
                     $pKey = $parentAsset->getKey();
                     if (!empty($pKey)) {
                         $intendedPath .= $parentAsset->getKey() . "/";
@@ -628,7 +641,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                         $allowUpdate = false;
                     }
 
-                    if($asset->isLocked()) {
+                    if ($asset->isLocked()) {
                         $allowUpdate = false;
                     }
                 }
@@ -641,7 +654,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
                 if ($this->getParam("filename") != $asset->getFilename() and !$asset->isAllowed("rename")) {
                     unset($updateData["filename"]);
-                    \Logger::debug("prevented renaming asset because of missing permissions ");
+                    Logger::debug("prevented renaming asset because of missing permissions ");
                 }
 
                 $asset->setValues($updateData);
@@ -651,29 +664,27 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     $asset->save();
                     $success = true;
                 } catch (\Exception $e) {
-                    $this->_helper->json(array("success" => false, "message" => $e->getMessage()));
+                    $this->_helper->json(["success" => false, "message" => $e->getMessage()]);
                 }
-
-
             } else {
                 $msg = "prevented moving asset, asset with same path+key already exists at target location or the asset is locked. ID: " . $asset->getId();
-                \Logger::debug($msg);
-                $this->_helper->json(array("success" => $success, "message" => $msg));
+                Logger::debug($msg);
+                $this->_helper->json(["success" => $success, "message" => $msg]);
             }
-        } else if ($asset->isAllowed("rename") && $this->getParam("filename")) {
+        } elseif ($asset->isAllowed("rename") && $this->getParam("filename")) {
             //just rename
             try {
                 $asset->setFilename($this->getParam("filename"));
                 $asset->save();
                 $success = true;
             } catch (\Exception $e) {
-                $this->_helper->json(array("success" => false, "message" => $e->getMessage()));
+                $this->_helper->json(["success" => false, "message" => $e->getMessage()]);
             }
         } else {
-            \Logger::debug("prevented update asset because of missing permissions ");
+            Logger::debug("prevented update asset because of missing permissions ");
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
 
@@ -685,14 +696,22 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             $publicDir = new Asset\WebDAV\Folder($homeDir);
             $objectTree = new Asset\WebDAV\Tree($publicDir);
             $server = new \Sabre\DAV\Server($objectTree);
+            $server->setBaseUri("/admin/asset/webdav/");
 
+            // lock plugin
             $lockBackend = new \Sabre\DAV\Locks\Backend\File(PIMCORE_WEBDAV_TEMP . '/locks.dat');
             $lockPlugin = new \Sabre\DAV\Locks\Plugin($lockBackend);
             $server->addPlugin($lockPlugin);
 
+            // sync plugin
+            $server->addPlugin(new \Sabre\DAV\Sync\Plugin());
+
+            // browser plugin
+            $server->addPlugin(new Sabre\DAV\Browser\Plugin());
+
             $server->exec();
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
         }
 
         exit;
@@ -701,91 +720,99 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function saveAction()
     {
-        $success = false;
-        if ($this->getParam("id")) {
-            $asset = Asset::getById($this->getParam("id"));
-            if ($asset->isAllowed("publish")) {
+        try {
+            $success = false;
+            if ($this->getParam("id")) {
+                $asset = Asset::getById($this->getParam("id"));
+                if ($asset->isAllowed("publish")) {
 
 
-                // metadata
-                if($this->getParam("metadata")) {
-                    $metadata = \Zend_Json::decode($this->getParam("metadata"));
-                    $metadata = Asset\Service::minimizeMetadata($metadata);
-                    $asset->setMetadata($metadata);
-                }
+                    // metadata
+                    if ($this->getParam("metadata")) {
+                        $metadata = \Zend_Json::decode($this->getParam("metadata"));
+                        $metadata = Asset\Service::minimizeMetadata($metadata);
+                        $asset->setMetadata($metadata);
+                    }
 
-                // properties
-                if ($this->getParam("properties")) {
-                    $properties = array();
-                    $propertiesData = \Zend_Json::decode($this->getParam("properties"));
+                    // properties
+                    if ($this->getParam("properties")) {
+                        $properties = [];
+                        $propertiesData = \Zend_Json::decode($this->getParam("properties"));
 
-                    if (is_array($propertiesData)) {
-                        foreach ($propertiesData as $propertyName => $propertyData) {
+                        if (is_array($propertiesData)) {
+                            foreach ($propertiesData as $propertyName => $propertyData) {
+                                $value = $propertyData["data"];
 
-                            $value = $propertyData["data"];
+                                try {
+                                    $property = new Model\Property();
+                                    $property->setType($propertyData["type"]);
+                                    $property->setName($propertyName);
+                                    $property->setCtype("asset");
+                                    $property->setDataFromEditmode($value);
+                                    $property->setInheritable($propertyData["inheritable"]);
 
-                            try {
-                                $property = new Model\Property();
-                                $property->setType($propertyData["type"]);
-                                $property->setName($propertyName);
-                                $property->setCtype("asset");
-                                $property->setDataFromEditmode($value);
-                                $property->setInheritable($propertyData["inheritable"]);
+                                    $properties[$propertyName] = $property;
+                                } catch (\Exception $e) {
+                                    Logger::err("Can't add " . $propertyName . " to asset " . $asset->getRealFullPath());
+                                }
+                            }
 
-                                $properties[$propertyName] = $property;
-                            } catch (\Exception $e) {
-                                \Logger::err("Can't add " . $propertyName . " to asset " . $asset->getFullPath());
+                            $asset->setProperties($properties);
+                        }
+                    }
+
+                    // scheduled tasks
+                    if ($this->getParam("scheduler")) {
+                        $tasks = [];
+                        $tasksData = \Zend_Json::decode($this->getParam("scheduler"));
+
+                        if (!empty($tasksData)) {
+                            foreach ($tasksData as $taskData) {
+                                $taskData["date"] = strtotime($taskData["date"] . " " . $taskData["time"]);
+
+                                $task = new Model\Schedule\Task($taskData);
+                                $tasks[] = $task;
                             }
                         }
 
-                        $asset->setProperties($properties);
+                        $asset->setScheduledTasks($tasks);
                     }
-                }
 
-                // scheduled tasks
-                if ($this->getParam("scheduler")) {
-                    $tasks = array();
-                    $tasksData = \Zend_Json::decode($this->getParam("scheduler"));
+                    if ($this->hasParam("data")) {
+                        $asset->setData($this->getParam("data"));
+                    }
 
-                    if (!empty($tasksData)) {
-                        foreach ($tasksData as $taskData) {
-                            $taskData["date"] = strtotime($taskData["date"] . " " . $taskData["time"]);
+                    $asset->setUserModification($this->getUser()->getId());
 
-                            $task = new Model\Schedule\Task($taskData);
-                            $tasks[] = $task;
+                    try {
+                        $asset->save();
+                        $asset->getData();
+                        $success = true;
+                    } catch (\Exception $e) {
+                        if (Tool\Admin::isExtJS6() && $e instanceof Element\ValidationException) {
+                            throw $e;
                         }
+                        $this->_helper->json(["success" => false, "message" => $e->getMessage()]);
                     }
-
-                    $asset->setScheduledTasks($tasks);
+                } else {
+                    Logger::debug("prevented save asset because of missing permissions ");
                 }
 
-                if ($this->hasParam("data")) {
-                    $asset->setData($this->getParam("data"));
-                }
-
-                $asset->setUserModification($this->getUser()->getId());
-
-
-                try {
-                    $asset->save();
-                    $asset->getData();
-                    $success = true;
-                } catch (\Exception $e) {
-                    $this->_helper->json(array("success" => false, "message" => $e->getMessage()));
-                }
-            } else {
-                \Logger::debug("prevented save asset because of missing permissions ");
+                $this->_helper->json(["success" => $success]);
             }
 
-            $this->_helper->json(array("success" => $success));
+            $this->_helper->json(false);
+        } catch (\Exception $e) {
+            Logger::log($e);
+            if (Tool\Admin::isExtJS6() && $e instanceof Element\ValidationException) {
+                $this->_helper->json(["success" => false, "type" => "ValidationException", "message" => $e->getMessage(), "stack" => $e->getTraceAsString(), "code" => $e->getCode()]);
+            }
+            throw $e;
         }
-
-        $this->_helper->json(false);
     }
 
     public function publishVersionAction()
     {
-
         $version = Model\Version::getById($this->getParam("id"));
         $asset = $version->loadData();
 
@@ -794,12 +821,10 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             try {
                 $asset->setUserModification($this->getUser()->getId());
                 $asset->save();
-                $this->_helper->json(array("success" => true));
+                $this->_helper->json(["success" => true]);
             } catch (\Exception $e) {
-                $this->_helper->json(array("success" => false, "message" => $e->getMessage()));
+                $this->_helper->json(["success" => false, "message" => $e->getMessage()]);
             }
-
-
         }
 
         $this->_helper->json(false);
@@ -811,7 +836,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $version = Model\Version::getById($id);
         $asset = $version->loadData();
 
-        if($asset->isAllowed("versions")) {
+        if ($asset->isAllowed("versions")) {
             $this->view->asset = $asset;
             $this->render("show-version-" . $asset->getType());
         } else {
@@ -826,9 +851,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         if ($asset->isAllowed("view")) {
             header("Content-Type: " . $asset->getMimetype(), true);
             header('Content-Disposition: attachment; filename="' . $asset->getFilename() . '"');
-            header("Content-Length: " . filesize($asset->getFileSystemPath()), true);
-
-            while (@ob_end_flush()) ;
+            header("Content-Length: " . filesize($asset->getFileSystemPath()), true); while (@ob_end_flush()) ;
             flush();
 
             readfile($asset->getFileSystemPath());
@@ -838,8 +861,102 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $this->removeViewRenderer();
     }
 
-    public function getImageThumbnailAction() {
+    public function downloadImageThumbnailAction()
+    {
+        $image = Asset\Image::getById($this->getParam("id"));
+        $config = null;
 
+        if ($this->getParam("config")) {
+            $config = \Zend_Json::decode($this->getParam("config"));
+        } elseif ($this->getParam("type")) {
+            $predefined = [
+                "web" => [
+                    "resize_mode" => "scaleByWidth",
+                    "width" => 3500,
+                    "dpi" => 72,
+                    "format" => "JPEG",
+                    "quality" => 85
+                ],
+                "print" => [
+                    "resize_mode" => "scaleByWidth",
+                    "width" => 6000,
+                    "dpi" => 300,
+                    "format" => "JPEG",
+                    "quality" => 95
+                ],
+                "office" => [
+                    "resize_mode" => "scaleByWidth",
+                    "width" => 1190,
+                    "dpi" => 144,
+                    "format" => "JPEG",
+                    "quality" => 90
+                ],
+            ];
+
+            $config = $predefined[$this->getParam("type")];
+        }
+
+        if ($config) {
+            $thumbnailConfig = new Asset\Image\Thumbnail\Config();
+            $thumbnailConfig->setName("pimcore-download-" . $image->getId() . "-" . md5($this->getParam("config")));
+
+            if ($config["resize_mode"] == "scaleByWidth") {
+                $thumbnailConfig->addItem("scaleByWidth", [
+                    "width" => $config["width"]
+                ]);
+            } elseif ($config["resize_mode"] == "scaleByHeight") {
+                $thumbnailConfig->addItem("scaleByHeight", [
+                    "height" => $config["height"]
+                ]);
+            } else {
+                $thumbnailConfig->addItem("resize", [
+                    "width" => $config["width"],
+                    "height" => $config["height"]
+                ]);
+            }
+
+            $thumbnailConfig->setQuality($config["quality"]);
+            $thumbnailConfig->setFormat($config["format"]);
+
+
+            if ($thumbnailConfig->getFormat() == "JPEG") {
+                $thumbnailConfig->setPreserveMetaData(true);
+                $thumbnailConfig->setPreserveColor(true);
+            }
+
+            $thumbnail = $image->getThumbnail($thumbnailConfig);
+            $thumbnailFile = $thumbnail->getFileSystemPath();
+
+            $exiftool = \Pimcore\Tool\Console::getExecutable("exiftool");
+            if ($thumbnailConfig->getFormat() == "JPEG" && $exiftool && isset($config["dpi"]) && $config["dpi"]) {
+                \Pimcore\Tool\Console::exec($exiftool . " -overwrite_original -xresolution=" . $config["dpi"] . " -yresolution=" . $config["dpi"] . " -resolutionunit=inches " . escapeshellarg($thumbnailFile));
+            }
+
+            $downloadFilename = str_replace("." . File::getFileExtension($image->getFilename()),
+                "." . $thumbnail->getFileExtension(), $image->getFilename());
+            $downloadFilename = strtolower($downloadFilename);
+            header('Content-Disposition: attachment; filename="' . $downloadFilename . '"');
+
+            header("Content-Type: " . $thumbnail->getMimeType(), true);
+
+            // we have to clear the stat cache here, otherwise filesize() would return the wrong value
+            // the reason is that exiftool modifies the file's size, but PHP doesn't know anything about that
+            clearstatcache();
+            header("Content-Length: " . filesize($thumbnailFile), true);
+            $this->sendThumbnailCacheHeaders();
+            while (@ob_end_flush()) {
+                ;
+            }
+            flush();
+
+            readfile($thumbnailFile);
+            @unlink($thumbnailFile);
+            exit;
+        }
+    }
+
+    public function getImageThumbnailAction()
+    {
         $fileinfo = $this->getParam("fileinfo");
         $image = Asset\Image::getById(intval($this->getParam("id")));
         $thumbnail = null;
@@ -848,7 +965,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             $thumbnail = $image->getThumbnailConfig($this->getParam("thumbnail"));
         }
         if (!$thumbnail) {
-            if($this->getParam("config")) {
+            if ($this->getParam("config")) {
                 $thumbnail = $image->getThumbnailConfig(\Zend_Json::decode($this->getParam("config")));
             } else {
                 $thumbnail = $image->getThumbnailConfig($this->getAllParams());
@@ -863,51 +980,37 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $format = strtolower($thumbnail->getFormat());
         if ($format == "source" || $format == "print") {
             $thumbnail->setFormat("PNG");
-            $format = "png";
         }
 
-        if($this->getParam("treepreview")) {
+        if ($this->getParam("treepreview")) {
             $thumbnail = Asset\Image\Thumbnail\Config::getPreviewConfig();
         }
 
         if ($this->getParam("cropPercent")) {
-            $thumbnail->addItemAt(0,"cropPercent", array(
+            $thumbnail->addItemAt(0, "cropPercent", [
                 "width" => $this->getParam("cropWidth"),
                 "height" => $this->getParam("cropHeight"),
                 "y" => $this->getParam("cropTop"),
                 "x" => $this->getParam("cropLeft")
-            ));
+            ]);
 
             $hash = md5(Tool\Serialize::serialize($this->getAllParams()));
             $thumbnail->setName($thumbnail->getName() . "_auto_" . $hash);
         }
 
-        if($this->getParam("download")) {
-            $downloadFilename = str_replace("." . File::getFileExtension($image->getFilename()), "." . $thumbnail->getFormat(), $image->getFilename());
-            $downloadFilename = strtolower($downloadFilename);
-            header('Content-Disposition: attachment; filename="' . $downloadFilename . '"');
-        }
-
         $thumbnail = $image->getThumbnail($thumbnail);
 
         if ($fileinfo) {
-            $this->_helper->json(array(
+            $this->_helper->json([
                 "width" => $thumbnail->getWidth(),
-                "height" => $thumbnail->getHeight()));
+                "height" => $thumbnail->getHeight()]);
         }
 
-        $thumbnailFile = PIMCORE_DOCUMENT_ROOT . $thumbnail;
-        $fileExtension = File::getFileExtension($thumbnailFile);
-        if(in_array($fileExtension, array("gif","jpeg","jpeg","png","pjpeg"))) {
-            header("Content-Type: image/".$fileExtension, true);
-        } else {
-            header("Content-Type: " . $image->getMimetype(), true);
-        }
-
+        $thumbnailFile = $thumbnail->getFileSystemPath();
+        header("Content-Type: " . $thumbnail->getMimeType(), true);
+        header("Access-Control-Allow-Origin: *"); // for Aviary.Feather (Adobe Creative SDK)
         header("Content-Length: " . filesize($thumbnailFile), true);
-        $this->sendThumbnailCacheHeaders();
-
-        while(@ob_end_flush());
+        $this->sendThumbnailCacheHeaders(); while (@ob_end_flush());
         flush();
 
         readfile($thumbnailFile);
@@ -916,19 +1019,13 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function getVideoThumbnailAction()
     {
-
         if ($this->getParam("id")) {
             $video = Asset::getById(intval($this->getParam("id")));
-        } else if ($this->getParam("path")) {
+        } elseif ($this->getParam("path")) {
             $video = Asset::getByPath($this->getParam("path"));
         }
-        $thumbnail = $video->getImageThumbnailConfig($this->getAllParams());
 
-        $format = strtolower($thumbnail->getFormat());
-        if ($format == "source") {
-            $thumbnail->setFormat("PNG");
-            $format = "png";
-        }
+        $thumbnail = $this->getAllParams();
 
         if ($this->getParam("treepreview")) {
             $thumbnail = Asset\Image\Thumbnail\Config::getPreviewConfig();
@@ -956,13 +1053,12 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             $video->save();
         }
 
-        $thumbnailFile = PIMCORE_DOCUMENT_ROOT . $video->getImageThumbnail($thumbnail, $time, $image);
+        $thumb = $video->getImageThumbnail($thumbnail, $time, $image);
+        $thumbnailFile = $thumb->getFileSystemPath();
 
-        header("Content-type: image/" . $format, true);
+        header("Content-type: image/" . File::getFileExtension($thumbnailFile), true);
         header("Content-Length: " . filesize($thumbnailFile), true);
-        $this->sendThumbnailCacheHeaders();
-
-        while (@ob_end_flush()) ;
+        $this->sendThumbnailCacheHeaders(); while (@ob_end_flush()) ;
         flush();
 
         readfile($thumbnailFile);
@@ -971,7 +1067,6 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function getDocumentThumbnailAction()
     {
-
         $document = Asset::getById(intval($this->getParam("id")));
         $thumbnail = Asset\Image\Thumbnail\Config::getByAutoDetect($this->getAllParams());
 
@@ -990,14 +1085,13 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         }
 
 
-        $thumbnailFile = PIMCORE_DOCUMENT_ROOT . $document->getImageThumbnail($thumbnail, $page);
+        $thumb = $document->getImageThumbnail($thumbnail, $page);
+        $thumbnailFile = $thumb->getFileSystemPath();
 
         $format = "png";
         header("Content-type: image/" . $format, true);
         header("Content-Length: " . filesize($thumbnailFile), true);
-        $this->sendThumbnailCacheHeaders();
-
-        while (@ob_end_flush()) ;
+        $this->sendThumbnailCacheHeaders(); while (@ob_end_flush()) ;
         flush();
 
         readfile($thumbnailFile);
@@ -1009,8 +1103,11 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $this->getResponse()->clearAllHeaders();
 
         $lifetime = 300;
+        $date = new \DateTime("now");
+        $date->add(new \DateInterval("PT" . $lifetime . "S"));
+
         header("Cache-Control: public, max-age=" . $lifetime, true);
-        header("Expires: " . \Zend_Date::now()->add($lifetime)->get(\Zend_Date::RFC_1123), true);
+        header("Expires: " . $date->format(\DateTime::RFC1123), true);
         header("Pragma: ");
     }
 
@@ -1023,14 +1120,13 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function getPreviewVideoAction()
     {
-
         $asset = Asset::getById($this->getParam("id"));
 
         $this->view->asset = $asset;
 
         $config = Asset\Video\Thumbnail\Config::getPreviewConfig();
 
-        $thumbnail = $asset->getThumbnail($config, array("mp4"));
+        $thumbnail = $asset->getThumbnail($config, ["mp4"]);
 
         if ($thumbnail) {
             $this->view->asset = $asset;
@@ -1046,21 +1142,24 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         }
     }
 
-
-    public function saveImagePixlrAction()
+    public function imageEditorAction()
     {
-
         $asset = Asset::getById($this->getParam("id"));
-        $asset->setData(Tool::getHttpData($this->getParam("image")));
+        $this->view->asset = $asset;
+    }
+
+    public function imageEditorSaveAction()
+    {
+        $asset = Asset::getById($this->getParam("id"));
+        $asset->setData(Tool::getHttpData($this->getParam("url")));
         $asset->setUserModification($this->getUser()->getId());
         $asset->save();
 
-        $this->view->asset = $asset;
+        $this->_helper->json(["success" => true]);
     }
 
     public function getFolderContentPreviewAction()
     {
-
         $folder = Asset::getById($this->getParam("id"));
 
         $start = 0;
@@ -1072,116 +1171,119 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         if ($this->getParam("start")) {
             $start = $this->getParam("start");
         }
-        
-        $condition = "path LIKE '" . ($folder->getFullPath() == "/" ? "/%'" : $folder->getFullPath() . "/%'") ." AND type != 'folder'";
 
-        $list = Asset::getList(array(
+        $condition = "path LIKE '" . ($folder->getRealFullPath() == "/" ? "/%'" : $folder->getRealFullPath() . "/%'") ." AND type != 'folder'";
+
+        $list = Asset::getList([
             "condition" => $condition,
             "limit" => $limit,
             "offset" => $start,
             "orderKey" => "filename",
             "order" => "asc"
-        ));
+        ]);
 
-        $assets = array();
+        $assets = [];
 
         foreach ($list as $asset) {
-
             $thumbnailMethod = "";
             if ($asset instanceof Asset\Image) {
                 $thumbnailMethod = "getThumbnail";
-            } else if ($asset instanceof Asset\Video && \Pimcore\Video::isAvailable()) {
+            } elseif ($asset instanceof Asset\Video && \Pimcore\Video::isAvailable()) {
                 $thumbnailMethod = "getImageThumbnail";
-            } else if ($asset instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
+            } elseif ($asset instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
                 $thumbnailMethod = "getImageThumbnail";
             }
 
             if (!empty($thumbnailMethod)) {
-                $assets[] = array(
+                $filenameDisplay = $asset->getFilename();
+                if (strlen($filenameDisplay) > 32) {
+                    $filenameDisplay = substr($filenameDisplay, 0, 25) . "..." . \Pimcore\File::getFileExtension($filenameDisplay);
+                }
+
+                $assets[] = [
                     "id" => $asset->getId(),
                     "type" => $asset->getType(),
                     "filename" => $asset->getFilename(),
+                    "filenameDisplay" => $filenameDisplay,
                     "url" => "/admin/asset/get-" . $asset->getType() . "-thumbnail/id/" . $asset->getId() . "/treepreview/true",
                     "idPath" => $data["idPath"] = Element\Service::getIdPath($asset)
-                );
+                ];
             }
         }
 
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "assets" => $assets,
             "success" => true,
             "total" => $list->getTotalCount()
-        ));
+        ]);
     }
 
     public function copyInfoAction()
     {
-
         $transactionId = time();
-        $pasteJobs = array();
+        $pasteJobs = [];
 
         Tool\Session::useSession(function ($session) use ($transactionId) {
-            $session->$transactionId = array();
+            $session->$transactionId = [];
         }, "pimcore_copy");
 
 
         if ($this->getParam("type") == "recursive") {
-
             $asset = Asset::getById($this->getParam("sourceId"));
 
             // first of all the new parent
-            $pasteJobs[] = array(array(
+            $pasteJobs[] = [[
                 "url" => "/admin/asset/copy",
-                "params" => array(
+                "params" => [
                     "sourceId" => $this->getParam("sourceId"),
                     "targetId" => $this->getParam("targetId"),
                     "type" => "child",
                     "transactionId" => $transactionId,
                     "saveParentId" => true
-                )
-            ));
+                ]
+            ]];
 
             if ($asset->hasChilds()) {
                 // get amount of childs
                 $list = new Asset\Listing();
-                $list->setCondition("path LIKE '" . $asset->getFullPath() . "/%'");
+                $list->setCondition("path LIKE '" . $asset->getRealFullPath() . "/%'");
                 $list->setOrderKey("LENGTH(path)", false);
                 $list->setOrder("ASC");
                 $childIds = $list->loadIdList();
 
                 if (count($childIds) > 0) {
                     foreach ($childIds as $id) {
-                        $pasteJobs[] = array(array(
+                        $pasteJobs[] = [[
                             "url" => "/admin/asset/copy",
-                            "params" => array(
+                            "params" => [
                                 "sourceId" => $id,
                                 "targetParentId" => $this->getParam("targetId"),
                                 "sourceParentId" => $this->getParam("sourceId"),
                                 "type" => "child",
                                 "transactionId" => $transactionId
-                            )
-                        ));
+                            ]
+                        ]];
                     }
                 }
             }
-        } else if ($this->getParam("type") == "child" || $this->getParam("type") == "replace") {
+        } elseif ($this->getParam("type") == "child" || $this->getParam("type") == "replace") {
             // the object itself is the last one
-            $pasteJobs[] = array(array(
+            $pasteJobs[] = [[
                 "url" => "/admin/asset/copy",
-                "params" => array(
+                "params" => [
                     "sourceId" => $this->getParam("sourceId"),
                     "targetId" => $this->getParam("targetId"),
                     "type" => $this->getParam("type"),
                     "transactionId" => $transactionId
-                )
-            ));
+                ]
+            ]];
         }
 
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "pastejobs" => $pasteJobs
-        ));
+        ]);
     }
 
 
@@ -1203,7 +1305,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 $targetParent = Asset::getById($this->getParam("targetParentId"));
             }
 
-            $targetPath = preg_replace("@^" . $sourceParent->getFullPath() . "@", $targetParent . "/", $source->getPath());
+            $targetPath = preg_replace("@^" . $sourceParent->getRealFullPath() . "@", $targetParent . "/", $source->getRealPath());
             $target = Asset::getByPath($targetPath);
         } else {
             $target = Asset::getById($targetId);
@@ -1219,74 +1321,71 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     if ($this->getParam("saveParentId")) {
                         $session->{$this->getParam("transactionId")}["parentId"] = $newAsset->getId();
                     }
-                } else if ($this->getParam("type") == "replace") {
+                } elseif ($this->getParam("type") == "replace") {
                     $this->_assetService->copyContents($target, $source);
                 }
 
                 $success = true;
             } else {
-                \Logger::debug("prevended copy/paste because asset with same path+key already exists in this location");
+                Logger::debug("prevended copy/paste because asset with same path+key already exists in this location");
             }
         } else {
-            \Logger::error("could not execute copy/paste because of missing permissions on target [ " . $targetId . " ]");
-            $this->_helper->json(array("error" => false, "message" => "missing_permission"));
+            Logger::error("could not execute copy/paste because of missing permissions on target [ " . $targetId . " ]");
+            $this->_helper->json(["error" => false, "message" => "missing_permission"]);
         }
 
         Tool\Session::writeClose();
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
 
     public function downloadAsZipJobsAction()
     {
-
         $jobId = uniqid();
         $filesPerJob = 5;
-        $jobs = array();
+        $jobs = [];
         $asset = Asset::getById($this->getParam("id"));
 
         if ($asset->isAllowed("view")) {
-            $parentPath = $asset->getFullPath();
+            $parentPath = $asset->getRealFullPath();
             if ($asset->getId() == 1) {
                 $parentPath = "";
             }
 
             $assetList = new Asset\Listing();
-            $assetList->setCondition("path LIKE ? AND type != ?", array($parentPath . "/%", "folder"));
+            $assetList->setCondition("path LIKE ? AND type != ?", [$parentPath . "/%", "folder"]);
             $assetList->setOrderKey("LENGTH(path)", false);
             $assetList->setOrder("ASC");
 
             for ($i = 0; $i < ceil($assetList->getTotalCount() / $filesPerJob); $i++) {
-                $jobs[] = array(array(
+                $jobs[] = [[
                     "url" => "/admin/asset/download-as-zip-add-files",
-                    "params" => array(
+                    "params" => [
                         "id" => $asset->getId(),
                         "offset" => $i * $filesPerJob,
                         "limit" => $filesPerJob,
                         "jobId" => $jobId
-                    )
-                ));
+                    ]
+                ]];
             }
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "success" => true,
             "jobs" => $jobs,
             "jobId" => $jobId
-        ));
+        ]);
     }
 
 
     public function downloadAsZipAddFilesAction()
     {
-
         $zipFile = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/download-zip-" . $this->getParam("jobId") . ".zip";
         $asset = Asset::getById($this->getParam("id"));
         $success = false;
 
         if ($asset->isAllowed("view")) {
-
             $zip = new \ZipArchive();
             if (!is_file($zipFile)) {
                 $zipState = $zip->open($zipFile, \ZipArchive::CREATE);
@@ -1294,9 +1393,8 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 $zipState = $zip->open($zipFile);
             }
 
-            if ($zipState === TRUE) {
-
-                $parentPath = $asset->getFullPath();
+            if ($zipState === true) {
+                $parentPath = $asset->getRealFullPath();
                 if ($asset->getId() == 1) {
                     $parentPath = "";
                 }
@@ -1311,7 +1409,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     if ($a->isAllowed("view")) {
                         if (!$a instanceof Asset\Folder) {
                             // add the file with the relative path to the parent directory
-                            $zip->addFile($a->getFileSystemPath(), preg_replace("@^" . preg_quote($asset->getPath(), "@") . "@i", "", $a->getFullPath()));
+                            $zip->addFile($a->getFileSystemPath(), preg_replace("@^" . preg_quote($asset->getRealPath(), "@") . "@i", "", $a->getRealFullPath()));
                         }
                     }
                 }
@@ -1319,12 +1417,11 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 $zip->close();
                 $success = true;
             }
-
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "success" => $success
-        ));
+        ]);
     }
 
     /**
@@ -1333,7 +1430,6 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
      */
     public function downloadAsZipAction()
     {
-
         $asset = Asset::getById($this->getParam("id"));
         $zipFile = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/download-zip-" . $this->getParam("jobId") . ".zip";
         $suggestedFilename = $asset->getFilename();
@@ -1343,9 +1439,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
         header("Content-Type: application/zip");
         header("Content-Length: " . filesize($zipFile));
-        header('Content-Disposition: attachment; filename="' . $suggestedFilename . '.zip"');
-
-        while (@ob_end_flush()) ;
+        header('Content-Disposition: attachment; filename="' . $suggestedFilename . '.zip"'); while (@ob_end_flush()) ;
         flush();
 
         readfile($zipFile);
@@ -1356,10 +1450,9 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
     public function importZipAction()
     {
-
         $jobId = uniqid();
         $filesPerJob = 5;
-        $jobs = array();
+        $jobs = [];
         $asset = Asset::getById($this->getParam("parentId"));
         $zipFile = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/" . $jobId . ".zip";
 
@@ -1369,16 +1462,16 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         if ($zip->open($zipFile) === true) {
             $jobAmount = ceil($zip->numFiles / $filesPerJob);
             for ($i = 0; $i < $jobAmount; $i++) {
-                $jobs[] = array(array(
+                $jobs[] = [[
                     "url" => "/admin/asset/import-zip-files",
-                    "params" => array(
+                    "params" => [
                         "parentId" => $asset->getId(),
                         "offset" => $i * $filesPerJob,
                         "limit" => $filesPerJob,
                         "jobId" => $jobId,
                         "last" => (($i + 1) >= $jobAmount) ? "true" : ""
-                    )
-                ));
+                    ]
+                ]];
             }
             $zip->close();
         }
@@ -1387,11 +1480,11 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         // Content-Type: application/json which fires a download window in most browsers, because this is a normal POST
         // request and not XHR where the content-type doesn't matter
         $this->disableViewAutoRender();
-        echo \Zend_Json::encode(array(
+        echo \Zend_Json::encode([
             "success" => true,
             "jobs" => $jobs,
             "jobId" => $jobId
-        ));
+        ]);
     }
 
     public function importZipFilesAction()
@@ -1414,34 +1507,32 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
                 if ($path !== false) {
                     if ($zip->extractTo($tmpDir . "/", $path)) {
-
                         $tmpFile = $tmpDir . "/" . preg_replace("@^/@", "", $path);
 
-                        $filename = File::getValidFilename(basename($path));
+                        $filename = Element\Service::getValidKey(basename($path), "asset");
 
                         $relativePath = "";
                         if (dirname($path) != ".") {
                             $relativePath = dirname($path);
                         }
 
-                        $parentPath = $importAsset->getFullPath() . "/" . preg_replace("@^/@", "", $relativePath);
+                        $parentPath = $importAsset->getRealFullPath() . "/" . preg_replace("@^/@", "", $relativePath);
                         $parent = Asset\Service::createFolderByPath($parentPath);
 
                         // check for duplicate filename
-                        $filename = $this->getSafeFilename($parent->getFullPath(), $filename);
+                        $filename = $this->getSafeFilename($parent->getRealFullPath(), $filename);
 
                         if ($parent->isAllowed("create")) {
-
-                            $asset = Asset::create($parent->getId(), array(
+                            $asset = Asset::create($parent->getId(), [
                                 "filename" => $filename,
                                 "sourcePath" => $tmpFile,
                                 "userOwner" => $this->user->getId(),
                                 "userModification" => $this->user->getId()
-                            ));
+                            ]);
 
                             @unlink($tmpFile);
                         } else {
-                            \Logger::debug("prevented creating asset because of missing permissions");
+                            Logger::debug("prevented creating asset because of missing permissions");
                         }
                     }
                 }
@@ -1453,48 +1544,47 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             unlink($zipFile);
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "success" => true
-        ));
+        ]);
     }
 
     public function importServerAction()
     {
-
         $success = true;
         $filesPerJob = 5;
-        $jobs = array();
+        $jobs = [];
         $importDirectory = str_replace("/fileexplorer", PIMCORE_DOCUMENT_ROOT, $this->getParam("serverPath"));
         if (is_dir($importDirectory)) {
-
             $files = rscandir($importDirectory . "/");
             $count = count($files);
-            $jobFiles = array();
+            $jobFiles = [];
 
             for ($i = 0; $i < $count; $i++) {
-
-                if (is_dir($files[$i])) continue;
+                if (is_dir($files[$i])) {
+                    continue;
+                }
 
                 $jobFiles[] = preg_replace("@^" . preg_quote($importDirectory, "@") . "@", "", $files[$i]);
 
                 if (count($jobFiles) >= $filesPerJob || $i >= ($count - 1)) {
-                    $jobs[] = array(array(
+                    $jobs[] = [[
                         "url" => "/admin/asset/import-server-files",
-                        "params" => array(
+                        "params" => [
                             "parentId" => $this->getParam("parentId"),
                             "serverPath" => $importDirectory,
                             "files" => implode("::", $jobFiles)
-                        )
-                    ));
-                    $jobFiles = array();
+                        ]
+                    ]];
+                    $jobFiles = [];
                 }
             }
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "success" => $success,
             "jobs" => $jobs
-        ));
+        ]);
     }
 
     public function importServerFilesAction()
@@ -1507,29 +1597,29 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             $absolutePath = $serverPath . $file;
             if (is_file($absolutePath)) {
                 $relFolderPath = str_replace('\\', '/', dirname($file));
-                $folder = Asset\Service::createFolderByPath($assetFolder->getFullPath() . $relFolderPath);
+                $folder = Asset\Service::createFolderByPath($assetFolder->getRealFullPath() . $relFolderPath);
                 $filename = basename($file);
 
                 // check for duplicate filename
-                $filename = File::getValidFilename($filename);
-                $filename = $this->getSafeFilename($folder->getFullPath(), $filename);
+                $filename = Element\Service::getValidKey($filename, "asset");
+                $filename = $this->getSafeFilename($folder->getRealFullPath(), $filename);
 
                 if ($assetFolder->isAllowed("create")) {
-                    $asset = Asset::create($folder->getId(), array(
+                    $asset = Asset::create($folder->getId(), [
                         "filename" => $filename,
                         "sourcePath" => $absolutePath,
                         "userOwner" => $this->getUser()->getId(),
                         "userModification" => $this->getUser()->getId()
-                    ));
+                    ]);
                 } else {
-                    \Logger::debug("prevented creating asset because of missing permissions ");
+                    Logger::debug("prevented creating asset because of missing permissions ");
                 }
             }
         }
 
-        $this->_helper->json(array(
+        $this->_helper->json([
             "success" => true
-        ));
+        ]);
     }
 
     public function importUrlAction()
@@ -1541,34 +1631,33 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
         $parentId = $this->getParam("id");
         $parentAsset = Asset::getById(intval($parentId));
 
-        $filename = File::getValidFilename($filename);
-        $filename = $this->getSafeFilename($parentAsset->getFullPath(), $filename);
+        $filename = Element\Service::getValidKey($filename, "asset");
+        $filename = $this->getSafeFilename($parentAsset->getRealFullPath(), $filename);
 
         if (empty($filename)) {
             throw new \Exception("The filename of the asset is empty");
         }
 
         // check for duplicate filename
-        $filename = $this->getSafeFilename($parentAsset->getFullPath(), $filename);
+        $filename = $this->getSafeFilename($parentAsset->getRealFullPath(), $filename);
 
         if ($parentAsset->isAllowed("create")) {
-            $asset = Asset::create($parentId, array(
+            $asset = Asset::create($parentId, [
                 "filename" => $filename,
                 "data" => $data,
                 "userOwner" => $this->user->getId(),
                 "userModification" => $this->user->getId()
-            ));
+            ]);
             $success = true;
         } else {
-            \Logger::debug("prevented creating asset because of missing permissions");
+            Logger::debug("prevented creating asset because of missing permissions");
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
     public function clearThumbnailAction()
     {
-
         $success = false;
 
         if ($asset = Asset::getById($this->getParam("id"))) {
@@ -1580,17 +1669,17 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
             }
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
-    public function gridProxyAction() {
-
+    public function gridProxyAction()
+    {
         if ($this->getParam("data")) {
             if ($this->getParam("xaction") == "update") {
                 //TODO probably not needed
             }
         } else {
-            $db = \Pimcore\Resource::get();
+            $db = \Pimcore\Db::get();
                 // get list of objects
             $folder = Asset::getById($this->getParam("folderId"));
 
@@ -1608,56 +1697,52 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                 $start = $this->getParam("start");
             }
 
-            if ($this->getParam("dir")) {
-                $order = $this->getParam("dir");
-            }
-
-            if ($this->getParam("sort")) {
-                $orderKey = $this->getParam("sort");
+            $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+            if ($sortingSettings['orderKey']) {
+                $orderKey = $sortingSettings['orderKey'];
                 if ($orderKey == "fullpath") {
-                    $orderKey = array("path" , "filename");
+                    $orderKey = ["path", "filename"];
                 }
+
+                $order = $sortingSettings['order'];
             }
 
-            $conditionFilters = array();
-            if($this->getParam("only_direct_children") == "true") {
+            $conditionFilters = [];
+            if ($this->getParam("only_direct_children") == "true") {
                 $conditionFilters[] = "parentId = " . $folder->getId();
             } else {
-                $conditionFilters[] = "path LIKE '" . ($folder->getFullPath() == "/" ? "/%'" : $folder->getFullPath() . "/%'");
+                $conditionFilters[] = "path LIKE '" . ($folder->getRealFullPath() == "/" ? "/%'" : $folder->getRealFullPath() . "/%'");
             }
 
             $conditionFilters[] = "type != 'folder'";
             $filterJson = $this->getParam("filter");
             if ($filterJson) {
-
-
                 $filters = \Zend_Json::decode($filterJson);
                 foreach ($filters as $filter) {
-
                     $operator = "=";
 
-                    if($filter["type"] == "string") {
+                    if ($filter["type"] == "string") {
                         $operator = "LIKE";
-                    } else if ($filter["type"] == "numeric") {
-                        if($filter["comparison"] == "lt") {
+                    } elseif ($filter["type"] == "numeric") {
+                        if ($filter["comparison"] == "lt") {
                             $operator = "<";
-                        } else if($filter["comparison"] == "gt") {
+                        } elseif ($filter["comparison"] == "gt") {
                             $operator = ">";
-                        } else if($filter["comparison"] == "eq") {
+                        } elseif ($filter["comparison"] == "eq") {
                             $operator = "=";
                         }
-                    } else if ($filter["type"] == "date") {
-                        if($filter["comparison"] == "lt") {
+                    } elseif ($filter["type"] == "date") {
+                        if ($filter["comparison"] == "lt") {
                             $operator = "<";
-                        } else if($filter["comparison"] == "gt") {
+                        } elseif ($filter["comparison"] == "gt") {
                             $operator = ">";
-                        } else if($filter["comparison"] == "eq") {
+                        } elseif ($filter["comparison"] == "eq") {
                             $operator = "=";
                         }
                         $filter["value"] = strtotime($filter["value"]);
-                    } else if ($filter["type"] == "list") {
+                    } elseif ($filter["type"] == "list") {
                         $operator = "=";
-                    } else if ($filter["type"] == "boolean") {
+                    } elseif ($filter["type"] == "boolean") {
                         $operator = "=";
                         $filter["value"] = (int) $filter["value"];
                     }
@@ -1668,7 +1753,7 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
                     }
 
                     $field = "`" . $filter["field"] . "` ";
-                    if($filter["field"] == "fullpath") {
+                    if ($filter["field"] == "fullpath") {
                         $field = "CONCAT(path,filename)";
                     }
 
@@ -1686,34 +1771,35 @@ class Admin_AssetController extends \Pimcore\Controller\Action\Admin\Element
 
             $list->load();
 
-            $assets = array();
+            $assets = [];
             foreach ($list->getAssets() as $asset) {
 
                 /** @var $asset Asset */
-                $filename = PIMCORE_ASSET_DIRECTORY . "/" . $asset->getFullPath();
-                $size = filesize($filename);
+                $filename = PIMCORE_ASSET_DIRECTORY . "/" . $asset->getRealFullPath();
+                $size = @filesize($filename);
 
-                $assets[] = array(
+                $assets[] = [
                     "id" => $asset->getid(),
                     "type" => $asset->getType(),
-                    "fullpath" => $asset->getFullPath(),
+                    "fullpath" => $asset->getRealFullPath(),
                     "creationDate" => $asset->getCreationDate(),
                     "modificationDate" => $asset->getModificationDate(),
                     "size" => formatBytes($size),
                     "idPath" => $data["idPath"] = Element\Service::getIdPath($asset)
-                );
+                ];
             }
 
-            $this->_helper->json(array("data" => $assets, "success" => true, "total" => $list->getTotalCount()));
+            $this->_helper->json(["data" => $assets, "success" => true, "total" => $list->getTotalCount()]);
         }
     }
 
-    public function getTextAction(){
+    public function getTextAction()
+    {
         $asset = Asset::getById($this->getParam('id'));
         $page = $this->getParam('page');
-        if($asset instanceof Asset\Document){
+        if ($asset instanceof Asset\Document) {
             $text = $asset->getText($page);
         }
-        $this->_helper->json(array('success' => 'true','text' => $text));
+        $this->_helper->json(['success' => 'true', 'text' => $text]);
     }
 }

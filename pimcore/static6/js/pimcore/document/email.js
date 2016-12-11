@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.email");
@@ -37,6 +36,9 @@ pimcore.document.email = Class.create(pimcore.document.page_snippet, {
         if (this.isAllowed("settings")) {
             this.settings = new pimcore.document.emails.settings(this);
             this.scheduler = new pimcore.element.scheduler(this, "document");
+        }
+
+        if (user.isAllowed("notes_events")) {
             this.notes = new pimcore.element.notes(this, "document");
         }
 
@@ -50,6 +52,8 @@ pimcore.document.email = Class.create(pimcore.document.page_snippet, {
         this.dependencies = new pimcore.element.dependencies(this, "document");
         this.preview = new pimcore.document.pages.preview(this);
         this.reports = new pimcore.report.panel("document_snippet", this);
+
+        this.tagAssignment = new pimcore.element.tag.assignment(this, "document");
     },
 
     getTabPanel: function () {
@@ -80,8 +84,12 @@ pimcore.document.email = Class.create(pimcore.document.page_snippet, {
             items.push(reportLayout);
         }
 
-        if (this.isAllowed("settings")) {
+        if (user.isAllowed("notes_events")) {
             items.push(this.notes.getLayout());
+        }
+
+        if (user.isAllowed("tags_assignment")) {
+            items.push(this.tagAssignment.getLayout());
         }
 
         this.tabbar = new Ext.TabPanel({

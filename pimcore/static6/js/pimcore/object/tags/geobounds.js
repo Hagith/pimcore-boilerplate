@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 /*global google */
 pimcore.registerNS('pimcore.object.tags.geobounds');
@@ -20,6 +19,10 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
     dirty: false,
 
     getLayoutEdit: function () {
+
+        if(!this.isMapsAvailable()) {
+            return this.getErrorLayout();
+        }
 
         this.mapImageID = uniqid();
 
@@ -35,12 +38,11 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
             height: 370,
             width: 650,
             componentCls: 'object_field object_geo_field',
-            html: '<div id="google_maps_container_' + this.mapImageID + '" align="center">'
-                        + '<img align="center" width="300" height="300" src="' + this.getMapUrl(this.fieldConfig, this.data) + '" /></div>',
+            html: '<div id="google_maps_container_' + this.mapImageID + '" align="center"></div>',
             bbar: [{
                 xtype: 'button',
                 text: t('empty'),
-                icon: '/pimcore/static6/img/icon/bin.png',
+                iconCls: "pimcore_icon_empty",
                 handler: function () {
                     this.data = null;
                     this.updatePreviewImage();
@@ -49,7 +51,7 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
             },"->",{
                 xtype: "button",
                 text: t("open_select_editor"),
-                icon: "/pimcore/static6/img/icon/magnifier.png",
+                iconCls: "pimcore_icon_search",
                 handler: this.openPicker.bind(this)
             }]
         });
@@ -62,9 +64,10 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
     },
 
     getMapUrl: function (fieldConfig, data, width, height) {
-
-        console.log(fieldConfig);
-        console.log(data);
+        if(data && !data.ne) {
+            data.ne = new google.maps.LatLng(data.NElatitude,data.NElongitude);
+            data.sw = new google.maps.LatLng(data.SWlatitude,data.SWlongitude);
+        }
 
         // static maps api image url
         var mapZoom = fieldConfig.zoom;
@@ -80,7 +83,7 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
         var py = height;
         var px = width;
 
-        //try {
+        try {
             if (data) {
 
                 var bounds = new google.maps.LatLngBounds(data.sw, data.ne);
@@ -95,22 +98,22 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
                     + data.ne.lng();
                 mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?center=' + center.y + ','
                     + center.x + '&zoom=' + mapZoom + '&size=' + px + 'x' + py
-                    + '&path=' + path + '&sensor=false&maptype=' + fieldConfig.mapType;
+                    + '&path=' + path + '&maptype=' + fieldConfig.mapType;
             }
             else {
                 mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?center='
                     + fieldConfig.lat + ',' + fieldConfig.lng
                     + '&zoom=' + mapZoom + '&size='
-                    + px + 'x' + py + '&sensor=false&maptype=' + fieldConfig.mapType;
+                    + px + 'x' + py + '&maptype=' + fieldConfig.mapType;
             }
 
             if (pimcore.settings.google_maps_api_key) {
                 mapUrl += '&key=' + pimcore.settings.google_maps_api_key;
             }
-        //}
-        //catch (e) {
-        //    console.log(e);
-        //}
+        }
+        catch (e) {
+            console.log(e);
+        }
         return mapUrl;
     },
 
@@ -135,25 +138,25 @@ pimcore.object.tags.geobounds = Class.create(pimcore.object.tags.geo.abstract, {
             tbar: [{
                 xtype: 'button',
                 text: t('empty'),
-                icon: '/pimcore/static6/img/icon/bin.png',
+                iconCls: "pimcore_icon_empty",
                 handler: this.removeOverlay.bind(this)
             }],
             bbar: [this.searchfield, {
                 xtype: 'button',
                 text: t('search'),
-                icon: '/pimcore/static6/img/icon/magnifier.png',
+                iconCls: "pimcore_icon_search",
                 handler: this.geocode.bind(this)
             },"->",{
                 xtype: 'button',
                 text: t('cancel'),
-                icon: '/pimcore/static6/img/icon/cancel.png',
+                iconCls: "pimcore_icon_cancel",
                 handler: function () {
                     this.searchWindow.close();
                 }.bind(this)
             },{
                 xtype: 'button',
                 text: 'OK',
-                icon: '/pimcore/static6/img/icon/tick.png',
+                iconCls: "pimcore_icon_save",
                 handler: function () {
 
                     this.data = null;

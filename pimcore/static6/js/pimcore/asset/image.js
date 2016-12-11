@@ -1,21 +1,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.image");
 pimcore.asset.image = Class.create(pimcore.asset.asset, {
 
-    initialize: function(id) {
+    initialize: function (id) {
 
         this.id = intval(id);
         this.setType("image");
@@ -23,11 +22,18 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
 
         pimcore.plugin.broker.fireEvent("preOpenAsset", this, "image");
 
+        var user = pimcore.globalmanager.get("user");
+
         this.properties = new pimcore.element.properties(this, "asset");
         this.versions = new pimcore.asset.versions(this);
         this.scheduler = new pimcore.element.scheduler(this, "asset");
         this.dependencies = new pimcore.element.dependencies(this, "asset");
-        this.notes = new pimcore.element.notes(this, "asset");
+
+        if (user.isAllowed("notes_events")) {
+            this.notes = new pimcore.element.notes(this, "asset");
+        }
+
+        this.tagAssignment = new pimcore.element.tag.assignment(this, "asset");
         this.metadata = new pimcore.asset.metadata(this);
 
         this.getData();
@@ -36,12 +42,19 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
     getTabPanel: function () {
 
         var items = [];
+        var user = pimcore.globalmanager.get("user");
 
         items.push(this.getDisplayPanel());
 
         if (!pimcore.settings.asset_hide_edit && (this.isAllowed("save") || this.isAllowed("publish"))) {
             items.push(this.getEditPanel());
         }
+
+        var exifPanel = this.getExifPanel();
+        if(exifPanel) {
+            items.push(exifPanel);
+        }
+
         if (this.isAllowed("publish")) {
             items.push(this.metadata.getLayout());
         }
@@ -58,15 +71,19 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
 
         items.push(this.dependencies.getLayout());
 
-        if (this.isAllowed("settings")) {
+        if (user.isAllowed("notes_events")) {
             items.push(this.notes.getLayout());
+        }
+
+        if (user.isAllowed("tags_assignment")) {
+            items.push(this.tagAssignment.getLayout());
         }
 
         this.tabbar = new Ext.TabPanel({
             tabPosition: "top",
-            region:'center',
-            deferredRender:true,
-            enableTabScroll:true,
+            region: 'center',
+            deferredRender: true,
+            enableTabScroll: true,
             border: false,
             items: items,
             activeTab: 0
@@ -78,33 +95,15 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
     getEditPanel: function () {
 
         if (!this.editPanel) {
-
             this.editPanel = new Ext.Panel({
-                title: t("edit_image"),
-                tbar: [
-                    {
-                        text: t("simple"),
-                        iconCls: "pimcore_icon_image_editor_simple",
-                        handler: function () {
-                            Ext.get("asset_image_edit_" + this.id).dom.src = this.getEditUrlPixlr("express");
-                        }.bind(this)
-                    },"-",
-                    {
-                        text: t("advanced"),
-                        iconCls: "pimcore_icon_image_editor_advanced",
-                        handler: function () {
-                            Ext.get("asset_image_edit_" + this.id).dom.src = this.getEditUrlPixlr("editor");
-                        }.bind(this)
-                    }
-                ],
-                html: '<iframe src="' + this.getEditUrlPixlr("express") + '" frameborder="0" id="asset_image_edit_'
-                                                                            + this.id + '"></iframe>',
-                iconCls: "pimcore_icon_tab_edit"
+                title: t("edit"),
+                html: '<iframe src="/admin/asset/image-editor/id/' + this.id + '" frameborder="0" ' +
+                'style="width: 100%;" id="asset_image_edit_' + this.id + '"></iframe>',
+                iconCls: "pimcore_icon_edit"
             });
             this.editPanel.on("resize", function (el, width, height, rWidth, rHeight) {
                 Ext.get("asset_image_edit_" + this.id).setStyle({
-                    width: width + "px",
-                    height: (height - 25) + "px"
+                    height: (height - 7) + "px"
                 });
             }.bind(this));
         }
@@ -112,32 +111,43 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
         return this.editPanel;
     },
 
-    getEditUrlPixlr: function (type) {
+    getExifPanel: function () {
+        if (!this.exifPanel) {
 
-        var parts = this.data.filename.split(".");
-        var imageType = parts[parts.length-1].toLowerCase();
-        var validImageTypes = ["png","jpg","gif"];
+            if(!this.data["imageInfo"] || (!this.data["imageInfo"]["exif"] && !this.data["imageInfo"]["iptc"])) {
+                return false;
+            }
 
-        if(!in_array(imageType,validImageTypes)) {
-            imageType = "png";
+            var exifPanel = new Ext.grid.PropertyGrid({
+                title: 'EXIF',
+                flex: 1,
+                border: true,
+                source: this.data["imageInfo"]["exif"] || [],
+                clicksToEdit: 1000
+            });
+            exifPanel.plugins[0].disable();
+
+            var iptcPanel = new Ext.grid.PropertyGrid({
+                title: 'IPTC',
+                flex: 1,
+                border: true,
+                source: this.data["imageInfo"]["iptc"] || [],
+                clicksToEdit: 1000
+            });
+            iptcPanel.plugins[0].disable();
+
+            this.exifPanel = new Ext.Panel({
+                title: "EXIF/IPTC",
+                layout: {
+                    type: 'hbox',
+                    align: 'stretch'
+                },
+                iconCls: "pimcore_icon_exif",
+                items: [exifPanel, iptcPanel]
+            });
         }
 
-        var imageUrl = document.location.protocol + "//" + window.location.hostname
-                                                  + "/admin/asset/get-image-thumbnail/id/"
-                                                  + this.id + "/width/1000/aspectratio/true/pimcore_admin_sid/"
-                                                  + pimcore.settings.sessionId + "/" + this.data.filename;
-        var targetUrl = document.location.protocol + "//" + window.location.hostname
-                                                   + "/admin/asset/save-image-pixlr/?pimcore_admin_sid="
-                                                   + pimcore.settings.sessionId + "&id=" + this.id;
-        var editorUrl = "https://www.pixlr.com/" + type + "/?image=" + escape(imageUrl) + "&title="
-                                                 + this.data.filename + "&locktitle=true&locktarget=true&locktype="
-                                                 + imageType + "&wmode=transparent&target=" + escape(targetUrl);
-
-        if (type == "editor") {
-            editorUrl = editorUrl + "&redirect=false";
-        }
-
-        return editorUrl;
+        return this.exifPanel;
     },
 
     getDisplayPanel: function () {
@@ -150,7 +160,7 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
             var details = [];
 
 
-            if(this.data.imageInfo.dimensions) {
+            if (this.data.imageInfo.dimensions) {
 
                 var dimensionPanel = new Ext.create('Ext.grid.property.Grid', {
                     title: t("dimensions"),
@@ -158,26 +168,74 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
                     autoHeight: true,
 
                     clicksToEdit: 1000,
-                    viewConfig : {
+                    viewConfig: {
                         forceFit: true,
                         scrollOffset: 2
                     }
                 });
-                dimensionPanel.getStore().sort("name","DESC");
+                dimensionPanel.plugins[0].disable();
+                dimensionPanel.getStore().sort("name", "DESC");
 
                 details.push(dimensionPanel);
             }
 
-            if(this.data.imageInfo && this.data.imageInfo) {
-                if(this.data.imageInfo.dimensions && this.data.imageInfo.dimensions.width) {
+            var downloadDefaultWidth = 800;
+
+            if (this.data.imageInfo && this.data.imageInfo) {
+                if (this.data.imageInfo.dimensions && this.data.imageInfo.dimensions.width) {
                     downloadDefaultWidth = intval(this.data.imageInfo.dimensions.width);
                 }
             }
 
-            var downloadDefaultWidth = 800;
+            var downloadShortcutsHandler = function (type) {
+                pimcore.helpers.download("/admin/asset/download-image-thumbnail/id/" + this.id   + "/?type=" + type);
+            };
 
-            this.downloadBox = new Ext.form.FormPanel({
-                title: t("convert_to") + " & " + t("download"),
+            this.downloadBox = new Ext.Panel({
+                title: t("download"),
+                bodyStyle: "padding: 10px;",
+                style: "margin: 10px 0 10px 0",
+                items: [{
+                    xtype: "button",
+                    iconCls: "pimcore_icon_image",
+                    width: 260,
+                    textAlign: "left",
+                    style: "margin-bottom: 5px",
+                    text: t("original_file"),
+                    handler: function () {
+                        pimcore.helpers.download("/admin/asset/download/id/" + this.data.id);
+                    }.bind(this)
+                },{
+                    xtype: "button",
+                    iconCls: "pimcore_icon_world",
+                    width: 260,
+                    textAlign: "left",
+                    style: "margin-bottom: 5px",
+                    text: t("web_format"),
+                    handler: downloadShortcutsHandler.bind(this, "web")
+                }, {
+                    xtype: "button",
+                    iconCls: "pimcore_icon_print",
+                    width: 260,
+                    textAlign: "left",
+                    style: "margin-bottom: 5px",
+                    text: t("print_format"),
+                    handler: downloadShortcutsHandler.bind(this, "print")
+                },{
+                    xtype: "button",
+                    iconCls: "pimcore_icon_docx",
+                    width: 260,
+                    textAlign: "left",
+                    style: "margin-bottom: 5px",
+                    text: t("office_format"),
+                    handler: downloadShortcutsHandler.bind(this, "office")
+                }]
+            });
+            details.push(this.downloadBox);
+
+
+            this.customDownloadBox = new Ext.form.FormPanel({
+                title: t("custom_download"),
                 bodyStyle: "padding: 10px;",
                 style: "margin: 10px 0 10px 0",
                 items: [{
@@ -185,68 +243,99 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
                     triggerAction: "all",
                     name: "format",
                     fieldLabel: t("format"),
-                    store: [["JPEG", "JPEG"],["PNG","PNG"]],
+                    store: [["JPEG", "JPEG"], ["PNG", "PNG"]],
                     mode: "local",
                     value: "JPEG",
-                    width: 180
+                    editable: false,
+                    listeners: {
+                        select: function (el) {
+                            var dpiField = this.customDownloadBox.getComponent("dpi");
+                            if(el.getValue() == "JPEG") {
+                                dpiField.enable();
+                            } else {
+                                dpiField.disable();
+                            }
+                        }.bind(this)
+                    }
+                }, {
+                    xtype: "combo",
+                    triggerAction: "all",
+                    name: "resize_mode",
+                    itemId: "resize_mode",
+                    fieldLabel: t("resize_mode"),
+                    forceSelection: true,
+                    store: [["scaleByWidth", t("scalebywidth")], ["scaleByHeight", t("scalebyheight")], ["resize", t("resize")]],
+                    mode: "local",
+                    value: "scaleByWidth",
+                    editable: false,
+                    listeners: {
+                        select: function (el) {
+                            var widthField = this.customDownloadBox.getComponent("width");
+                            var heightField = this.customDownloadBox.getComponent("height");
+
+                            if(el.getValue() == "scalebywidth") {
+                                widthField.enable();
+                                heightField.disable();
+                            } else if(el.getValue() == "scalebyheight") {
+                                widthField.disable();
+                                heightField.enable();
+                            } else {
+                                widthField.enable();
+                                heightField.enable();
+                            }
+                        }.bind(this)
+                    }
                 }, {
                     xtype: "numberfield",
                     name: "width",
+                    itemId: "width",
                     fieldLabel: t("width"),
                     value: downloadDefaultWidth
-                },{
+                }, {
                     xtype: "numberfield",
                     name: "height",
-                    fieldLabel: t("height")
-                },{
+                    itemId: "height",
+                    fieldLabel: t("height"),
+                    disabled: true
+                }, {
                     xtype: "numberfield",
                     name: "quality",
                     fieldLabel: t("quality"),
                     value: 95
-                },{
-                    xtype: "checkbox",
-                    name: "aspectratio",
-                    fieldLabel: t("aspect_ratio"),
-                    checked: true
+                }, {
+                    xtype: "numberfield",
+                    name: "dpi",
+                    itemId: "dpi",
+                    fieldLabel: "DPI",
+                    value: 300,
+                    disabled: !this.data.imageInfo["exiftoolAvailable"]
                 }],
                 buttons: [{
                     text: t("download"),
                     iconCls: "pimcore_icon_download",
                     handler: function () {
-                        var config = this.downloadBox.getForm().getFieldValues();
-                        pimcore.helpers.download("/admin/asset/get-image-thumbnail/id/" + this.id
-                                                                    + "/download/true?config=" + Ext.encode(config));
+                        var config = this.customDownloadBox.getForm().getFieldValues();
+                        pimcore.helpers.download("/admin/asset/download-image-thumbnail/id/" + this.id
+                            + "/?config=" + Ext.encode(config));
                     }.bind(this)
                 }]
             });
-            details.push(this.downloadBox);
-
-            if(this.data.imageInfo && this.data.imageInfo.exif) {
-                var exifPanel = new Ext.grid.PropertyGrid({
-                    title: t("exif_data"),
-                    source: this.data.imageInfo.exif,
-                    clicksToEdit: 1000,
-                    autoHeight: true
-                });
-
-                details.push(exifPanel);
-            }
+            details.push(this.customDownloadBox);
 
             this.displayPanel = new Ext.Panel({
                 title: t("view"),
                 layout: "border",
-                iconCls: "pimcore_icon_tab_view",
+                iconCls: "pimcore_icon_view",
                 items: [{
                     region: "center",
                     html: '&nbsp;',
                     bodyStyle: "background: url(/admin/asset/get-image-thumbnail/id/" + this.id +
-                        "/treepreview/true_dc=" + dc + ") center center no-repeat;"
-                },{
-                    title: t("image_details"),
+                    "/treepreview/true_dc=" + dc + ") center center no-repeat;"
+                }, {
                     region: "east",
                     width: 300,
                     items: details,
-                    autoScroll: true
+                    scrollable: "y"
                 }]
             });
         }

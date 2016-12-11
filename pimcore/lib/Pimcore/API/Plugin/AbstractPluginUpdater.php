@@ -2,23 +2,23 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\API\Plugin;
 
 use Pimcore\API\AbstractAPI;
-use Pimcore\Resource;
+use Pimcore\Db;
 
-abstract class AbstractPluginUpdater {
+abstract class AbstractPluginUpdater
+{
 
     /**
      * runs all Revision Updates
@@ -31,26 +31,30 @@ abstract class AbstractPluginUpdater {
     protected $revision;
 
     /**
-     * @var \Pimcore\Resource
+     * @var \Pimcore\Db
      */
     protected $db;
 
-    public function __construct($revision){
+    public function __construct($revision)
+    {
         $this->revision = $revision;
-        $this->db = \Pimcore\Resource::getConnection();
+        $this->db = \Pimcore\Db::getConnection();
     }
 
     /**
      * define updates which shoud be performed evertytime (e.g. Translation updates...)
      */
-    public function runDefaultUpdates(){}
+    public function runDefaultUpdates()
+    {
+    }
 
     /**
      * Runs all revision updates
      */
-    public function updateRevisionAll(){
-        foreach(get_class_methods(get_class($this)) as $method){
-            if(stripos($method,'updateRevision') !== false && $method != __FUNCTION__){
+    public function updateRevisionAll()
+    {
+        foreach (get_class_methods(get_class($this)) as $method) {
+            if (stripos($method, 'updateRevision') !== false && $method != __FUNCTION__) {
                 $this->$method();
             }
         }
@@ -59,10 +63,11 @@ abstract class AbstractPluginUpdater {
     /**
      * performs the updates
      */
-    public function run(){
+    public function run()
+    {
         $this->runDefaultUpdates();
         $method = 'updateRevision'.$this->revision;
-        if(method_exists($this,$method)){
+        if (method_exists($this, $method)) {
             $this->$method();
         }
     }

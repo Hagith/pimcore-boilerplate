@@ -2,63 +2,69 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    User
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\User;
 
 use Pimcore\Model;
 
-class UserRole extends AbstractUser {
+/**
+ * @method \Pimcore\Model\User\UserRole\Dao getDao()
+ */
+class UserRole extends AbstractUser
+{
 
     /**
      * @var array
      */
-    public $permissions = array();
+    public $permissions = [];
 
     /**
      * @var array
      */
-    public $workspacesAsset = array();
+    public $workspacesAsset = [];
 
     /**
      * @var array
      */
-    public $workspacesObject = array();
+    public $workspacesObject = [];
 
     /**
      * @var array
      */
-    public $workspacesDocument = array();
+    public $workspacesDocument = [];
 
     /**
      * @var array
      */
-    public $classes = array();
+    public $classes = [];
 
     /**
      * @var array
      */
-    public $docTypes = array();
+    public $docTypes = [];
+
+    public $perspectives;
 
     /**
      *
      */
-    public function update () {
-        $this->getResource()->update();
+    public function update()
+    {
+        $this->getDao()->update();
 
         // save all workspaces
-        $this->getResource()->emptyWorkspaces();
+        $this->getDao()->emptyWorkspaces();
 
         foreach ($this->getWorkspacesAsset() as $workspace) {
             $workspace->save();
@@ -74,8 +80,10 @@ class UserRole extends AbstractUser {
     /**
      *
      */
-    public function setAllAclToFalse() {
-        $this->permissions = array();
+    public function setAllAclToFalse()
+    {
+        $this->permissions = [];
+
         return $this;
     }
 
@@ -84,21 +92,23 @@ class UserRole extends AbstractUser {
      * @param null $value
      * @return $this
      */
-    public function setPermission($permissionName, $value = null) {
-
-        if(!in_array($permissionName, $this->permissions) && $value) {
+    public function setPermission($permissionName, $value = null)
+    {
+        if (!in_array($permissionName, $this->permissions) && $value) {
             $this->permissions[] = $permissionName;
-        } else if (in_array($permissionName, $this->permissions) && !$value) {
+        } elseif (in_array($permissionName, $this->permissions) && !$value) {
             $position = array_search($permissionName, $this->permissions);
             array_splice($this->permissions, $position, 1);
         }
+
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getPermissions() {
+    public function getPermissions()
+    {
         return $this->permissions;
     }
 
@@ -106,9 +116,9 @@ class UserRole extends AbstractUser {
      * @param $permissionName
      * @return bool
      */
-    public function getPermission($permissionName) {
-
-        if(in_array($permissionName, $this->permissions)) {
+    public function getPermission($permissionName)
+    {
+        if (in_array($permissionName, $this->permissions)) {
             return true;
         }
 
@@ -120,7 +130,8 @@ class UserRole extends AbstractUser {
      *
      * @return void
      */
-    public function generatePermissionList() {
+    public function generatePermissionList()
+    {
         $permissionInfo = null;
 
         $list = new Permission\Definition\Listing();
@@ -139,11 +150,12 @@ class UserRole extends AbstractUser {
      */
     public function setPermissions($permissions)
     {
-        if(is_string($permissions)) {
+        if (is_string($permissions)) {
             $this->permissions = explode(",", $permissions);
-        } else if (is_array($permissions)) {
+        } elseif (is_array($permissions)) {
             $this->permissions = $permissions;
         }
+
         return $this;
     }
 
@@ -154,6 +166,7 @@ class UserRole extends AbstractUser {
     public function setWorkspacesAsset($workspacesAsset)
     {
         $this->workspacesAsset = $workspacesAsset;
+
         return $this;
     }
 
@@ -172,6 +185,7 @@ class UserRole extends AbstractUser {
     public function setWorkspacesDocument($workspacesDocument)
     {
         $this->workspacesDocument = $workspacesDocument;
+
         return $this;
     }
 
@@ -190,6 +204,7 @@ class UserRole extends AbstractUser {
     public function setWorkspacesObject($workspacesObject)
     {
         $this->workspacesObject = $workspacesObject;
+
         return $this;
     }
 
@@ -206,14 +221,14 @@ class UserRole extends AbstractUser {
      */
     public function setClasses($classes)
     {
-        if (!\Pimcore\Tool\Admin::isExtJS6()) {
+        if (is_string($classes)) {
             if (strlen($classes)) {
                 $classes = explode(",", $classes);
             }
         }
 
-        if(empty($classes)) {
-            $classes = array();
+        if (empty($classes)) {
+            $classes = [];
         }
         $this->classes = $classes;
     }
@@ -231,14 +246,14 @@ class UserRole extends AbstractUser {
      */
     public function setDocTypes($docTypes)
     {
-        if (!\Pimcore\Tool\Admin::isExtJS6()) {
+        if (is_string($docTypes)) {
             if (strlen($docTypes)) {
                 $docTypes = explode(",", $docTypes);
             }
         }
 
-        if(empty($docTypes)) {
-            $docTypes = array();
+        if (empty($docTypes)) {
+            $docTypes = [];
         }
 
         $this->docTypes = $docTypes;
@@ -250,5 +265,32 @@ class UserRole extends AbstractUser {
     public function getDocTypes()
     {
         return $this->docTypes;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPerspectives()
+    {
+        return $this->perspectives;
+    }
+
+    /**
+     * @param mixed $perspectives
+     */
+    public function setPerspectives($perspectives)
+    {
+        if (is_string($perspectives)) {
+            if (strlen($perspectives)) {
+                $perspectives = explode(",", $perspectives);
+            }
+        }
+
+        if (empty($perspectives)) {
+            $perspectives = [];
+        }
+
+
+        $this->perspectives = $perspectives;
     }
 }

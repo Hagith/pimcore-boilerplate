@@ -2,22 +2,22 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\View\Helper;
 
 use Pimcore\Translate\Admin as TranslateAdapter;
 
-class TranslateAdmin extends \Zend_View_Helper_Translate {
+class TranslateAdmin extends \Zend_View_Helper_Translate
+{
 
     /**
      * @var \Pimcore\Translate
@@ -30,12 +30,13 @@ class TranslateAdmin extends \Zend_View_Helper_Translate {
      * @throws \Zend_Exception
      * @throws \Zend_View_Exception
      */
-    public function translateAdmin($key = "") {
+    public function translateAdmin($key = "")
+    {
         if ($key) {
             $locale = $_REQUEST["systemLocale"];
 
-            if(!$locale){
-                if(\Zend_Registry::isRegistered("Zend_Locale")) {
+            if (!$locale) {
+                if (\Zend_Registry::isRegistered("Zend_Locale")) {
                     $locale = \Zend_Registry::get("Zend_Locale");
                 } else {
                     $locale = new \Zend_Locale("en");
@@ -43,15 +44,14 @@ class TranslateAdmin extends \Zend_View_Helper_Translate {
             }
 
             if ($locale) {
-                if(!$this->getTranslator()) {
+                if (!$this->getTranslator()) {
                     $translate = new TranslateAdapter($locale);
                     $this->setTranslator($translate);
                 }
                 $this->setLocale($locale);
 
-                return call_user_func_array(array($this, "translate"), func_get_args());
+                return call_user_func_array([$this, "translate"], func_get_args());
             }
-
         }
 
         return $key;
@@ -74,4 +74,3 @@ class TranslateAdmin extends \Zend_View_Helper_Translate {
         return $this->translator;
     }
 }
-

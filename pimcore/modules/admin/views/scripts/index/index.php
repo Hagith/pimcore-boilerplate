@@ -2,13 +2,14 @@
 <html>
 <head>
 
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
     <meta name="robots" content="noindex, nofollow" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
 
-    <link rel="icon" type="image/png" href="/pimcore/static/img/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" href="/pimcore/static6/img/favicon/favicon-32x32.png" />
+    <meta name="google" value="notranslate">
 
     <style type="text/css">
         body {
@@ -18,7 +19,7 @@
         }
     </style>
 
-    <title><?= htmlentities($this->getRequest()->getHttpHost(), ENT_QUOTES, 'UTF-8') ?> :: pimcore</title>
+    <title><?= htmlentities(\Pimcore\Tool::getHostname(), ENT_QUOTES, 'UTF-8') ?> :: Pimcore</title>
 
     <!-- load in head because of the progress bar at loading -->
     <link rel="stylesheet" type="text/css" href="/pimcore/static/css/admin.css?_dc=<?= \Pimcore\Version::$revision ?>" />
@@ -27,7 +28,7 @@
 <body>
 
 <div id="pimcore_logo" style="display: none;">
-    <img src="/pimcore/static/img/logo.png"/>
+    <img src="/pimcore/static6/img/logo-white.svg"/>
 </div>
 
 <div id="pimcore_loading">
@@ -58,7 +59,7 @@
 <?php // define stylesheets ?>
 <?php
 $styles = array(
-    "/admin/misc/admin-css",
+    "/admin/misc/admin-css?extjs3=true",
     "/pimcore/static/css/icons.css",
     "/pimcore/static/js/lib/ext/resources/css/ext-all.css",
     "/pimcore/static/js/lib/ext/resources/css/xtheme-gray.css",
@@ -167,10 +168,6 @@ $scripts = array(
 
     // fixes for libraries
     "pimcore/libfixes.js",
-
-    // small libs
-    "lib/array_merge.js",
-    "lib/array_merge_recursive.js",
 
     // runtime
     "pimcore/namespace.js",
@@ -299,7 +296,6 @@ $scripts = array(
     "pimcore/object/bulk-export.js",
     "pimcore/object/bulk-import.js",
     "pimcore/object/classes/data/data.js",
-    "pimcore/object/classes/data/classificationstore.js",
     "pimcore/object/classes/data/date.js",
     "pimcore/object/classes/data/datetime.js",
     "pimcore/object/classes/data/time.js",
@@ -365,7 +361,6 @@ $scripts = array(
     "pimcore/object/tags/hotspotimage.js",
     "pimcore/object/tags/video.js",
     "pimcore/object/tags/input.js",
-    "pimcore/object/tags/classificationstore.js",
     "pimcore/object/tags/numeric.js",
     "pimcore/object/tags/objects.js",
     "pimcore/object/tags/objectsMetadata.js",
@@ -413,7 +408,6 @@ $scripts = array(
     "pimcore/object/folder.js",
     "pimcore/object/variant.js",
     "pimcore/object/tree.js",
-    "pimcore/object/customviews/settings.js",
     "pimcore/object/customviews/tree.js",
 
     //plugins
@@ -428,7 +422,6 @@ $scripts = array(
     "pimcore/report/analytics/settings.js",
     "pimcore/report/analytics/elementoverview.js",
     "pimcore/report/analytics/elementexplorer.js",
-    "pimcore/report/analytics/elementnavigation.js",
     "pimcore/report/webmastertools/settings.js",
     "pimcore/report/custom/item.js",
     "pimcore/report/custom/panel.js",
@@ -442,9 +435,6 @@ $scripts = array(
 
     "pimcore/report/qrcode/panel.js",
     "pimcore/report/qrcode/item.js",
-
-    "pimcore/report/newsletter/panel.js",
-    "pimcore/report/newsletter/item.js",
 
     // extension manager
     "pimcore/extensionmanager/settings.js",
@@ -477,15 +467,7 @@ $scripts = array(
     "pimcore/object/keyvalue/selectionWindow.js",
     "pimcore/object/keyvalue/specialConfigWindow.js",
     "pimcore/object/keyvalue/columnConfigDialog.js",
-    "pimcore/object/keyvalue/translatorConfigWindow.js",
-
-    // classification store
-    "pimcore/object/classificationstore/configPanel.js",
-    "pimcore/object/classificationstore/groupsPanel.js",
-    "pimcore/object/classificationstore/propertiesPanel.js",
-    "pimcore/object/classificationstore/collectionsPanel.js",
-    "pimcore/object/classificationstore/keyDefinitionWindow.js",
-    "pimcore/object/classificationstore/keySelectionWindow.js"
+    "pimcore/object/keyvalue/translatorConfigWindow.js"
 
 );
 
@@ -513,7 +495,6 @@ $googleMapsApiKey = $this->config->services->google->browserapikey;
         customviews: <?= \Zend_Json::encode($this->customview_config) ?>,
         language: '<?= $this->language; ?>',
         websiteLanguages: <?= \Zend_Json::encode(explode(",",$this->config->general->validLanguages)); ?>,
-        google_translate_api_key: "<?= $this->config->services->translate->apikey; ?>",
         google_maps_api_key: "<?= $googleMapsApiKey ?>",
         showCloseConfirmation: true,
         debug_admin_translations: <?= \Zend_Json::encode((bool) $this->config->general->debug_admin_translations) ?>,
@@ -527,13 +508,15 @@ $googleMapsApiKey = $this->config->services->google->browserapikey;
 
 <?php // 3rd party libraries ?>
 <script type="text/javascript">
-    var gmapInitialize = function () {}; // dummy callback
-    (function() {
-        var script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = 'https://maps.googleapis.com/maps/api/js?sensor=false&libraries=drawing&callback=gmapInitialize&key=<?= $googleMapsApiKey ?>';
-        document.body.appendChild(script);
-    })();
+    <?php if(isset($googleMapsApiKey) && strlen($googleMapsApiKey) > 0){ ?>
+        var gmapInitialize = function () {}; // dummy callback
+        (function() {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = 'https://maps.googleapis.com/maps/api/js?libraries=drawing&callback=gmapInitialize&key=<?= $googleMapsApiKey ?>';
+            document.body.appendChild(script);
+        })();
+    <?php } ?>
 </script>
 
 <script type="text/javascript" src="/admin/misc/json-translations-system/language/<?= $this->language ?>/?_dc=<?= \Pimcore\Version::$revision ?>"></script>
@@ -563,7 +546,7 @@ foreach ($scripts as $scriptUrl) {
     }
 }
 ?>
-    <script type="text/javascript" src="<?= \Pimcore\Tool\Admin::getMinimizedScriptPath($scriptContents) ?>?_dc=<?= \Pimcore\Version::$revision ?>"></script>
+    <script type="text/javascript" src="<?= \Pimcore\Tool\Admin::getMinimizedScriptPath($scriptContents) ?>"></script>
 <?php } ?>
 
 

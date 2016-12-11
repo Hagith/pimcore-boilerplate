@@ -2,24 +2,28 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\KeyValue;
 
 use Pimcore\Model;
+use Pimcore\Logger;
 
-class TranslatorConfig extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Object\KeyValue\TranslatorConfig\Dao getDao()
+ */
+class TranslatorConfig extends Model\AbstractModel
+{
 
     /**
      * @var integer
@@ -40,38 +44,40 @@ class TranslatorConfig extends Model\AbstractModel {
      * @param integer $id
      * @return Model\Object\KeyValue\TranslatorConfig
      */
-    public static function getById($id) {
+    public static function getById($id)
+    {
         try {
-
             $config = new self();
             $config->setId(intval($id));
-            $config->getResource()->getById();
+            $config->getDao()->getById();
 
             return $config;
         } catch (\Exception $e) {
-            \Logger::warning($e);
+            Logger::warning($e);
         }
     }
 
     /**
      * @param $name
      */
-    public static function getByName ($name) {
+    public static function getByName($name)
+    {
         try {
             $config = new self();
             $config->setName($name);
-            $config->getResource()->getByName();
+            $config->getDao()->getByName();
 
             return $config;
         } catch (\Exception $e) {
-            \Logger::warning($e);
+            Logger::warning($e);
         }
     }
 
     /**
      * @return Model\Object\KeyValue\TranslatorConfig
      */
-    public static function create() {
+    public static function create()
+    {
         $config = new self();
         $config->save();
 
@@ -80,26 +86,31 @@ class TranslatorConfig extends Model\AbstractModel {
 
     /**
      * @param integer $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
     /**
-     * @param string name
-     * @return void
+     * @param string $name
+     * @return $this
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
@@ -116,7 +127,8 @@ class TranslatorConfig extends Model\AbstractModel {
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 }

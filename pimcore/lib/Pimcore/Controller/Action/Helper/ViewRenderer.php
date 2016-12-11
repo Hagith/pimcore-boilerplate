@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Controller\Action\Helper;
@@ -19,7 +18,8 @@ use Pimcore\Controller\Action\Frontend as FrontendController;
 use Pimcore\Tool;
 use Pimcore\View;
 
-class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
+class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer
+{
 
     /**
      * @var bool
@@ -29,8 +29,8 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
     /**
      *
      */
-    public function postDispatch() {
-
+    public function postDispatch()
+    {
         if ($this->_shouldRender()) {
             if (method_exists($this->getActionController(), "getRenderScript")) {
                 if ($script = $this->getActionController()->getRenderScript()) {
@@ -40,25 +40,6 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
         }
         
         parent::postDispatch();
-
-        // append custom styles to response body
-        if($this->getActionController() instanceof FrontendController) {
-            $doc = $this->getActionController()->getDocument();
-            if(Tool::isHtmlResponse($this->getResponse())
-                && $doc && method_exists($doc, "getCss") && $doc->getCss()
-                && !$this->getRequest()->getParam("pimcore_editmode")) {
-
-                $code = '<style type="text/css" id="pimcore_styles_' . $doc->getId() . '">';
-                $code .= "\n\n" . $doc->getCss() . "\n\n";
-                $code .= '</style>';
-
-                $name = $this->getResponseSegment();
-                $this->getResponse()->appendBody(
-                    $code,
-                    $name
-                );
-            }
-        }
     }
 
     /**
@@ -66,7 +47,7 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
      * @param null $prefix
      * @param array $options
      */
-    public function initView($path = null, $prefix = null, array $options = array())
+    public function initView($path = null, $prefix = null, array $options = [])
     {
         if (null === $this->view) {
             $view = new View();
@@ -83,7 +64,7 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
 
         // this is very important, the initView could be called multiple times.
         // if we add the path on every call, we have big performance issues.
-        if($this->isInitialized) {
+        if ($this->isInitialized) {
             return;
         }
 
@@ -92,17 +73,16 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
         $paths = $this->view->getScriptPaths();
         // script pathes for layout path
         foreach (array_reverse($paths) as $path) {
-            $path = str_replace("\\","/",$path);
-            if(!in_array($path, $paths)) {
+            $path = str_replace("\\", "/", $path);
+            if (!in_array($path, $paths)) {
                 $this->view->addScriptPath($path);
             }
 
             $path = str_replace("/scripts", "/layouts", $path);
-            if(!in_array($path, $paths)) {
+            if (!in_array($path, $paths)) {
                 $this->view->addScriptPath($path);
             }
         }
-
     }
 
     /**
@@ -112,6 +92,7 @@ class ViewRenderer extends \Zend_Controller_Action_Helper_ViewRenderer {
     public function setIsInitialized($isInitialized)
     {
         $this->isInitialized = $isInitialized;
+
         return $this;
     }
 

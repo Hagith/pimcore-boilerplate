@@ -15,8 +15,14 @@ RewriteEngine On
 RewriteBase /
 
 <IfModule mod_status.c>
-    RewriteCond %{REQUEST_URI} ^/server-(info|status)
+    RewriteCond %{REQUEST_URI} ^/(fpm|server)-(info|status|ping)
     RewriteRule . - [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpe?g|png)$">
+        Header always unset X-Content-Type-Options
+    </FilesMatch>
 </IfModule>
 
 # ASSETS: check if request method is GET (because of WebDAV) and if the requested file (asset) exists on the filesystem, if both match, deliver the asset directly 
@@ -24,16 +30,28 @@ RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)
 RewriteCond %{DOCUMENT_ROOT}/website/var/assets%{REQUEST_URI} -f
 RewriteRule ^(.*)$ /website/var/assets%{REQUEST_URI} [PT,L]
 
+# cache-buster rule for scripts & stylesheets embedded using view helpers
+RewriteRule ^cache-buster\-[\d]+/(.*) $1 [PT,L]
+
 # allow access to plugin-data and core assets
 RewriteRule ^plugins/.*/static.* - [PT,L]
 RewriteRule ^.*modules/.*/static.* - [PT,L]
 RewriteRule ^pimcore/static.* - [PT,L]
 
 # forbid the direct access to pimcore-internal data (eg. config-files, ...)
-RewriteRule ^website/var/(?!tmp|assets|plugins|areas) / [F,L]
+RewriteRule ^website/var/(?!tmp|assets|areas) / [F,L]
 RewriteRule ^plugins/.*$ / [F,L]
 RewriteRule ^pimcore/.*$ / [F,L]
-RewriteRule ^composer.(json|lock)$ / [F,L]
+
+# restrict access to dotfiles
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule (^\.|/\.) - [F,L]
+
+# restrict access to potentially sensitive directories and files
+RewriteRule ^(vendor|tests|node_modules|phing|docs)/.*$ / [F,L]
+RewriteRule ^(bower|package|composer|gulpfile|readme)\. / [NC,F,L]
 
 # basic zend-framework setup see: http://framework.zend.com/manual/en/zend.controller.html
 RewriteCond %{REQUEST_FILENAME} -d [OR]
@@ -87,7 +105,7 @@ RewriteRule ^.*$ index.php [NC,L]
     RewriteCond %{REQUEST_URI} ^/(mod_)?pagespeed_(statistics|message|console|beacon|admin|global_admin)
     RewriteRule . - [L]
 
-    #ModPagespeed On
+    ModPagespeed Off
     AddOutputFilterByType MOD_PAGESPEED_OUTPUT_FILTER text/html
     ModPagespeedModifyCachingHeaders off
     ModPagespeedRewriteLevel PassThrough

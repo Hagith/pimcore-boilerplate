@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.metadata");
@@ -133,6 +132,7 @@ pimcore.asset.metadata = Class.create({
                 autoScroll: true,
                 region: "center",
                 iconCls: "pimcore_icon_metadata",
+                bodyCls: "pimcore_editable_grid",
                 trackMouseOver: true,
                 store: store,
                 tbar: [{
@@ -175,9 +175,11 @@ pimcore.asset.metadata = Class.create({
                         {
                             header: t("name"),
                             dataIndex: 'name',
-                            editor: new Ext.form.TextField({
-                                allowBlank: false
-                            }),
+                            getEditor: function() {
+                                return new Ext.form.TextField({
+                                    allowBlank: false
+                                });
+                            },
                             sortable: true,
                             width: 230
                         },
@@ -185,13 +187,16 @@ pimcore.asset.metadata = Class.create({
                             header: t('language'),
                             sortable: true,
                             dataIndex: "language",
-                            editor: new Ext.form.ComboBox({
-                                name: "language",
-                                store: languagestore,
-                                editable: false,
-                                triggerAction: 'all',
-                                mode: "local"
-                            }),
+                            getEditor: function() {
+                                return new Ext.form.ComboBox({
+                                    name: "language",
+                                    store: languagestore,
+                                    editable: false,
+                                    listConfig: {minWidth: 200},
+                                    triggerAction: 'all',
+                                    mode: "local"
+                                });
+                            },
                             width: 80
                         },
                         {
@@ -211,7 +216,7 @@ pimcore.asset.metadata = Class.create({
                             width: 40,
                             items: [{
                                 tooltip: t('open'),
-                                icon: "/pimcore/static6/img/icon/pencil_go.png",
+                                icon: "/pimcore/static6/img/flat-color-icons/cursor.svg",
                                 handler: function (grid, rowIndex) {
                                     var pData = grid.getStore().getAt(rowIndex).data;
                                     if (pData.data) {
@@ -232,7 +237,7 @@ pimcore.asset.metadata = Class.create({
                             width: 40,
                             items: [{
                                 tooltip: t('delete'),
-                                icon: "/pimcore/static6/img/icon/cross.png",
+                                icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                                 handler: function (grid, rowIndex) {
                                     grid.getStore().removeAt(rowIndex);
                                 }.bind(this)
@@ -322,8 +327,7 @@ pimcore.asset.metadata = Class.create({
         if (value == "input") {
             value = "text";
         }
-        return '<div style="background: url(/pimcore/static6/img/icon/' + value + '.png) '
-            + 'center center no-repeat; height: 16px;" name="' + record.data.name + '">&nbsp;</div>';
+        return '<div class="pimcore_icon_' + value + ' pimcore_property_grid_type_column" name="' + record.data.name + '">&nbsp;</div>';
     },
 
 

@@ -2,20 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore;
 
 use Pimcore\Model;
+use Pimcore\Logger;
 
 class Placeholder
 {
@@ -39,7 +39,7 @@ class Placeholder
      *
      * @var string
      */
-    protected static $placeholderClassPrefixes = ['Pimcore_Placeholder_', 'Website_Placeholder_', "\\Pimcore\\Placeholder\\","\\Website\\Placeholder\\"];
+    protected static $placeholderClassPrefixes = ['Pimcore_Placeholder_', 'Website_Placeholder_', "\\Pimcore\\Placeholder\\", "\\Website\\Placeholder\\"];
 
     /**
      * Contains the document object
@@ -52,8 +52,9 @@ class Placeholder
      * @param $classPrefix
      * @throws \Exception
      */
-    public static function addPlaceholderClassPrefix($classPrefix){
-        if(!is_string($classPrefix) || $classPrefix == ''){
+    public static function addPlaceholderClassPrefix($classPrefix)
+    {
+        if (!is_string($classPrefix) || $classPrefix == '') {
             throw new \Exception('$classPrefix has to be a valid string and mustn\'t be empty');
         }
 
@@ -65,17 +66,19 @@ class Placeholder
      * @return bool
      * @throws \Exception
      */
-    public static function removePlaceholderClassPrefix($classPrefix){
-        if(!is_string($classPrefix) || $classPrefix == ''){
+    public static function removePlaceholderClassPrefix($classPrefix)
+    {
+        if (!is_string($classPrefix) || $classPrefix == '') {
             throw new \Exception('$classPrefix has to be a valid string and mustn\'t be empty');
         }
 
-        $arrayIndex = array_search($classPrefix,self::$placeholderClassPrefixes);
+        $arrayIndex = array_search($classPrefix, self::$placeholderClassPrefixes);
 
-        if($arrayIndex === false){
+        if ($arrayIndex === false) {
             return false;
-        }else{
+        } else {
             unset(self::$placeholderClassPrefixes[$arrayIndex]);
+
             return true;
         }
     }
@@ -85,7 +88,8 @@ class Placeholder
      * @static
      * @return array
      */
-    public static function getPlaceholderClassPrefixes(){
+    public static function getPlaceholderClassPrefixes()
+    {
         return array_reverse(self::$placeholderClassPrefixes);
     }
 
@@ -169,13 +173,12 @@ class Placeholder
      */
     public function detectPlaceholders($contentString, $params, $document = null)
     {
-        $placeholderStack = array();
+        $placeholderStack = [];
 
         $regex = "/" . self::$placeholderPrefix . "([a-z_]+)\(([a-z_0-9]+)[\s,]*(.*?)\)" . self::$placeholderSuffix . "/is";
         preg_match_all($regex, $contentString, $matches);
 
         if (is_array($matches[1])) {
-
             foreach ($matches[1] as $key => $match) {
                 $placeholderString = $matches[0][$key]; //placeholder string
                 $placeholderClass = $matches[1][$key]; //placeholder php class
@@ -185,10 +188,10 @@ class Placeholder
                 if ($placeholderConfigString) {
                     //try to create the json config object
                     try {
-                        $configJsonString = str_replace(array("&quot;","'"), '"', $placeholderConfigString);
-                        $placeholderConfig = new \Zend_Config_Json($configJsonString,null,array('ignoreconstants' => true));
+                        $configJsonString = str_replace(["&quot;", "'"], '"', $placeholderConfigString);
+                        $placeholderConfig = new \Zend_Config_Json($configJsonString, null, ['ignoreconstants' => true]);
                     } catch (\Exception $e) {
-                        \Logger::warn('PlaceholderConfig is not a valid JSON string. PlaceholderConfig for ' . $placeholderClass . ' ignored.');
+                        Logger::warn('PlaceholderConfig is not a valid JSON string. PlaceholderConfig for ' . $placeholderClass . ' ignored.');
                         continue;
                     }
                 } else {
@@ -196,13 +199,13 @@ class Placeholder
                     $placeholderConfig = new \Zend_Config_Json("{}");
                 }
 
-                $placeholderStack[] = array('placeholderString' => $placeholderString,
+                $placeholderStack[] = ['placeholderString' => $placeholderString,
                     'placeholderClass' => $placeholderClass,
                     'placeholderKey' => $placeholderKey,
                     'placeholderConfig' => $placeholderConfig,
                     'document' => $document,
                     'params' => $params,
-                    'contentString' => $contentString);
+                    'contentString' => $contentString];
             }
         }
 
@@ -217,7 +220,7 @@ class Placeholder
      * @param null | Model\Document $document
      * @return string
      */
-    public function replacePlaceholders($mixed, $params = array(), $document = null,$enableLayoutOnPlaceholderReplacement = true)
+    public function replacePlaceholders($mixed, $params = [], $document = null, $enableLayoutOnPlaceholderReplacement = true)
     {
         if (is_string($mixed)) {
             $contentString = $mixed;
@@ -234,6 +237,7 @@ class Placeholder
         //replaces the placeholders if any were found
         if (!empty($placeholderStack)) {
             $replacedString = $this->replacePlaceholdersFromStack($placeholderStack);
+
             return $replacedString;
         } else {
             return $contentString;
@@ -247,20 +251,19 @@ class Placeholder
      * @param array $placeholderStack
      * @return string
      */
-    protected function replacePlaceholdersFromStack($placeholderStack = array())
+    protected function replacePlaceholdersFromStack($placeholderStack = [])
     {
         $stringReplaced = null;
         if (!empty($placeholderStack)) {
-
             foreach ($placeholderStack as $placeholder) {
                 $placeholderObject = null;
                 $placeholderClassPrefixes = self::getPlaceholderClassPrefixes();
 
                 $placeholderObject = null;
 
-                foreach($placeholderClassPrefixes as $classPrefix){
+                foreach ($placeholderClassPrefixes as $classPrefix) {
                     $className = $classPrefix . $placeholder['placeholderClass'];
-                    if(Tool::classExists($className)){
+                    if (Tool::classExists($className)) {
                         $placeholderObject = new $className();
                         break;
                     }
@@ -287,10 +290,11 @@ class Placeholder
                     }
                     $stringReplaced = str_replace($placeholderObject->getPlaceholderString(), $replaceWith, $stringReplaced);
                 } else {
-                    \Logger::warn('Ignoring Placeholder "' . $placeholder['placeholderClass'] . '" -> Class not Found or not an instance of Pimcore_Placeholder_Abstract!');
+                    Logger::warn('Ignoring Placeholder "' . $placeholder['placeholderClass'] . '" -> Class not Found or not an instance of Pimcore_Placeholder_Abstract!');
                 }
             }
         }
+
         return $stringReplaced;
     }
 }

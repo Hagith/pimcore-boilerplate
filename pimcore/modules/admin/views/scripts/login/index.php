@@ -2,13 +2,15 @@
 <html>
 <head>
 
-    <title>Welcome to pimcore!</title>
+    <title>Welcome to Pimcore!</title>
 
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="UTF-8">
     <meta name="robots" content="noindex, follow" />
 
-    <link rel="stylesheet" href="/pimcore/static/css/login.css" type="text/css" />
-    <script type="text/javascript" src="/pimcore/static/js/lib/jquery.min.js"></script>
+    <link rel="icon" type="image/png" href="/pimcore/static6/img/favicon/favicon-32x32.png" />
+
+    <link rel="stylesheet" href="/pimcore/static6/css/login.css" type="text/css" />
+    <script type="text/javascript" src="/pimcore/static6/js/lib/jquery.min.js"></script>
 
     <?php
     // load plugin scripts
@@ -47,19 +49,19 @@ $browser = new \Pimcore\Browser();
 $browserVersion = (int) $browser->getVersion();
 $platform = $browser->getPlatform();
 
-if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_FIREFOX && $browserVersion >= 4) {
+if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_FIREFOX && $browserVersion >= 39) {
     $supported = true;
 }
-if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_IE && $browserVersion >= 9) {
+if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_IE && $browserVersion >= 11) {
     $supported = true;
 }
-if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_CHROME && $browserVersion >= 6) {
+if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_CHROME && $browserVersion >= 40) {
     $supported = true;
 }
-if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_SAFARI && $browserVersion >= 5) {
+if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_SAFARI && $browserVersion >= 7) {
     $supported = true;
 }
-if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_OPERA && $browserVersion >= 15) {
+if ($browser->getBrowser() == \Pimcore\Browser::BROWSER_OPERA && $browserVersion >= 30) {
     $supported = true;
 }
 
@@ -92,10 +94,7 @@ $config = \Pimcore\Config::getSystemConfig();
 <div id="vcenter" class="<?= ($config->general->loginscreencustomimage ? "customimage" : ""); ?>">
     <div id="hcenter">
         <div id="header">
-            <img src="/pimcore/static/img/login/logo.png">
-            <p>
-                Your Open Source Multichannel PLatform
-            </p>
+            <img src="/pimcore/static6/img/logo-white.svg">
         </div>
         <div id="content">
             <div id="loginform">
@@ -108,7 +107,7 @@ $config = \Pimcore\Config::getSystemConfig();
                     <?php } ?>
 
                     <div class="form-fields">
-                        <input type="text" name="username" placeholder="<?= $this->translate("Username"); ?>" required />
+                        <input type="text" name="username" placeholder="<?= $this->translate("Username"); ?>" required autofocus />
                         <input type="password" name="password" placeholder="<?= $this->translate("Password"); ?>" required />
                     </div>
 
@@ -130,10 +129,10 @@ $config = \Pimcore\Config::getSystemConfig();
 
                     <div class="body">
                         <div class="links">
-                            <a href="http://www.google.com/chrome/" target="_blank"><img src="/pimcore/static/img/login/chrome.png"/></a>
-                            <a href="http://www.mozilla.com/" target="_blank"><img src="/pimcore/static/img/login/firefox.png"/></a>
-                            <a href="http://www.apple.com/safari/" target="_blank"><img src="/pimcore/static/img/login/safari.png"/></a>
-                            <a href="http://www.microsoft.com/" target="_blank"><img src="/pimcore/static/img/login/ie.png"/></a>
+                            <a href="http://www.google.com/chrome/" target="_blank" title="Chrome"><img src="/pimcore/static6/img/login/chrome.svg" alt="Chrome"/></a>
+                            <a href="http://www.mozilla.com/" target="_blank" title="Firefox"><img src="/pimcore/static6/img/login/firefox.svg" alt="Firefox"/></a>
+                            <a href="http://www.apple.com/safari/" target="_blank" title="Safari"><img src="/pimcore/static6/img/login/safari.svg" alt="Safari"/></a>
+                            <a href="http://www.microsoft.com/" target="_blank" title="Edge"><img src="/pimcore/static6/img/login/edge.svg" alt="Edge"/></a>
                         </div>
                         <br>
                         <a href="#" onclick="showLogin();"><?= $this->translate("Click here to proceed"); ?></a>
@@ -157,11 +156,13 @@ $config = \Pimcore\Config::getSystemConfig();
     </div>
 </div>
 <div id="footer">
-    <a href="http://www.pimcore.org/">pimcore. Open Source Multichannel Experience and Engagement Platform</a>
-    <br />
     &copy; 2009-<?= date("Y") ?> <a href="http://www.pimcore.org/">pimcore GmbH</a>, a proud member of the <a href="http://www.elements.at/">elements group</a>
 </div>
 
+<?php if (!$config->general->loginscreencustomimage) { ?>
+    <div id="background"></div>
+    <div id="backgroundImageInfo"></div>
+<?php } ?>
 
 <script type="text/javascript">
     <?php if(!$this->getParam("deeplink")) { ?>
@@ -171,7 +172,7 @@ $config = \Pimcore\Config::getSystemConfig();
     $("#username").select();
 </script>
 
-<script type="text/javascript" src="https://www.pimcore.org/imageservice/?nocache=1"></script>
+<script type="text/javascript" src="https://www.pimcore.org/imageservice/"></script>
 
 </body>
 </html>

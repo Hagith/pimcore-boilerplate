@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.metadata.predefined");
@@ -53,8 +52,6 @@ pimcore.settings.metadata.predefined = Class.create({
     },
 
     getRowEditor: function () {
-        var itemsPerPage = 20;
-
         var url =  '/admin/settings/metadata?';
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -78,8 +75,10 @@ pimcore.settings.metadata.predefined = Class.create({
                 {name: 'language', allowBlank: true},
                 {name: 'creationDate', allowBlank: true},
                 {name: 'modificationDate', allowBlank: true}
-            ],
-            itemsPerPage
+            ], null, {
+                remoteSort: false,
+                remoteFilter: false
+            }
         );
 
         this.store.addListener('exception', function(proxy, mode, action, options, response) {
@@ -92,9 +91,6 @@ pimcore.settings.metadata.predefined = Class.create({
             });
         });
 
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
-
-
         this.filterField = new Ext.form.TextField({
             xtype: "textfield",
             width: 200,
@@ -104,7 +100,7 @@ pimcore.settings.metadata.predefined = Class.create({
                 "keydown" : function (field, key) {
                     if (key.getKey() == key.ENTER) {
                         var input = field;
-                        var proxy = this.store.getPropxy();
+                        var proxy = this.store.getProxy();
                         proxy.extraParams.filter = input.getValue();
                         this.store.load();
                     }
@@ -127,30 +123,37 @@ pimcore.settings.metadata.predefined = Class.create({
                 renderer: this.getTypeRenderer.bind(this),
                 sortable: true
             },
-            {header: t("name"), width: 200, sortable: true, dataIndex: 'name', editor: new Ext.form.TextField({})},
-            {header: t("description"), sortable: true, dataIndex: 'description', editor: new Ext.form.TextArea({}),
-                    renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                                    if(empty(value)) {
-                                        return "";
-                                    }
-                                    return nl2br(value);
-                               }
+            {header: t("name"), width: 200, sortable: true, dataIndex: 'name',
+                getEditor: function() { return new Ext.form.TextField({}); }
+            },
+            {header: t("description"), sortable: true, dataIndex: 'description',
+                getEditor: function() { return new Ext.form.TextArea({}); },
+                renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+                                if(empty(value)) {
+                                    return "";
+                                }
+                                return nl2br(value);
+                           }
             },
             {header: t("type"), width: 90, sortable: true,
-                dataIndex: 'type', editor: new Ext.form.ComboBox({
-                editable: false,
-                store: [
-                    ["input", t("input")],
-                    ["textarea", t("textarea")],
-                    ["document", "Document"],
-                    ["asset", "Asset"],
-                    ["object", "Object"],
-                    ["date", "Date"],
-                    ["checkbox", "checkbox"],
-                    ["select", "select"]
-                ]
+                dataIndex: 'type',
+                getEditor: function() {
+                    return new Ext.form.ComboBox({
+                        editable: false,
+                        store: [
+                            ["input", t("input")],
+                            ["textarea", t("textarea")],
+                            ["document", "Document"],
+                            ["asset", "Asset"],
+                            ["object", "Object"],
+                            ["date", "Date"],
+                            ["checkbox", "checkbox"],
+                            ["select", "select"]
+                        ]
 
-            })},
+                    })
+                }
+            },
             {header: t("value"),
                 flex: 510,
                 sortable: true,
@@ -163,31 +166,38 @@ pimcore.settings.metadata.predefined = Class.create({
                 width: 100,
                 sortable: false,
                 dataIndex: 'config',
-                editor: new Ext.form.TextField({})
+                getEditor: function() { return new Ext.form.TextField({}); }
             },
             {
                 header: t('language'),
                 sortable: true,
                 dataIndex: "language",
-                editor: new Ext.form.ComboBox({
-                    name: "language",
-                    store: languagestore,
-                    editable: false,
-                    triggerAction: 'all',
-                    mode: "local"
-                }),
+                getEditor: function() {
+                    return new Ext.form.ComboBox({
+                        name: "language",
+                        store: languagestore,
+                        editable: false,
+                        triggerAction: 'all',
+                        mode: "local"
+                    });
+                },
                 width: 70
             },
-            {header: t("target_subtype"), width: 80, sortable: true, dataIndex: 'targetSubtype', editor: new Ext.form.ComboBox({
-                editable: true,
-                store: ["image", "text", "audio", "video", "document", "archive", "unknown"]
-            })},
+            {
+                header: t("target_subtype"), width: 80, sortable: true, dataIndex: 'targetSubtype',
+                getEditor: function() {
+                    return new Ext.form.ComboBox({
+                        editable: true,
+                        store: ["image", "text", "audio", "video", "document", "archive", "unknown"]
+                    });
+                }
+            },
             {
                 xtype: 'actioncolumn',
                 width: 40,
                 items: [{
                     tooltip: t('delete'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         grid.getStore().removeAt(rowIndex);
                     }.bind(this)
@@ -233,6 +243,7 @@ pimcore.settings.metadata.predefined = Class.create({
             store: this.store,
             columnLines: true,
             stripeRows: true,
+            bodyCls: "pimcore_editable_grid",
             trackMouseOver: true,
             columns : metadataColumns,
             clicksToEdit: 1,
@@ -275,8 +286,7 @@ pimcore.settings.metadata.predefined = Class.create({
         if (value == "input") {
             value = "text";
         }
-        return '<div style="background: url(/pimcore/static6/img/icon/' + value + '.png) '
-            + 'center center no-repeat; height: 16px;" recordid=' + record.id + '>&nbsp;</div>';
+        return '<div class="pimcore_icon_' + value + '" recordid=' + record.id + '>&nbsp;</div>';
     },
 
 

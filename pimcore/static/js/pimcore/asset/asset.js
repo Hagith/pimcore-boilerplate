@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.asset");
@@ -356,8 +355,7 @@ pimcore.asset.asset = Class.create(pimcore.element.abstract, {
 
     upload: function () {
 
-        pimcore.helpers.uploadDialog('/admin/asset/replace-asset/?pimcore_admin_sid='
-            + pimcore.settings.sessionId + "&id=" + this.data.id, "Filedata", function() {
+        pimcore.helpers.uploadDialog('/admin/asset/replace-asset/?id=' + this.data.id, "Filedata", function() {
             this.reload();
         }.bind(this), function () {
             Ext.MessageBox.alert(t("error"), t("error"));

@@ -3,17 +3,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\KeyValue;
@@ -21,12 +20,14 @@ namespace Pimcore\Model\Object\KeyValue;
 use Pimcore\Model;
 use Pimcore\Model\Object;
 
-class Helper {
+class Helper
+{
 
     /** Returns the group/key config as XML.
      * @return mixed
      */
-    public static function export() {
+    public static function export()
+    {
         $xml = new \SimpleXMLElement('<xml/>');
 
         $groupConfigList = new Object\KeyValue\GroupConfig\Listing();
@@ -65,13 +66,14 @@ class Helper {
     /** Imports the group/key config from XML.
      * @param $config
      */
-    public static function import($config) {
+    public static function import($config)
+    {
         if (is_array($config["groups"])) {
             $groups = $config["groups"]["group"];
             if (!isset($groups[0])) {
-                $groups = array($groups);
+                $groups = [$groups];
             }
-            $groupIdMapping = array();
+            $groupIdMapping = [];
 
             foreach ($groups as $groupConfig) {
                 $name = $groupConfig["name"];
@@ -90,7 +92,7 @@ class Helper {
         if (is_array($config["keys"])) {
             $keys = $config["keys"]["key"];
             if (!isset($keys[0])) {
-                $keys = array($keys);
+                $keys = [$keys];
             }
             foreach ($keys as $keyConfig) {
                 $name = $keyConfig["name"];
@@ -118,5 +120,4 @@ class Helper {
             }
         }
     }
-
 }

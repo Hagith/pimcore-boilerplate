@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.keyvalue.groupspanel");
@@ -42,7 +41,7 @@ pimcore.object.keyvalue.groupspanel = Class.create({
             readerFields.push({name: this.fields[i], allowBlank: true});
         }
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize(-1);
         var url =  "/admin/key-value/groups?";
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -50,7 +49,10 @@ pimcore.object.keyvalue.groupspanel = Class.create({
             readerFields,
             itemsPerPage
         );
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store,
+            {
+                pageSize: itemsPerPage
+            });
 
 
         this.store.addListener("exception", function (conn, mode, action, request, response, store) {
@@ -95,7 +97,7 @@ pimcore.object.keyvalue.groupspanel = Class.create({
             items: [
                 {
                     tooltip: t('remove'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                           var data = grid.getStore().getAt(rowIndex);
                           var id = data.data.id;
@@ -126,6 +128,7 @@ pimcore.object.keyvalue.groupspanel = Class.create({
             columns: gridColumns,
             loadMask: true,
             columnLines: true,
+            bodyCls: "pimcore_editable_grid",
             plugins: plugins,
             stripeRows: true,
             trackMouseOver: true,
@@ -189,8 +192,7 @@ pimcore.object.keyvalue.groupspanel = Class.create({
                              params: {
                                 "overrideSort": "true"
                             }
-                            }
-                        );
+                        });
                     }
                 }.bind(this)
             });

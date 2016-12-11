@@ -2,22 +2,22 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Search\Backend\Data;
 
 use Pimcore\Model\Element;
 
-class Id {
+class Id
+{
 
     /**
      * @var int
@@ -32,9 +32,10 @@ class Id {
     /**
      * @param $webResource
      */
-    public function __construct($webResource) {
+    public function __construct($webResource)
+    {
         $this->id = $webResource->getId();
-        if($webResource instanceof Element\ElementInterface) {
+        if ($webResource instanceof Element\ElementInterface) {
             $this->type = Element\Service::getType($webResource);
         } else {
             $this->type = "unknown";
@@ -44,14 +45,16 @@ class Id {
     /**
      * @return int
      */
-    public function getId(){
+    public function getId()
+    {
         return $this->id;
     }
 
     /**
      * @return string
      */
-    public function getType(){
+    public function getType()
+    {
         return $this->type;
     }
 }

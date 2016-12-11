@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.layout.portlets.customreports");
@@ -25,7 +24,7 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
     },
 
     getIcon: function () {
-        return "pimcore_icon_portlet_custom_reports";
+        return "pimcore_icon_reports";
     },
 
     getLayout: function (portletId) {
@@ -62,9 +61,42 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
     },
 
     editSettings: function () {
+        this.configSelectionCombo = new Ext.form.ComboBox({
+            xtype:"combo",
+            width: 500,
+            id: "pimcore_portlet_selected_custom_report",
+            autoSelect: true,
+            valueField: "id",
+            displayField: "text",
+            value: this.config,
+            fieldLabel: t("portlet_customreport"),
+            store: new Ext.data.Store({
+                autoDestroy: true,
+                autoLoad: true,
+                proxy: {
+                    type: 'ajax',
+                    url: '/admin/reports/custom-report/tree',
+                    extraParams: {
+                        portlet: 1
+                    },
+                    reader: {
+                        type: 'json',
+                        rootProperty: 'data'
+                    }
+                },
+                listeners: {
+                    load: function() {
+                        this.configSelectionCombo.setValue(this.config);
+                    }.bind(this)
+                },
+                fields: ['id','text']
+            }),
+            triggerAction: "all"
+        });
+
         var win = new Ext.Window({
             width: 600,
-            height: 100,
+            height: 150,
             modal: true,
             title: t('portlet_customreport_settings'),
             closeAction: "destroy",
@@ -73,31 +105,7 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
                     xtype: "form",
                     bodyStyle: "padding: 10px",
                     items: [
-                        {
-                            xtype:"combo",
-                            id: "pimcore_portlet_selected_custom_report",
-                            autoSelect: true,
-                            valueField: "id",
-                            displayField: "text",
-                            value: this.config,
-                            fieldLabel: t("portlet_customreport"),
-                            store: new Ext.data.Store({
-                                autoDestroy: true,
-                                proxy: {
-                                    type: 'ajax',
-                                    url: '/admin/reports/custom-report/tree',
-                                    extraParams: {
-                                        portlet: 1
-                                    },
-                                    reader: {
-                                        type: 'json',
-                                        rootProperty: 'data'
-                                    }
-                                },
-                                fields: ['id','text']
-                            }),
-                            triggerAction: "all"
-                        },
+                        this.configSelectionCombo,
                         {
                             xtype: "button",
                             text: t("save"),
@@ -139,10 +147,10 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
                 success: function (response) {
                     var data = Ext.decode(response.responseText);
 
-                    var chartPanel = this.getChart(data);
+                    var chart = this.getChart(data);
                     this.layout.removeAll();
-                    if(chartPanel) {
-                        this.layout.add(chartPanel);
+                    if(chart) {
+                        this.layout.add(chart);
                     }
 
                     this.layout.setTitle(t("portlet_customreport") + ": " + data.niceName);
@@ -171,14 +179,14 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
     ],
 
     getChart: function(data) {
-        var chartPanel = null;
+        var chart = null;
 
-        var columnLabels = {};
+        this.columnLabels = {};
         var colConfig;
 
         for(var f=0; f<data.columnConfiguration.length; f++) {
             colConfig = data.columnConfiguration[f];
-            columnLabels[colConfig["name"]] = colConfig["label"] ? ts(colConfig["label"]) : ts(colConfig["name"]);
+            this.columnLabels[colConfig["name"]] = colConfig["label"] ? ts(colConfig["label"]) : ts(colConfig["name"]);
         }
 
 
@@ -193,7 +201,7 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
                 autoDestroy: true,
                 proxy: {
                     type: 'ajax',
-                    url: "/admin/reports/custom-report/chart",
+                    url: "/admin/reports/custom-report/chart/?",
                     extraParams: {
                         name: this.config
                     },
@@ -208,77 +216,146 @@ pimcore.layout.portlets.customreports = Class.create(pimcore.layout.portlets.abs
 
             var series = [];
             for(var i = 0; i < data.yAxis.length; i++) {
+                var yAxis = data.yAxis[i];
                 series.push({
-                    displayName: columnLabels[data.yAxis[i]],
-                    type: (data.chartType == 'line' ? 'line' : 'column'),
-                    yField: data.yAxis[i],
-                    style: {
-                        color: this.chartColors[i]
+                    displayName: this.columnLabels[data.yAxis[i]],
+                    type: (data.chartType == 'line' ? 'line' : 'bar'),
+                    xField: data.xAxis,
+                    yField: yAxis,
+                    marker: {
+                        radius: 4
+                    },
+                    highlight: true,
+                    tooltip: {
+                        trackMouse: true,
+                        renderer: function (tooltip, record, item) {
+                            tooltip.setHtml(record.get(data.xAxis) + ': ' + record.get(yAxis));
+                        }
                     }
                 });
             }
 
-            chartPanel = new Ext.Panel({
-                id:"cartID",
-                region: "north",
+            chart = Ext.create('Ext.chart.CartesianChart', {
+                store: chartStore,
+                width: '100%',
                 height: 350,
-                border: false,
-                items: [{
-                    xtype: (data.chartType == 'line' ? 'cartesian' : 'columnchart'),
-                    store: chartStore,
-                    xField: data.xAxis,
-                    chartStyle: {
-                        padding: 10,
-                        legend: {
-                            display: 'bottom'
-                        }
-                    },
-                    series: series
-                }]
-            });
-        } else if(data.chartType == 'pie') {
-            var chartStore = new Ext.data.Store({
-                autoDestroy: true,
-                proxy: {
-                    type: 'ajax',
-                    url: "/admin/reports/custom-report/chart",
-                    extraParams: {
-                        name: this.config
-                    },
-                    reader: {
-                        type: 'json',
-                        rootProperty: 'data'
-                    }
+                insetPadding: 5,
+                innerPadding: 10,
+                legend: {
+                    docked: 'bottom'
                 },
-                fields: [data.pieLabelColumn, data.pieColumn]
+                interactions: [
+                    'itemhighlight',
+                    {
+                        type: 'panzoom',
+                        zoomOnPanGesture: true
+                    }
+                ],
+                axes: [
+                    {
+                        type: 'numeric',
+                        fields: data.yAxis,
+                        position: 'left',
+                        grid: true
+                    },{
+                        type: 'category',
+                        fields: data.xAxis,
+                        position: 'bottom'
+                    }
+                ],
+                series: series
             });
-            chartStore.load();
 
-            chartPanel = new Ext.Panel({
-                region: "north",
+        } else if(data.chartType == 'pie') {
+            var chartFields = [];
+            if (data.pieLabelColumn) {
+                chartFields.push(data.pieLabelColumn);
+            };
+            if (data.pieColumn) {
+                chartFields.push({
+                    name: data.pieColumn,
+                    type: "int"
+                });
+            }
+
+            var chartStore = pimcore.helpers.grid.buildDefaultStore(
+                '/admin/reports/custom-report/chart/?',
+                chartFields,
+                400000000
+            );
+            var proxy = chartStore.getProxy();
+            proxy.extraParams.name = this.config;
+
+            var chart = Ext.create('Ext.chart.PolarChart', {
+                xtype: "polar",
+                store: chartStore,
+                theme: 'default-gradients',
+                width: '100%',
                 height: 350,
-                border: false,
-                items: [{
-                    store: chartStore,
-                    xtype: 'piechart',
-                    dataField: data.pieColumn,
-                    categoryField: data.pieLabelColumn,
-                    chartStyle: {
-                        padding: 10,
-                        legend: {
-                            display: 'right'
-                        }
+                innerPadding: 10,
+                legend: {
+                    docked: 'right'
+                },
+                interactions: ['rotate'],
+                series: [{
+                    type: 'pie',
+                    xField: data.pieColumn,
+                    highlight: true,
+                    tooltip: {
+                        trackMouse: true,
+                        renderer: function (tooltip, record, item) {
+                            var count = chartStore.getCount();
+                            var value = record.get(data.pieColumn);
+
+
+                            var sum = chartStore.sum(data.pieColumn);
+                            var percentage = sum > 0 ? " (" + Math.round((value * 100 / sum)) + ' %)' : "";
+                            tooltip.setHtml(record.get(data.pieLabelColumn) + ': ' + value + percentage);
+                        }.bind(this)
                     }
                 }]
             });
+
+            //this is needed to display correct data in legend when no label is defined
+            //label cannot be defined, because there is a bug when reloading chartstore with another amount of data entries
+            var series = chart.getSeries()[0];
+            series.provideLegendInfo = function (target) {
+                var me = this,
+                    store = me.getStore();
+
+                if (store) {
+                    var items = store.getData().items,
+                        labelField = data.pieLabelColumn,
+                        xField = me.getXField(),
+                        hidden = me.getHidden(),
+                        i, style, fill;
+
+                    for (i = 0; i < items.length; i++) {
+                        style = me.getStyleByIndex(i);
+                        fill = style.fillStyle;
+                        if (Ext.isObject(fill)) {
+                            fill = fill.stops && fill.stops[0].color;
+                        }
+                        target.push({
+                            name: labelField ? String(items[i].get(labelField)) : xField + ' ' + i,
+                            mark: fill || style.strokeStyle || 'black',
+                            disabled: hidden[i],
+                            series: me.getId(),
+                            index: i
+                        });
+                    }
+                }
+            };
         }
 
-        return chartPanel;
+        return chart;
     },
 
     openReport: function() {
         var toolbar = pimcore.globalmanager.get("layout_toolbar");
-        toolbar.showReports(pimcore.report.custom.report, {
+
+        var reportClass = this.reportConfig.reportClass ? this.reportConfig.reportClass : "pimcore.report.custom.report";
+        toolbar.showReports(reportClass, {
             name: this.reportConfig.name,
             text: this.reportConfig.niceName,
             niceName: this.reportConfig.niceName,

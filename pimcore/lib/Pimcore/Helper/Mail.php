@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Helper;
@@ -53,7 +52,7 @@ class Mail
             }
             $debugInformation .= '</td></tr>';
 
-            foreach (array('To', 'Cc', 'Bcc') as $key) {
+            foreach (['To', 'Cc', 'Bcc'] as $key) {
                 if (isset($temporaryStorage[$key]) && is_array($temporaryStorage[$key])) {
                     $debugInformation .= '<tr><td class="pimcore_label_column">' . $key . ': </td>';
                     $debugInformation .= '<td>' . self::formatDebugReceivers($temporaryStorage[$key]) . '</td></tr>';
@@ -64,7 +63,16 @@ class Mail
         } else {
             //generating text debug info
             $debugInformation = "\r\n  \r\nDebug Information:  \r\n  \r\n";
-            foreach (array('To', 'Cc', 'Bcc') as $key) {
+            if ($mail->getFrom()) {
+                $debugInformation .= 'From: ' . $mail->getFrom(). "\r\n";
+            } else {
+                $defaultFrom = $mail->getDefaultFrom();
+                $debugInformation .= 'From: ' . $defaultFrom["email"] . ' (Info: No "from" email address given so the default "from" email address is used from "Settings" -> "System" -> "Email Settings" )'. "\r\n";
+            }
+
+            //generating text debug info
+            $debugInformation = "\r\n  \r\nDebug Information:  \r\n  \r\n";
+            foreach (['To', 'Cc', 'Bcc'] as $key) {
                 if (isset($temporaryStorage[$key]) && is_array($temporaryStorage[$key])) {
                     $debugInformation .= "$key: " . self::formatDebugReceivers($temporaryStorage[$key]) . "\r\n";
                 }
@@ -109,6 +117,7 @@ class Mail
 
 </style>
 CSS;
+
         return $style;
     }
 
@@ -118,11 +127,11 @@ CSS;
      * @param array $receivers
      * @return string
      */
-    protected static function formatDebugReceivers(Array $receivers)
+    protected static function formatDebugReceivers(array $receivers)
     {
         $tmpString = '';
         foreach ($receivers as $entry) {
-            if(isset($entry['email'])) {
+            if (isset($entry['email'])) {
                 $tmpString .= $entry['email'];
                 if (isset($entry['name'])) {
                     $tmpString .= " (" . $entry["name"] . ")";
@@ -131,6 +140,7 @@ CSS;
             }
         }
         $tmpString = substr($tmpString, 0, strrpos($tmpString, ','));
+
         return $tmpString;
     }
 
@@ -150,8 +160,16 @@ CSS;
 
         $emailLog->setRequestUri(htmlspecialchars($_SERVER['REQUEST_URI']));
         $emailLog->setParams($mail->getParams());
-        $emailLog->setSubject($mail->getSubject());
         $emailLog->setSentDate(time());
+
+        $subject = $mail->getSubjectRendered();
+        if (0 === strpos($subject, '=?')) {
+            $mbIntEnc = mb_internal_encoding();
+            mb_internal_encoding($mail->getCharset());
+            $subject = mb_decode_mimeheader($subject);
+            mb_internal_encoding($mbIntEnc);
+        }
+        $emailLog->setSubject($subject);
 
         $mailFrom = $mail->getFrom();
         if ($mailFrom) {
@@ -177,7 +195,7 @@ CSS;
         }
 
         $temporaryStorage = $mail->getTemporaryStorage();
-        foreach (array('To', 'Cc', 'Bcc') as $key) {
+        foreach (['To', 'Cc', 'Bcc'] as $key) {
             if (isset($temporaryStorage[$key]) && is_array($temporaryStorage[$key])) {
                 if (method_exists($emailLog, 'set' . $key)) {
                     $emailLog->{"set$key"}(self::formatDebugReceivers($temporaryStorage[$key]));
@@ -203,21 +221,33 @@ CSS;
             throw new \Exception('$document has to be an instance of Document');
         }
 
-        if(is_null($hostUrl)){
-            $hostUrl = \Pimcore\Tool::getHostUrl();
+        $replacePrefix = "";
+
+        if (!$hostUrl && $document) {
+            // try to determine if the newsletter is within a site
+            $site = \Pimcore\Tool\Frontend::getSiteForDocument($document);
+            if ($site) {
+                $hostUrl = "http://" . $site->getMainDomain();
+                $replacePrefix = $site->getRootPath();
+            }
+
+            // fallback
+            if (!$hostUrl) {
+                $hostUrl = \Pimcore\Tool::getHostUrl();
+            }
         }
 
         //matches all links
         preg_match_all("@(href|src)\s*=[\"']([^(http|mailto|javascript|data:|#)].*?(css|jpe?g|gif|png)?)[\"']@is", $string, $matches);
         if (!empty($matches[0])) {
             foreach ($matches[0] as $key => $value) {
-                $fullMatch = $matches[0][$key];
-                $linkType = $matches[1][$key];
                 $path = $matches[2][$key];
-                $fileType = $matches[3][$key];
 
-                if (strpos($path, '/') === 0) {
-                    $absolutePath = $hostUrl . $path;
+                if (strpos($path, '//') === 0) {
+                    $absolutePath = "http:" . $path;
+                } elseif (strpos($path, '/') === 0) {
+                    $absolutePath = preg_replace("@^" . $replacePrefix . "/@", "/", $path);
+                    $absolutePath = $hostUrl . $absolutePath;
                 } else {
                     $absolutePath = $hostUrl . "/$path";
                     $netUrl = new \Net_URL2($absolutePath);
@@ -228,6 +258,19 @@ CSS;
                 $string = preg_replace("!([\"'])$path([\"'])!is", "\\1" . $absolutePath . "\\2", $string);
             }
         }
+
+        preg_match_all("@srcset\s*=[\"'](.*?)[\"']@is", $string, $matches);
+        foreach ((array)$matches[1] as $i => $value) {
+            $parts = explode(',', $value);
+            foreach ($parts as $key => $v) {
+                $parts[$key] = $hostUrl.trim($v);
+            }
+            $s = ' srcset="'.implode(', ', $parts).'" ';
+            if ($matches[0][$i]) {
+                $string = str_replace($matches[0][$i], $s, $string);
+            }
+        }
+
         return $string;
     }
 
@@ -245,39 +288,45 @@ CSS;
         }
 
         //matches all <link> Tags
-        preg_match_all("@<link.*?href\s*=\s*[\"']([^http].*?)[\"'].*?(/?>|</\s*link>)@is", $string, $matches);
+        preg_match_all("@<link.*?href\s*=\s*[\"'](.*?)[\"'].*?(/?>|</\s*link>)@is", $string, $matches);
         if (!empty($matches[0])) {
-
             $css = "";
 
             foreach ($matches[0] as $key => $value) {
                 $fullMatch = $matches[0][$key];
                 $path = $matches[1][$key];
-                $fileInfo = self::getNormalizedFileInfo($path, $document);
-                if (in_array($fileInfo['fileExtension'], array('css', 'less'))) {
-                    if (is_readable($fileInfo['filePathNormalized'])) {
 
-                        if ($fileInfo['fileExtension'] == 'css') {
-                            $fileContent = file_get_contents($fileInfo['filePathNormalized']);
-                        } else {
-                            $fileContent = \Pimcore\Tool\Less::compile($fileInfo['filePathNormalized']);
-                            $fileContent = str_replace('/**** compiled with lessphp ****/','',$fileContent);
-                        }
-                        if ($fileContent) {
-                            $fileContent = self::normalizeCssContent($fileContent, $fileInfo);
-
-                            $css .= "\n\n\n";
-                            $css .= $fileContent;
-
-                            // remove <link> tag
-                            $string = str_replace($fullMatch, '', $string);
+                $fileContent = "";
+                $fileInfo = [];
+                if (stream_is_local($path)) {
+                    $fileInfo = self::getNormalizedFileInfo($path, $document);
+                    if (in_array($fileInfo['fileExtension'], ['css', 'less'])) {
+                        if (is_readable($fileInfo['filePathNormalized'])) {
+                            if ($fileInfo['fileExtension'] == 'css') {
+                                $fileContent = file_get_contents($fileInfo['filePathNormalized']);
+                            } else {
+                                $fileContent = \Pimcore\Tool\Less::compile($fileInfo['filePathNormalized']);
+                                $fileContent = str_replace('/**** compiled with lessphp ****/', '', $fileContent);
+                            }
                         }
                     }
+                } elseif (strpos($path, "http") === 0) {
+                    $fileContent = \Pimcore\Tool::getHttpData($path);
+                    $fileInfo = [
+                        "fileUrlNormalized" => $path
+                    ];
+                }
+
+                if ($fileContent) {
+                    $fileContent = self::normalizeCssContent($fileContent, $fileInfo);
+
+                    $css .= "\n\n\n";
+                    $css .= $fileContent;
+
+                    // remove <link> tag
+                    $string = str_replace($fullMatch, '', $string);
                 }
             }
-
-            $autoloader = \Zend_Loader_Autoloader::getInstance();
-            $autoloader->registerNamespace('TijsVerkoyen');
 
             $cssToInlineStyles = new CssToInlineStyles();
             $cssToInlineStyles->setHTML($string);
@@ -297,7 +346,7 @@ CSS;
      * @param array $fileInfo
      * @return string
      */
-    public static function normalizeCssContent($content, Array $fileInfo)
+    public static function normalizeCssContent($content, array $fileInfo)
     {
         preg_match_all("@url\s*\(\s*[\"']?(.*?)[\"']?\s*\)@is", $content, $matches);
         $hostUrl = Tool::getHostUrl();
@@ -335,7 +384,7 @@ CSS;
             throw new \Exception('$document has to be an instance of Document');
         }
 
-        $fileInfo = array();
+        $fileInfo = [];
         $hostUrl = Tool::getHostUrl();
         if ($path[0] != '/') {
             $fileInfo['fileUrl'] = $hostUrl . $document . "/$path"; //relative eg. ../file.css

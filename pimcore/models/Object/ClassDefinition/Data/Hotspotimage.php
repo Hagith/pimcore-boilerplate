@@ -1,18 +1,17 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
@@ -24,7 +23,8 @@ use Pimcore\Model\Document;
 use Pimcore\Model\Element;
 use Pimcore\Tool\Serialize;
 
-class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
+class Hotspotimage extends Model\Object\ClassDefinition\Data\Image
+{
 
     /**
      * Static type of this element
@@ -38,14 +38,14 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      *
      * @var string
      */
-    public $queryColumnType = array("image" => "int(11)","hotspots" => "text");
+    public $queryColumnType = ["image" => "int(11)", "hotspots" => "text"];
 
     /**
      * Type for the column
      *
      * @var string
      */
-    public $columnType = array("image" => "int(11)","hotspots" => "text");
+    public $columnType = ["image" => "int(11)", "hotspots" => "text"];
 
     /**
      * Type for the generated phpdoc
@@ -101,50 +101,57 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param Object\Data\Hotspotimage $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return integer|null
      */
-    public function getDataForResource($data, $object = null) {
+    public function getDataForResource($data, $object = null, $params = [])
+    {
         if ($data instanceof Object\Data\Hotspotimage) {
             $imageId = null;
-            if($data->getImage()) {
+            if ($data->getImage()) {
                 $imageId = $data->getImage()->getId();
             }
 
-            $metaData = array(
+            $metaData = [
                 "hotspots" => $data->getHotspots(),
                 "marker" => $data->getMarker(),
                 "crop" => $data->getCrop()
-            );
+            ];
 
             $metaData = Serialize::serialize($metaData);
 
-            return array(
+            return [
                 $this->getName() . "__image" => $imageId,
                 $this->getName() . "__hotspots" => $metaData
-            );
+            ];
         }
-        return array(
+
+        return [
             $this->getName() . "__image" => null,
             $this->getName() . "__hotspots" => null
-        );
+        ];
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param Object\Data\Hotspotimage $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return Asset
      */
-    public function getDataFromResource($data) {
-        if($data[$this->getName() . "__image"] || $data[$this->getName() . "__hotspots"]) {
-
+    public function getDataFromResource($data, $object = null, $params = [])
+    {
+        $imageId = $data[$this->getName() . "__image"];
+        $image = Asset::getById($imageId);
+        if ($image) {
             $metaData = $data[$this->getName() . "__hotspots"];
 
             // check if the data is JSON (backward compatibility)
             $md = json_decode($metaData, true);
-            if(!$md) {
+            if (!$md) {
                 $md = Serialize::unserialize($metaData);
             } else {
-                if(is_array($md) && count($md)) {
+                if (is_array($md) && count($md)) {
                     $md["hotspots"] = $md;
                 }
             }
@@ -154,71 +161,77 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
             $crop = empty($md["crop"]) ? null : $md["crop"];
 
             $rewritePath = function ($data) {
-
-                if(!is_array($data)) {
-                    return array();
+                if (!is_array($data)) {
+                    return [];
                 }
 
                 foreach ($data as &$element) {
-                    if(array_key_exists("data",$element) && is_array($element["data"]) && count($element["data"]) > 0) {
-                        foreach($element["data"] as &$metaData) {
+                    if (array_key_exists("data", $element) && is_array($element["data"]) && count($element["data"]) > 0) {
+                        foreach ($element["data"] as &$metaData) {
                             // this is for backward compatibility (Array vs. MarkerHotspotItem)
-                            if(is_array($metaData)) {
+                            if (is_array($metaData)) {
                                 $metaData = new Element\Data\MarkerHotspotItem($metaData);
                             }
                         }
                     }
                 }
+
                 return $data;
             };
 
             $hotspots = $rewritePath($hotspots);
             $marker = $rewritePath($marker);
 
-            return new Object\Data\Hotspotimage($data[$this->getName() . "__image"], $hotspots, $marker, $crop);
-        }
-        return null;
+            $value = new Object\Data\Hotspotimage($imageId, $hotspots, $marker, $crop);
 
+            return $value;
+        }
+
+        return null;
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param Object\Data\Hotspotimage $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return integer|null
      */
-    public function getDataForQueryResource($data, $object = null) {
-        return $this->getDataForResource($data, $object);
+    public function getDataForQueryResource($data, $object = null, $params = [])
+    {
+        return $this->getDataForResource($data, $object, $params);
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param Object\Data\Hotspotimage $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return integer
      */
-    public function getDataForEditmode($data, $object = null) {
+    public function getDataForEditmode($data, $object = null, $params = [])
+    {
         if ($data instanceof Object\Data\Hotspotimage) {
             $imageId = null;
-            if($data->getImage()) {
+            if ($data->getImage()) {
                 $imageId = $data->getImage()->getId();
             }
 
             $rewritePath = function ($data) {
-
-                if(!is_array($data)) {
-                    return array();
+                if (!is_array($data)) {
+                    return [];
                 }
 
                 foreach ($data as &$element) {
-                    if(array_key_exists("data",$element) && is_array($element["data"]) && count($element["data"]) > 0) {
-                        foreach($element["data"] as &$metaData) {
-                            if($metaData["value"] instanceof Element\ElementInterface) {
-                                $metaData["value"] = $metaData["value"]->getFullPath();
+                    if (array_key_exists("data", $element) && is_array($element["data"]) && count($element["data"]) > 0) {
+                        foreach ($element["data"] as &$metaData) {
+                            if ($metaData["value"] instanceof Element\ElementInterface) {
+                                $metaData["value"] = $metaData["value"]->getRealFullPath();
                             }
                         }
                     }
                 }
+
                 return $data;
             };
 
@@ -228,13 +241,14 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
             $marker = object2array($marker);
             $hotspots = object2array($hotspots);
 
-            return array(
+            return [
                 "image" => $imageId,
                 "hotspots" => $hotspots,
                 "marker" => $marker,
                 "crop" => $data->getCrop()
-            );
+            ];
         }
+
         return null;
     }
 
@@ -242,35 +256,36 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @see Model\Object\ClassDefinition\Data::getDataFromEditmode
      * @param Object\Data\Hotspotimage $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return Asset
      */
-    public function getDataFromEditmode($data, $object = null) {
-
+    public function getDataFromEditmode($data, $object = null, $params = [])
+    {
         $rewritePath = function ($data) {
-
-            if(!is_array($data)) {
-                return array();
+            if (!is_array($data)) {
+                return [];
             }
 
             foreach ($data as &$element) {
-                if(array_key_exists("data",$element) && is_array($element["data"]) && count($element["data"]) > 0) {
-                    foreach($element["data"] as &$metaData) {
+                if (array_key_exists("data", $element) && is_array($element["data"]) && count($element["data"]) > 0) {
+                    foreach ($element["data"] as &$metaData) {
                         $metaData = new Element\Data\MarkerHotspotItem($metaData);
-                        if(in_array($metaData["type"], array("object","asset","document"))) {
+                        if (in_array($metaData["type"], ["object", "asset", "document"])) {
                             $el = Element\Service::getElementByPath($metaData["type"], $metaData->getValue());
                             $metaData["value"] = $el;
                         }
                     }
                 }
             }
+
             return $data;
         };
 
-        if(array_key_exists("marker",$data) && is_array($data["marker"]) && count($data["marker"]) > 0) {
+        if (array_key_exists("marker", $data) && is_array($data["marker"]) && count($data["marker"]) > 0) {
             $data["marker"] = $rewritePath($data["marker"]);
         }
 
-        if(array_key_exists("hotspots",$data) && is_array($data["hotspots"]) && count($data["hotspots"]) > 0) {
+        if (array_key_exists("hotspots", $data) && is_array($data["hotspots"]) && count($data["hotspots"]) > 0) {
             $data["hotspots"] = $rewritePath($data["hotspots"]);
         }
 
@@ -281,9 +296,12 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
     /**
      * @see Object\ClassDefinition\Data::getVersionPreview
      * @param Asset\Image $data
+     * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getVersionPreview($data) {
+    public function getVersionPreview($data, $object = null, $params = [])
+    {
         if ($data instanceof Object\Data\Hotspotimage && $data->getImage() instanceof Asset\Image) {
             return '<img src="/admin/asset/get-image-thumbnail/id/' . $data->getImage()->getId() . '/width/100/height/100/aspectratio/true" />';
         }
@@ -292,21 +310,28 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
     /**
      * converts object data to a simple string value or CSV Export
      * @abstract
-     * @param Model\Object\AbstractObject $object
+     * @param Object\AbstractObject $object
+     * @param array $params
      * @return string
      */
-    public function getForCsvExport($object) {
-        $data = $this->getDataFromObjectParam($object);
+    public function getForCsvExport($object, $params = [])
+    {
+        $data = $this->getDataFromObjectParam($object, $params);
         if ($data instanceof Object\Data\Hotspotimage) {
             return base64_encode(Serialize::serialize($data));
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
      * @param string $importValue
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return mixed|null|Object\ClassDefinition\Data
      */
-    public function getFromCsvImport($importValue) {
+    public function getFromCsvImport($importValue, $object = null, $params = [])
+    {
         $value = null;
         $value = Serialize::unserialize(base64_decode($importValue));
         if ($value instanceof Object\Data\Hotspotimage) {
@@ -323,9 +348,9 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @param array $tags
      * @return array
      */
-    public function getCacheTags($data, $tags = array()) {
-
-        $tags = is_array($tags) ? $tags : array();
+    public function getCacheTags($data, $tags = [])
+    {
+        $tags = is_array($tags) ? $tags : [];
 
         if ($data instanceof Object\Data\Hotspotimage && $data->getImage() instanceof Asset\Image) {
             if (!array_key_exists($data->getImage()->getCacheTag(), $tags)) {
@@ -334,22 +359,22 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
 
 
             $getMetaDataCacheTags = function ($d, $tags) {
-
-                if(!is_array($d)) {
+                if (!is_array($d)) {
                     return $tags;
                 }
 
                 foreach ($d as $element) {
-                    if(array_key_exists("data",$element) && is_array($element["data"]) && count($element["data"]) > 0) {
-                        foreach($element["data"] as $metaData) {
-                            if($metaData["value"] instanceof Element\ElementInterface) {
-                                if(!array_key_exists($metaData["value"]->getCacheTag(), $tags)) {
+                    if (array_key_exists("data", $element) && is_array($element["data"]) && count($element["data"]) > 0) {
+                        foreach ($element["data"] as $metaData) {
+                            if ($metaData["value"] instanceof Element\ElementInterface) {
+                                if (!array_key_exists($metaData["value"]->getCacheTag(), $tags)) {
                                     $tags = $metaData["value"]->getCacheTags($tags);
                                 }
                             }
                         }
                     }
                 }
+
                 return $tags;
             };
 
@@ -367,34 +392,34 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @param mixed $data
      * @return array
      */
-    public function resolveDependencies($data) {
-
-        $dependencies = array();
+    public function resolveDependencies($data)
+    {
+        $dependencies = [];
 
         if ($data instanceof Object\Data\Hotspotimage && $data->getImage() instanceof Asset\Image) {
-            $dependencies["asset_" . $data->getImage()->getId()] = array(
+            $dependencies["asset_" . $data->getImage()->getId()] = [
                 "id" => $data->getImage()->getId(),
                 "type" => "asset"
-            );
+            ];
 
             $getMetaDataDependencies = function ($data, $dependencies) {
-
-                if(!is_array($data)) {
+                if (!is_array($data)) {
                     return $dependencies;
                 }
 
                 foreach ($data as $element) {
-                    if(array_key_exists("data",$element) && is_array($element["data"]) && count($element["data"]) > 0) {
-                        foreach($element["data"] as $metaData) {
-                            if($metaData["value"] instanceof Element\ElementInterface) {
-                                $dependencies[$metaData["type"] . "_" . $metaData["value"]->getId()] = array(
+                    if (array_key_exists("data", $element) && is_array($element["data"]) && count($element["data"]) > 0) {
+                        foreach ($element["data"] as $metaData) {
+                            if ($metaData["value"] instanceof Element\ElementInterface) {
+                                $dependencies[$metaData["type"] . "_" . $metaData["value"]->getId()] = [
                                     "id" => $metaData["value"]->getId(),
                                     "type" => $metaData["type"]
-                                );
+                                ];
                             }
                         }
                     }
                 }
+
                 return $dependencies;
             };
 
@@ -406,28 +431,57 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
     }
 
 
-        /**
+    /**
      * converts data to be exposed via webservices
      * @param string $object
+     * @param mixed $params
      * @return mixed
      */
-    public function getForWebserviceExport ($object) {
-        return $this->getForCsvExport($object);
+    public function getForWebserviceExport($object, $params = [])
+    {
+        $data = $this->getDataFromObjectParam($object, $params);
+
+        $dataForResource = $this->getDataForResource($data, $object, $params);
+
+        if ($dataForResource) {
+            if ($dataForResource['image__hotspots']) {
+                $dataForResource['image__hotspots'] = unserialize($dataForResource['image__hotspots']);
+            }
+
+            return $dataForResource;
+        }
+
+        return null;
     }
 
 
     /**
      * @param mixed $value
-     * @param null $relatedObject
+     * @param null $object
+     * @param array $params
      * @param null $idMapper
-     * @return mixed|void
+     * @return null|Asset|Object\Data\Hotspotimage
      * @throws \Exception
      */
-    public function getFromWebserviceImport($value, $relatedObject = null, $idMapper = null) {
-        $hotspotImage = $this->getFromCsvImport($value);
+    public function getFromWebserviceImport($value, $object = null, $params = [], $idMapper = null)
+    {
+        if (!is_null($value)) {
+            $value = json_decode(json_encode($value), true);
+
+            if ($value['image__image']) {
+                $value['image__image'] = $idMapper->getMappedId('asset', $value['image__image']);
+            }
+        }
+
+        if (is_array($value) && isset($value['image__hotspots']) && $value['image__hotspots']) {
+            $value['image__hotspots'] = serialize($value['image__hotspots']);
+        }
+        $hotspotImage = $this->getDataFromResource($value);
+
+
         /** @var $hotspotImage Object\Data\Hotspotimage */
 
-        if(!$hotspotImage) {
+        if (!$hotspotImage) {
             return null;
         }
 
@@ -439,16 +493,12 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
 
         $id = $theImage->getId();
 
-        if ($idMapper && !empty($id)) {
-            $id = $idMapper->getMappedId("asset", $id);
-            $fromMapper = true;
-        }
-
         $asset = Asset::getById($id);
-        if(empty($id) && !$fromMapper){
+        if (empty($id)) {
             return null;
-        } else if (is_numeric($id) and $asset instanceof Asset) {
+        } elseif (is_numeric($id) and $asset instanceof Asset) {
             $hotspotImage->setImage($asset);
+
             return $hotspotImage;
         } else {
             if (!$idMapper || !$idMapper->ignoreMappingFailures()) {
@@ -462,10 +512,11 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
     /**
      * @param $data
      * @param null $object
+     * @param mixed $params
      * @return null
      */
-    public function getDataForGrid($data, $object = null) {
-
+    public function getDataForGrid($data, $object = null, $params = [])
+    {
         if ($data instanceof Object\Data\Hotspotimage && $data->getImage() instanceof Asset) {
             return $data->getImage();
         } else {
@@ -488,11 +539,12 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @param array $params
      * @return Element\ElementInterface
      */
-    public function rewriteIds($object, $idMapping, $params = array()) {
+    public function rewriteIds($object, $idMapping, $params = [])
+    {
         $data = $this->getDataFromObjectParam($object, $params);
-        if($data instanceof Object\Data\Hotspotimage && $data->getImage()) {
+        if ($data instanceof Object\Data\Hotspotimage && $data->getImage()) {
             $id = $data->getImage()->getId();
-            if(array_key_exists("asset", $idMapping) and array_key_exists($id, $idMapping["asset"])) {
+            if (array_key_exists("asset", $idMapping) and array_key_exists($id, $idMapping["asset"])) {
                 $data->setImage(Asset::getById($idMapping["asset"][$id]));
 
                 // reset hotspot, marker & crop
@@ -502,10 +554,10 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
             }
 
 
-            if($data->getHotspots()) {
+            if ($data->getHotspots()) {
                 $data->setHotspots($this->rewriteIdsInDataEntries($data->getHotspots(), $idMapping));
             }
-            if($data->getMarker()) {
+            if ($data->getMarker()) {
                 $data->setMarker($this->rewriteIdsInDataEntries($data->getMarker(), $idMapping));
             }
         }
@@ -518,31 +570,32 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
      * @param $idMapping
      * @return array
      */
-    private function rewriteIdsInDataEntries($dataArray, $idMapping) {
-        $newDataArray = array();
-        if($dataArray) {
-            foreach($dataArray as $dataArrayEntry) {
-                if($dataArrayEntry['data']) {
-                    $newData = array();
-                    foreach($dataArrayEntry['data'] as $dataEntry) {
+    private function rewriteIdsInDataEntries($dataArray, $idMapping)
+    {
+        $newDataArray = [];
+        if ($dataArray) {
+            foreach ($dataArray as $dataArrayEntry) {
+                if ($dataArrayEntry['data']) {
+                    $newData = [];
+                    foreach ($dataArrayEntry['data'] as $dataEntry) {
                         //rewrite objects
-                        if($dataEntry['type'] == 'object' && $dataEntry['value']) {
+                        if ($dataEntry['type'] == 'object' && $dataEntry['value']) {
                             $id = $dataEntry['value']->getId();
-                            if(array_key_exists("object", $idMapping) and array_key_exists($id, $idMapping["object"])) {
+                            if (array_key_exists("object", $idMapping) and array_key_exists($id, $idMapping["object"])) {
                                 $dataEntry['value'] = Object::getById($idMapping["object"][$id]);
                             }
                         }
                         //rewrite assets
-                        if($dataEntry['type'] == 'asset' && $dataEntry['value']) {
+                        if ($dataEntry['type'] == 'asset' && $dataEntry['value']) {
                             $id = $dataEntry['value']->getId();
-                            if(array_key_exists("asset", $idMapping) and array_key_exists($id, $idMapping["asset"])) {
+                            if (array_key_exists("asset", $idMapping) and array_key_exists($id, $idMapping["asset"])) {
                                 $dataEntry['value'] = Asset::getById($idMapping["asset"][$id]);
                             }
                         }
                         //rewrite documents
-                        if($dataEntry['type'] == 'document' && $dataEntry['value']) {
+                        if ($dataEntry['type'] == 'document' && $dataEntry['value']) {
                             $id = $dataEntry['value']->getId();
-                            if(array_key_exists("document", $idMapping) and array_key_exists($id, $idMapping["document"])) {
+                            if (array_key_exists("document", $idMapping) and array_key_exists($id, $idMapping["document"])) {
                                 $dataEntry['value'] = Document::getById($idMapping["document"][$id]);
                             }
                         }
@@ -553,6 +606,61 @@ class Hotspotimage extends Model\Object\ClassDefinition\Data\Image {
                 $newDataArray[] = $dataArrayEntry;
             }
         }
+
         return $newDataArray;
+    }
+
+    /** Encode value for packing it into a single column.
+     * @param mixed $value
+     * @param Model\Object\AbstractObject $object
+     * @param mixed $params
+     * @return mixed
+     */
+    public function marshal($value, $object = null, $params = [])
+    {
+        if ($value instanceof Object\Data\Hotspotimage) {
+            $result = [];
+            $result["hotspots"] = $value->getHotspots();
+            $result["marker"] = $value->getMarker();
+            $result["crop"] = $value->getCrop();
+
+            $image = $value->getImage();
+            if ($image) {
+                $type = Element\Service::getType($image);
+                $id = $image->getId();
+                $result["image"] = [
+                    "type" => $type,
+                    "id" => $id
+                ];
+            }
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    /** See marshal
+     * @param mixed $value
+     * @param Model\Object\AbstractObject $object
+     * @param mixed $params
+     * @return mixed
+     */
+    public function unmarshal($value, $object = null, $params = [])
+    {
+        if (is_array($value)) {
+            $image = new Object\Data\Hotspotimage();
+            $image->setHotspots($value["hotspots"]);
+            $image->setMarker($value["marker"]);
+            $image->setCrop($value["crop"]);
+            if ($value["image"]) {
+                $type = $value["image"]["type"];
+                $id = $value["image"]["id"];
+                $asset = Element\Service::getElementById($type, $id);
+                $image->setImage($asset);
+            }
+
+            return $image;
+        }
     }
 }

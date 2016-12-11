@@ -2,21 +2,25 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2015 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Console;
 
-use Pimcore\Console\Log\Writer;
+use Monolog\Handler\NullHandler;
+use Monolog\Handler\StreamHandler;
+use Pimcore\Logger;
+use Pimcore\Console\Log\Formatter\ConsoleColorFormatter;
 use Pimcore\Tool\Admin;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -35,6 +39,9 @@ abstract class AbstractCommand extends \Symfony\Component\Console\Command\Comman
     /** @var Dumper */
     protected $dumper;
 
+    /** @var LoggerInterface */
+    protected $logger;
+
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
@@ -46,36 +53,91 @@ abstract class AbstractCommand extends \Symfony\Component\Console\Command\Comman
         $this->input  = $input;
         $this->output = $output;
 
+        $this->initializeLogging();
+
         // use Console\Dumper for nice debug output
         $this->dumper = new Dumper($this->output);
 
         // skip if maintenance mode is on and the flag is not set
         if (Admin::isInMaintenanceMode() && !$input->getOption('ignore-maintenance-mode')) {
-            throw new \RuntimeException('In maintenance mode - set the flag --ignore-maintenance-mode to force execution!');
+            //throw new \RuntimeException('In maintenance mode - set the flag --ignore-maintenance-mode to force execution!');
         }
     }
 
     /**
-     * Hook into the pimcore logger using the Pimcore\Console\Log\Writer
-     *
-     * @param int $filterPriority
+     * Initialize logging
      */
-    protected function initializePimcoreLogging($filterPriority = \Zend_Log::INFO)
+    protected function initializeLogging()
     {
-        $writer = new Writer($this->output);
-        $logger = new \Zend_Log($writer);
+        $logger = $this->getLogger();
+
+        // hook logger into pimcore
+        Logger::addLogger($logger);
 
         if ($this->output->isVerbose()) {
-            $filterPriority = null;
+            Logger::setPriorities([
+                "info",
+                "notice",
+                "warning",
+                "error",
+                "critical",
+                "alert",
+                "emergency"
+            ]);
         }
 
-        if (null !== $filterPriority) {
-            $logger->addFilter(new \Zend_Log_Filter_Priority($filterPriority));
+        // set all priorities
+        if ($this->output->isDebug()) {
+            Logger::setVerbosePriorities();
+        }
+    }
+
+    /**
+     *
+     */
+    protected function disableLogging()
+    {
+        Logger::removeLogger($this->getLogger());
+    }
+
+    /**
+     * Get log level - default to warning, but show all messages in verbose mode
+     *
+     * @return null|string
+     */
+    protected function getLogLevel()
+    {
+        $logLevel = LogLevel::WARNING;
+        if ($this->output->isVerbose()) {
+            $logLevel = null;
         }
 
-        // the filter handles verbosity
-        \Logger::setVerbosePriorities();
-        \Logger::addLogger($logger);
+        return $logLevel;
+    }
+
+    /**
+     * @return \Monolog\Logger|LoggerInterface
+     */
+    protected function getLogger()
+    {
+        if (null === $this->logger) {
+            $handler = null;
+            if ($this->output->isQuiet()) {
+                $handler = new NullHandler();
+            } else {
+                $handler = new StreamHandler($this->output->getStream(), $this->getLogLevel());
+                if (!$this->input->getOption('no-ansi')) {
+                    $handler->setFormatter(new ConsoleColorFormatter());
+                }
+            }
+
+            $logger = new \Monolog\Logger('core');
+            $logger->pushHandler($handler);
+
+            $this->logger = $logger;
+        }
+
+        return $this->logger;
     }
 
     /**

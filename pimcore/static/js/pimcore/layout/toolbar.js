@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.layout.toolbar");
@@ -609,20 +608,6 @@ pimcore.layout.toolbar = Class.create({
                     iconCls: "pimcore_icon_key",
                     handler: this.keyValueSettings
                 });
-
-                objectMenu.menu.items.push({
-                    text: t("classificationstore_menu_config"),
-                    iconCls: "pimcore_icon_classificationstore",
-                    handler: this.editClassificationStoreConfig
-                });
-
-
-                objectMenu.menu.items.push({
-                    text: t("custom_views"),
-                    iconCls: "pimcore_icon_custom_views",
-                    handler: this.editCustomViews
-                });
-
 
                 objectMenu.menu.items.push({
                     text: t("bulk_export"),
@@ -1334,15 +1319,6 @@ pimcore.layout.toolbar = Class.create({
         }
     },
 
-    editClassificationStoreConfig: function () {
-        try {
-            pimcore.globalmanager.get("classifcationstore_config").activate();
-        }
-        catch (e) {
-            pimcore.globalmanager.add("classifcationstore_config", new pimcore.object.classificationstore.configPanel());
-        }
-    },
-
     editClasses: function () {
         try {
             pimcore.globalmanager.get("classes").activate();
@@ -1369,16 +1345,7 @@ pimcore.layout.toolbar = Class.create({
             pimcore.globalmanager.add("objectbricks", new pimcore.object.objectbrick());
         }
     },
-
-    editCustomViews: function () {
-        try {
-            pimcore.globalmanager.get("customviews").activate();
-        }
-        catch (e) {
-            pimcore.globalmanager.add("customviews", new pimcore.object.customviews.settings());
-        }
-    },
-
+    
     showDocumentSeo: function () {
         try {
             pimcore.globalmanager.get("document_seopanel").activate();
@@ -1508,7 +1475,7 @@ pimcore.layout.toolbar = Class.create({
         }
         catch (e) {
             pimcore.globalmanager.add(id, new pimcore.tool.genericiframewindow(id,
-                "/pimcore/modules/3rdparty/linfo/index.php", "pimcore_icon_server_info", "Server Info"));
+                "/admin/external_linfo/", "pimcore_icon_server_info", "Server Info"));
         }
 
     },
@@ -1536,7 +1503,7 @@ pimcore.layout.toolbar = Class.create({
         }
         catch (e) {
             pimcore.globalmanager.add(id, new pimcore.tool.genericiframewindow(id,
-                "/pimcore/modules/3rdparty/adminer/index.php", "pimcore_icon_mysql", "Database Admin"));
+                "/admin/external_adminer/adminer/", "pimcore_icon_mysql", "Database Admin"));
         }
 
     },

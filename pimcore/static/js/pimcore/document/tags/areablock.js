@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.areablock");
@@ -321,6 +320,9 @@ pimcore.document.tags.areablock = Class.create(pimcore.document.tag, {
 
     createDropZones: function () {
 
+        if(this.inherited) {
+            return;
+        }
         //Ext.get(this.id).addClass("pimcore_tag_areablock_hide_buttons");
 
         if(this.elements.length > 0) {
@@ -629,11 +631,24 @@ pimcore.document.tags.areablock = Class.create(pimcore.document.tag, {
 
         var content = Ext.get(element).query(".pimcore_area_editmode")[0];
 
+        var editmodeWindowWidth = 550;
+        var editmodeWindowHeight = 370;
+
+        if(this.options["params"]) {
+            if (this.options.params[element.type] && this.options.params[element.type]["editWidth"]) {
+                editmodeWindowWidth = this.options.params[element.type].editWidth;
+            }
+
+            if (this.options.params[element.type] && this.options.params[element.type]["editHeight"]) {
+                editmodeWindowHeight = this.options.params[element.type].editHeight;
+            }
+        }
+
         this.editmodeWindow = new Ext.Window({
             modal: true,
-            width: 500,
-            height: 330,
-            title: "Edit Block",
+            width: editmodeWindowWidth,
+            height: editmodeWindowHeight,
+            title: t("edit_block"),
             closeAction: "hide",
             bodyStyle: "padding: 10px;",
             closable: false,

@@ -2,19 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
-namespace Pimcore\FIle\Transfer\Adapter;
 
-trait AdapterTrait {
+namespace Pimcore\File\Transfer\Adapter;
+
+trait AdapterTrait
+{
 
     /**
      * @var null | string
@@ -48,6 +49,7 @@ trait AdapterTrait {
     public function setHost($host)
     {
         $this->host = $host;
+
         return $this;
     }
 
@@ -67,6 +69,7 @@ trait AdapterTrait {
     public function setPassword($password)
     {
         $this->password = $password;
+
         return $this;
     }
 
@@ -86,6 +89,7 @@ trait AdapterTrait {
     public function setUsername($username)
     {
         $this->username = $username;
+
         return $this;
     }
 
@@ -103,15 +107,18 @@ trait AdapterTrait {
      * @param $sourceFile
      * @return $this
      */
-    public function setSourceFile($sourceFile){
+    public function setSourceFile($sourceFile)
+    {
         $this->sourceFile = $sourceFile;
+
         return $this;
     }
 
     /**
      * @return null
      */
-    public function getSourceFile(){
+    public function getSourceFile()
+    {
         return $this->sourceFile;
     }
 
@@ -120,17 +127,18 @@ trait AdapterTrait {
      *
      * @return $this
      */
-    public function setDestinationFile($destinationFile){
+    public function setDestinationFile($destinationFile)
+    {
         $this->destinationFile  = $destinationFile;
+
         return $this;
     }
 
     /**
      * @return null
      */
-    public function getDestinationFile(){
+    public function getDestinationFile()
+    {
         return $this->destinationFile;
     }
-
-
 }

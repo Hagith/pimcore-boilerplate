@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.tagmanagement.item");
@@ -44,12 +43,14 @@ pimcore.settings.tagmanagement.item = Class.create({
             text: t("save"),
             iconCls: "pimcore_icon_apply",
             handler: this.save.bind(this)
-        }); 
+        });
 
         this.itemContainer = new Ext.Panel({
-            title: t("tags"),
             style: "margin: 20px 0 0 0;",
             tbar: [{
+                xtype: "tbtext",
+                html: t("tags")
+            }, {
                 iconCls: "pimcore_icon_add",
                 handler: this.addItem.bind(this)
             }],
@@ -83,10 +84,10 @@ pimcore.settings.tagmanagement.item = Class.create({
         var paramsFieldSet = {
             xtype: "fieldset",
             title: t("parameters") + " (GET &amp; POST)",
-            items: paramsFieldSetItems
+            items: paramsFieldSetItems,
+            collapsible: true,
+            collapsed: true
         };
-
-
 
         this.panel = new Ext.form.FormPanel({
             border: false,
@@ -121,6 +122,7 @@ pimcore.settings.tagmanagement.item = Class.create({
                     valueField: "id",
                     displayField: "domain",
                     triggerAction: "all",
+                    editable: false,
                     value: this.data.siteId
                 },{
                     xtype: "textfield",

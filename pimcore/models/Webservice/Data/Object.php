@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Webservice
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Webservice\Data;
 
 use Pimcore\Model;
 
-class Object extends Model\Webservice\Data {
+class Object extends Model\Webservice\Data
+{
 
 
     /** If set to true then null values will not be exported.
@@ -67,14 +67,14 @@ class Object extends Model\Webservice\Data {
      * @param $object
      * @param null $options
      */
-    public function map($object, $options = null) {
-
+    public function map($object, $options = null)
+    {
         parent::map($object);
 
         $keys = get_object_vars($this);
-        if(array_key_exists("childs",$keys)){
-            if($object->hasChilds()) {
-                $this->childs = array();
+        if (array_key_exists("childs", $keys)) {
+            if ($object->hasChilds()) {
+                $this->childs = [];
                 foreach ($object->getChilds() as $child) {
                     $item = new Model\Webservice\Data\Object\Listing\Item();
                     $item->id = $child->getId();
@@ -83,7 +83,6 @@ class Object extends Model\Webservice\Data {
                 }
             }
         }
-
     }
 
     /**
@@ -101,8 +100,4 @@ class Object extends Model\Webservice\Data {
     {
         return self::$dropNullValues;
     }
-
-
-
-
 }

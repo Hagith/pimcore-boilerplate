@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.analytics.settings");
@@ -68,11 +67,12 @@ pimcore.report.analytics.settings = Class.create({
 
         sites.each(function (record) {
             var id = record.data.id;
-            var key = "site_" + id;
-            if(!id) {
-                id = "default";
+            if (id == "default") {
                 key = "default";
+            } else {
+                key = "site_" + id;
             }
+
             configs.push(this.getConfiguration(key, record.data.domain, id));
         }, this);
 
@@ -81,8 +81,6 @@ pimcore.report.analytics.settings = Class.create({
 
     getConfiguration: function (key, name, id) {
 
-        id = id + "";
-        var itemId = id.replace(/\./g, '_');
         var config = {
             xtype: "fieldset",
             defaults: {
@@ -95,7 +93,7 @@ pimcore.report.analytics.settings = Class.create({
                     fieldLabel: t("analytics_trackid_code"),
                     name: "trackid_" + id,
                     width: 670,
-                    id: "report_settings_analytics_trackid_" + itemId,
+                    id: "report_settings_analytics_trackid_" + id,
                     value: this.parent.getValue("analytics.sites." + key + ".trackid")
                 },{
                     xtype: "fieldset",
@@ -111,7 +109,7 @@ pimcore.report.analytics.settings = Class.create({
                         name: "universal_configuration_" + id,
                         height: 100,
                         width: 650,
-                        id: "report_settings_analytics_universal_configuration_" + itemId,
+                        id: "report_settings_analytics_universal_configuration_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".universal_configuration")
                     },{
                         xtype: "textarea",
@@ -119,7 +117,7 @@ pimcore.report.analytics.settings = Class.create({
                         name: "additionalcodebeforeinit" + id,
                         height: 100,
                         width: 650,
-                        id: "report_settings_analytics_additionalcodebeforeinit_" + itemId,
+                        id: "report_settings_analytics_additionalcodebeforeinit_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".additionalcodebeforeinit")
                     },{
                         xtype: "textarea",
@@ -127,7 +125,7 @@ pimcore.report.analytics.settings = Class.create({
                         name: "additionalcodebeforepageview" + id,
                         height: 100,
                         width: 650,
-                        id: "report_settings_analytics_additionalcodebeforepageview_" + itemId,
+                        id: "report_settings_analytics_additionalcodebeforepageview_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".additionalcodebeforepageview")
                     },{
                         xtype: "textarea",
@@ -135,19 +133,19 @@ pimcore.report.analytics.settings = Class.create({
                         name: "additionalcode_" + id,
                         height: 100,
                         width: 650,
-                        id: "report_settings_analytics_additionalcode_" + itemId,
+                        id: "report_settings_analytics_additionalcode_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".additionalcode")
                     },{
                         xtype: "checkbox",
                         fieldLabel: t("analytics_asynchronous_code"),
                         name: "asynchronouscode_" + id,
-                        id: "report_settings_analytics_asynchronouscode_" + itemId,
+                        id: "report_settings_analytics_asynchronouscode_" + id,
                         checked: this.parent.getValue("analytics.sites." + key + ".asynchronouscode")
                     },{
                         xtype: "checkbox",
                         fieldLabel: t("analytics_retargeting_code"),
                         name: "retargetingcode_" + id,
-                        id: "report_settings_analytics_retargetingcode_" + itemId,
+                        id: "report_settings_analytics_retargetingcode_" + id,
                         checked: this.parent.getValue("analytics.sites." + key + ".retargetingcode")
                     }]
                 },{
@@ -186,7 +184,7 @@ pimcore.report.analytics.settings = Class.create({
                                 load: function(id) {
                                     var cmp = Ext.getCmp("report_settings_analytics_profile_" + id);
                                     cmp.setValue(this.parent.getValue("analytics.sites." + key + ".profile"));
-                                }.bind(this, itemId)
+                                }.bind(this, id)
                             }
                         }),
                         listeners: {
@@ -194,28 +192,28 @@ pimcore.report.analytics.settings = Class.create({
                                 Ext.getCmp("report_settings_analytics_trackid_" + id).setValue(record.get("trackid"));
                                 Ext.getCmp("report_settings_analytics_accountid_" + id).setValue(record.get("accountid"));
                                 Ext.getCmp("report_settings_analytics_internalid_" + id).setValue(record.get("internalid"));
-                            }.bind(this, itemId)
+                            }.bind(this, id)
                         },
                         valueField: 'id',
                         width: 650,
                         forceSelection: true,
                         triggerAction: 'all',
                         hiddenName: 'profile_' + id,
-                        id: "report_settings_analytics_profile_" + itemId,
+                        id: "report_settings_analytics_profile_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".profile")
                     },{
                         xtype: "textfield",
                         fieldLabel: t("analytics_accountid"),
                         name: "accountid_" + id,
                         width: 650,
-                        id: "report_settings_analytics_accountid_" + itemId,
+                        id: "report_settings_analytics_accountid_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".accountid")
                     },{
                         xtype: "textfield",
                         fieldLabel: t("analytics_internalid"),
                         width: 650,
                         name: "internalid_" + id,
-                        id: "report_settings_analytics_internalid_" + itemId,
+                        id: "report_settings_analytics_internalid_" + id,
                         value: this.parent.getValue("analytics.sites." + key + ".internalid")
                     }]
                 }
@@ -232,11 +230,11 @@ pimcore.report.analytics.settings = Class.create({
         var sitesData = {};
 
         sites.each(function (record) {
-            var id = record.data.id;
-            var key = "site_" + id;
-            if(!id) {
-                id = "default";
+            var id = record.get("id");
+            if (id == "default") {
                 key = "default";
+            } else {
+                key = "site_" + id;
             }
 
             sitesData[key] = {

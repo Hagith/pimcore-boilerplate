@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.helpers.gridTabAbstract");
@@ -17,42 +16,47 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
 
     objecttype: 'object',
 
-    filterUpdateFunction: function(gridfilters, toolbarFilterInfo) {
-        var filterString = "";
+    filterUpdateFunction: function(grid, toolbarFilterInfo, clearFilterButton) {
         var filterStringConfig = [];
-        var filterData = gridfilters.getFilterData();
-        var operator;
+        var filterData = grid.getStore().getFilters().items;
 
         // reset
-        toolbarFilterInfo.setText(" ");
+        toolbarFilterInfo.setTooltip(" ");
 
         if(filterData.length > 0) {
 
-            for (var i=0; i<filterData.length; i++) {
+            for (var i=0; i < filterData.length; i++) {
 
-                operator = "=";
-                if (filterData[i].data.type == "string") {
-                    operator = "LIKE";
-                } else if (filterData[i].data.type == "numeric" || filterData[i].data.type == "date") {
-                    if(filterData[i].data.comparison == "lt") {
-                        operator = "&lt;";
-                    } else if(filterData[i].data.comparison == "gt") {
-                        operator = "&gt;";
-                    }
-                } else if (filterData[i].data.type == "boolean") {
-                    filterData[i].value = filterData[i].data.value ? "true" : "false";
+                var operator = filterData[i].getOperator();
+                if(operator == 'lt') {
+                    operator = "&lt;";
+                } else if(operator == 'gt') {
+                    operator = "&gt;";
+                } else if(operator == 'eq') {
+                    operator = "=";
                 }
 
-                if(filterData[i].data.value && typeof filterData[i].data.value == "object") {
-                    filterStringConfig.push(filterData[i].field + " " + operator + " ("
-                    + filterData[i].data.value.join(" OR ") + ")");
+                var value = filterData[i].getValue();
+
+                if(value instanceof Date) {
+                    value = Ext.Date.format(value, "Y-m-d");
+                }
+
+                if(value && typeof value == "object") {
+                    filterStringConfig.push(filterData[i].getProperty() + " " + operator + " ("
+                        + value.join(" OR ") + ")");
                 } else {
-                    filterStringConfig.push(filterData[i].field + " " + operator + " " + filterData[i].data.value);
+                    filterStringConfig.push(filterData[i].getProperty() + " " + operator + " " + value);
                 }
             }
 
-            toolbarFilterInfo.setText("<b>" + t("filter_condition") + ": " + filterStringConfig.join(" AND ") + "</b>");
+            var filterCondition = filterStringConfig.join(" AND ") + "</b>";
+            toolbarFilterInfo.setTooltip("<b>" + t("filter_condition") + ": " + filterCondition);
+            toolbarFilterInfo.pimcore_filter_condition = filterCondition;
+            toolbarFilterInfo.setHidden(false);
         }
+        toolbarFilterInfo.setHidden(filterData.length == 0);
+        clearFilterButton.setHidden(!toolbarFilterInfo.isVisible());
     },
 
 
@@ -61,7 +65,7 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
 
         var columnConfig = new Ext.menu.Item({
             text: t("grid_column_config"),
-            iconCls: "pimcore_icon_grid_column_config",
+            iconCls: "pimcore_icon_table_col pimcore_icon_overlay_edit",
             handler: this.openColumnConfig.bind(this)
         });
         var menu = grid.headerCt.getMenu();
@@ -69,7 +73,7 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
         //
         var batchAllMenu = new Ext.menu.Item({
             text: t("batch_change"),
-            iconCls: "pimcore_icon_batch",
+            iconCls: "pimcore_icon_table pimcore_icon_overlay_go",
             handler: function (grid) {
                 menu = grid.headerCt.getMenu();
                 var columnDataIndex = menu.activeHeader;
@@ -80,7 +84,7 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
 
         var batchSelectedMenu = new Ext.menu.Item({
             text: t("batch_change_selected"),
-            iconCls: "pimcore_icon_batch",
+            iconCls: "pimcore_icon_table pimcore_icon_overlay_go",
             handler: function (grid) {
                 menu = grid.headerCt.getMenu();
                 var columnDataIndex = menu.activeHeader;
@@ -125,15 +129,13 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
             var filters = "";
             var condition = "";
 
-
             if(this.sqlButton.pressed) {
                 condition = this.sqlEditor.getValue();
             } else {
-            //TODO
-                //var filterData = this.gridfilters.getFilterData();
-                //if(filterData.length > 0) {
-                //    filters = this.gridfilters.buildQuery(filterData).filter;
-                //}
+                var filterData = this.store.getFilters().items;
+                if(filterData.length > 0) {
+                    filters = this.store.getProxy().encodeFilters(filterData);
+                }
             }
 
             var params = {
@@ -204,28 +206,32 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
         }
 
         var editor = new pimcore.object.tags[tagType](null, fieldInfo.layout.layout);
+        var formPanel = Ext.create('Ext.form.Panel', {
+            xtype: "form",
+            border: false,
+            items: [editor.getLayoutEdit()],
+            bodyStyle: "padding: 10px;",
+            buttons: [
+                {
+                    text: t("save"),
+                    handler: function() {
+                        if(formPanel.isValid()) {
+                            this.batchProcess(jobs, editor, fieldInfo, true);
+                        }
+                    }.bind(this)
+                }
+            ]
+        });
         this.batchWin = new Ext.Window({
             modal: false,
             title: t("batch_edit_field") + " " + fieldInfo.header,
-            items: [
-                {
-                    xtype: "form",
-                    border: false,
-                    items: [editor.getLayoutEdit()],
-                    bodyStyle: "padding: 10px;",
-                    buttons: [
-                        {
-                            text: t("save"),
-                            handler: this.batchProcess.bind(this, jobs, editor, fieldInfo, true)
-                        }
-                    ]
-                }
-            ],
+            items: [formPanel],
             bodyStyle: "background: #fff;",
-            width: 700
+            width: 700,
+            maxHeight: 600
         });
         this.batchWin.show();
-
+        this.batchWin.updateLayout();
     },
 
     batchProcess: function (jobs,  editor, fieldInfo, initial) {
@@ -359,9 +365,48 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
             selectedGridColumns: visibleColumns
         };
         var dialog = new pimcore.object.helpers.gridConfigDialog(columnConfig, function(data) {
-            this.gridLanguage = data.language;
-            this.createGrid(data.columns);
-        }.bind(this) );
+                this.gridLanguage = data.language;
+                this.createGrid(true, data.columns);
+            }.bind(this),
+            function() {
+                Ext.Ajax.request({
+                    url: "/admin/object-helper/grid-delete-column-config",
+                    params: {
+                        id: objectId,
+                        class_id: this.classId,
+                        searchType: this.searchType
+                    },
+                    success: function() {
+                        Ext.Ajax.request({
+                            url: "/admin/object-helper/grid-get-column-config",
+                            params: {
+                                id: this.classId,
+                                objectId: this.object.id,
+                                gridtype: "grid",
+                                searchType: this.searchType
+                            },
+                            success: function(response) {
+                                response = Ext.decode(response.responseText);
+                                if (response) {
+                                    fields = response.availableFields;
+                                    this.createGrid(false, fields);
+                                    if (typeof this.saveColumnConfigButton !== "undefined") {
+                                        this.saveColumnConfigButton.hide();
+                                    }
+                                } else {
+                                    pimcore.helpers.showNotification(t("error"), t("error_resetting_config"),
+                                        "error",t(rdata.message));
+                                }
+                            }.bind(this),
+                            failure: function () {
+                                pimcore.helpers.showNotification(t("error"), t("error_resetting_config"), "error");
+                            }
+                        });
+                    }.bind(this)
+                });
+            }.bind(this)
+        )
+
     },
 
     createGrid: function(columnConfig) {
@@ -394,47 +439,138 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
         return config;
     },
 
-    startCsvExport: function () {
-        var values = [];
+
+    exportPrepare: function(){
+        var jobs = [];
+
         var filters = "";
         var condition = "";
 
         if(this.sqlButton.pressed) {
             condition = this.sqlEditor.getValue();
         } else {
-            var store = this.grid.getStore();
-            var filterData = store.getFilters();
-
-            var filters = [];
-            for (i = 0; i < filterData.length; i++) {
-                var filterItem = filterData.getAt(i);
-                var filterConfig = filterItem.getConfig();
-
-                var fieldname = filterItem.getProperty();
-                var type = this.gridfilters[fieldname];
-                if (typeof type == 'object') {
-                    type = type.type;
-                }
-                filters.push({
-                    field: fieldname,
-                    type: type,
-                    comparison: filterItem.getOperator(),
-                    value: filterItem.getValue()
-                });
+            var filterData = this.store.getFilters().items;
+            if(filterData.length > 0) {
+                filters = this.store.getProxy().encodeFilters(filterData);
             }
-            filters = Ext.encode(filters);
+        }
+
+
+        var fields = this.getGridConfig().columns;
+        var fieldKeys = Object.keys(fields);
+
+        //create the ids array which contains chosen rows to export
+        ids = [];
+        var selectedRows = this.grid.getSelectionModel().getSelection();
+        for (var i = 0; i < selectedRows.length; i++) {
+            ids.push(selectedRows[i].data.id);
+        }
+
+        var params = {
+            extjs6: true,
+            filter: filters,
+            condition: condition,
+            classId: this.classId,
+            folderId: this.element.id,
+            objecttype: this.objecttype,
+            language: this.gridLanguage,
+            "ids[]": ids,
+            "fields[]": fieldKeys
+        };
+
+
+        Ext.Ajax.request({
+            url: "/admin/object-helper/get-export-jobs",
+            params: params,
+            success: function (response) {
+                var rdata = Ext.decode(response.responseText);
+
+                if (rdata.success && rdata.jobs) {
+                    this.exportProcess(rdata.jobs, rdata.fileHandle, fieldKeys, true);
+                }
+
+            }.bind(this)
+        });
+    },
+
+    exportProcess: function (jobs, fileHandle, fields, initial) {
+
+        if(initial){
+
+            this.exportErrors = [];
+            this.exportJobCurrent = 0;
+
+            this.exportParameters = {
+                fileHandle: fileHandle,
+                language: this.gridLanguage
+            };
+            this.exportProgressBar = new Ext.ProgressBar({
+                text: t('Initializing'),
+                style: "margin: 10px;",
+                width: 500
+            });
+
+            this.exportProgressWin = new Ext.Window({
+                items: [this.exportProgressBar],
+                modal: true,
+                bodyStyle: "background: #fff;",
+                closable: false
+            });
+            this.exportProgressWin.show();
 
         }
 
-        var path = "/admin/object-helper/export/classId/" + this.classId + "/folderId/" + this.element.id ;
-        path = path + "/?" + Ext.urlEncode({
-            filter: filters,
-            condition: condition,
-            objecttype: this.objecttype
-        });
-        pimcore.helpers.download(path);
-    },
+        if (this.exportJobCurrent >= jobs.length) {
+            this.exportProgressWin.close();
 
+            // error handling
+            if (this.exportErrors.length > 0) {
+                var jobErrors = [];
+                for (var i = 0; i < this.exportErrors.length; i++) {
+                    jobErrors.push(this.exportErrors[i].job);
+                }
+                Ext.Msg.alert(t("error"), t("error_jobs") + ": " + jobErrors.join(","));
+            } else {
+                pimcore.helpers.download("/admin/object-helper/download-csv-file?fileHandle=" + fileHandle);
+            }
+
+            return;
+        }
+
+        var status = (this.exportJobCurrent / jobs.length);
+        var percent = Math.ceil(status * 100);
+        this.exportProgressBar.updateProgress(status, percent + "%");
+
+        this.exportParameters['ids[]'] = jobs[this.exportJobCurrent];
+        this.exportParameters["fields[]"] = fields;
+        this.exportParameters.classId = this.classId;
+        this.exportParameters.initial = initial;
+
+        Ext.Ajax.request({
+            url: "/admin/object-helper/do-export",
+            params: this.exportParameters,
+            success: function (jobs, currentJob, response) {
+
+                try {
+                    var rdata = Ext.decode(response.responseText);
+                    if (rdata) {
+                        if (!rdata.success) {
+                            throw "not successful";
+                        }
+                    }
+                } catch (e) {
+                    this.exportErrors.push({
+                        job: currentJob
+                    });
+                }
+
+                window.setTimeout(function() {
+                    this.exportJobCurrent++;
+                    this.exportProcess(jobs, fileHandle, fields);
+                }.bind(this), 400);
+            }.bind(this,jobs, jobs[this.exportJobCurrent])
+        });
+    },
 
     createSqlEditor: function() {
         this.sqlEditor = new Ext.form.TextField({
@@ -446,11 +582,15 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
             listeners: {
                 "keydown" : function (field, key) {
                     if (key.getKey() == key.ENTER) {
-                        this.grid.filters.clearFilters();
-
                         var proxy = this.store.getProxy();
-                        proxy.extraParams = {};
+                        proxy.setExtraParams(
+                            {
+                                class: proxy.extraParams.class,
+                                "fields[]": proxy.extraParams["fields[]"]
+                            }
+                        );
                         proxy.setExtraParam("condition", field.getValue());
+                        this.grid.filters.clearFilters();
 
                         this.pagingtoolbar.moveFirst();
                     }
@@ -464,14 +604,19 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
             tooltip: t("direct_sql_query"),
             handler: function (button) {
 
-                this.grid.filters.clearFilters();
-
                 this.sqlEditor.setValue("");
 
                 // reset base params, because of the condition
                 var proxy = this.store.getProxy();
-                proxy.extraParams = {};
-                proxy.setExtraParam("condition", null);
+                proxy.setExtraParams(
+                    {
+                        class: proxy.extraParams.class,
+                        "fields[]": proxy.extraParams["fields[]"]
+                    }
+                );
+
+                this.grid.filters.clearFilters();
+
                 this.pagingtoolbar.moveFirst();
 
                 if(button.pressed) {
@@ -481,9 +626,7 @@ pimcore.object.helpers.gridTabAbstract = Class.create({
                 }
             }.bind(this)
         });
-
     }
-
 
 
 });

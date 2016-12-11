@@ -2,37 +2,45 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Classificationstore;
 
 use Pimcore\Model;
 
-class CollectionConfig extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Object\Classificationstore\CollectionConfig\Dao getDao()
+ */
+class CollectionConfig extends Model\AbstractModel
+{
 
     /** Group id.
      * @var integer
      */
     public $id;
 
+    /**
+     * Store ID
+     * @var integer
+     */
+    public $storeId = 1;
 
-    /** The group name.
+    /** The collection name.
      * @var string
      */
     public $name;
 
-    /** The group description.
+    /** The collection description.
      * @var
      */
     public $description;
@@ -52,16 +60,15 @@ class CollectionConfig extends Model\AbstractModel {
      * @param integer $id
      * @return Model\Object\Classificationstore\CollectionConfig
      */
-    public static function getById($id) {
+    public static function getById($id)
+    {
         try {
-
             $config = new self();
             $config->setId(intval($id));
-            $config->getResource()->getById();
+            $config->getDao()->getById();
 
             return $config;
         } catch (\Exception $e) {
-
         }
     }
 
@@ -69,22 +76,24 @@ class CollectionConfig extends Model\AbstractModel {
      * @param $name
      * @return CollectionConfig
      */
-    public static function getByName ($name) {
+    public static function getByName($name, $storeId = 1)
+    {
         try {
             $config = new self();
             $config->setName($name);
-            $config->getResource()->getByName();
+            $config->setStoreId($storeId ? $storeId : 1);
+            $config->getDao()->getByName();
 
             return $config;
         } catch (\Exception $e) {
-
         }
     }
 
     /**
      * @return Model\Object\Classificationstore\CollectionConfig
      */
-    public static function create() {
+    public static function create()
+    {
         $config = new self();
         $config->save();
 
@@ -93,41 +102,48 @@ class CollectionConfig extends Model\AbstractModel {
 
     /**
      * @param integer $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
 
     /**
-     * @param string name
-     * @return void
+     * @param string $name
+     * @return $this
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
     /** Returns the description.
      * @return mixed
      */
-    public function getDescription() {
+    public function getDescription()
+    {
         return $this->description;
     }
 
@@ -135,15 +151,18 @@ class CollectionConfig extends Model\AbstractModel {
      * @param $description
      * @return Model\Object\Classificationstore\CollectionConfig
      */
-    public function setDescription($description) {
+    public function setDescription($description)
+    {
         $this->description = $description;
+
         return $this;
     }
 
     /**
      * Deletes the key value group configuration
      */
-    public function delete() {
+    public function delete()
+    {
         \Pimcore::getEventManager()->trigger("object.Classificationstore.collectionConfig.preDelete", $this);
         parent::delete();
         \Pimcore::getEventManager()->trigger("object.Classificationstore.collectionConfig.postDelete", $this);
@@ -152,7 +171,8 @@ class CollectionConfig extends Model\AbstractModel {
     /**
      * Saves the collection config
      */
-    public function save() {
+    public function save()
+    {
         $isUpdate = false;
 
         if ($this->getId()) {
@@ -169,6 +189,7 @@ class CollectionConfig extends Model\AbstractModel {
         } else {
             \Pimcore::getEventManager()->trigger("object.Classificationstore.collectionConfig.postAdd", $this);
         }
+
         return $model;
     }
 
@@ -179,6 +200,7 @@ class CollectionConfig extends Model\AbstractModel {
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -197,6 +219,7 @@ class CollectionConfig extends Model\AbstractModel {
     public function setCreationDate($creationDate)
     {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -208,6 +231,19 @@ class CollectionConfig extends Model\AbstractModel {
         return $this->creationDate;
     }
 
+    /**
+     * @return int
+     */
+    public function getStoreId()
+    {
+        return $this->storeId;
+    }
 
-
+    /**
+     * @param int $storeId
+     */
+    public function setStoreId($storeId)
+    {
+        $this->storeId = $storeId;
+    }
 }

@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Element
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Element;
 
 use Pimcore\Model;
 
-class Note extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Element\Note\Dao getDao()
+ */
+class Note extends Model\AbstractModel
+{
 
     /**
      * @var int
@@ -64,18 +67,18 @@ class Note extends Model\AbstractModel {
     /**
      * @var array
      */
-    public $data = array();
+    public $data = [];
 
     /**
      * @static
      * @param $id
      * @return Element\Note
      */
-    public static function getById ($id) {
-
+    public static function getById($id)
+    {
         try {
             $note = new self();
-            $note->getResource()->getById($id);
+            $note->getDao()->getById($id);
 
             return $note;
         } catch (\Exception $e) {
@@ -89,36 +92,40 @@ class Note extends Model\AbstractModel {
      * @param string $type
      * @param mixed $data
      */
-    public function addData($name, $type, $data) {
-        $this->data[$name] = array(
+    public function addData($name, $type, $data)
+    {
+        $this->data[$name] = [
             "type" => $type,
             "data" => $data
-        );
+        ];
     }
 
     /**
      * @param ElementInterface $element
      * @return $this
      */
-    public function setElement(ElementInterface $element) {
+    public function setElement(ElementInterface $element)
+    {
         $this->setCid($element->getId());
         $this->setCtype(Service::getType($element));
+
         return $this;
     }
 
-    public function save() {
+    public function save()
+    {
 
         // check if there's a valid user
-        if(!$this->getUser()) {
+        if (!$this->getUser()) {
             // try to use the logged in user
-            if(\Pimcore::inAdmin()) {
-                if($user = \Pimcore\Tool\Admin::getCurrentUser()) {
+            if (\Pimcore::inAdmin()) {
+                if ($user = \Pimcore\Tool\Admin::getCurrentUser()) {
                     $this->setUser($user->getId());
                 }
             }
         }
 
-        $this->getResource()->save();
+        $this->getDao()->save();
     }
 
     /**
@@ -128,6 +135,7 @@ class Note extends Model\AbstractModel {
     public function setCid($cid)
     {
         $this->cid = (int) $cid;
+
         return $this;
     }
 
@@ -146,6 +154,7 @@ class Note extends Model\AbstractModel {
     public function setCtype($ctype)
     {
         $this->ctype = $ctype;
+
         return $this;
     }
 
@@ -164,6 +173,7 @@ class Note extends Model\AbstractModel {
     public function setData($data)
     {
         $this->data = $data;
+
         return $this;
     }
 
@@ -182,6 +192,7 @@ class Note extends Model\AbstractModel {
     public function setDate($date)
     {
         $this->date = (int) $date;
+
         return $this;
     }
 
@@ -200,6 +211,7 @@ class Note extends Model\AbstractModel {
     public function setDescription($description)
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -218,6 +230,7 @@ class Note extends Model\AbstractModel {
     public function setId($id)
     {
         $this->id = (int) $id;
+
         return $this;
     }
 
@@ -236,6 +249,7 @@ class Note extends Model\AbstractModel {
     public function setTitle($title)
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -254,6 +268,7 @@ class Note extends Model\AbstractModel {
     public function setType($type)
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -272,6 +287,7 @@ class Note extends Model\AbstractModel {
     public function setUser($user)
     {
         $this->user = $user;
+
         return $this;
     }
 

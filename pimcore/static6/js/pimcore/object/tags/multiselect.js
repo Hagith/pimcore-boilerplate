@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.multiselect");
@@ -41,20 +40,18 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
     },
 
     getGridColumnFilter: function(field) {
-        var selectFilterFields = [];
-
-        var store = new Ext.data.JsonStore({
-            autoDestroy: true,
-            root: 'options',
+        var store = Ext.create('Ext.data.JsonStore', {
             fields: ['key',"value"],
-            data: field.layout
+            data: field.layout.options
         });
 
-        store.each(function (rec) {
-            selectFilterFields.push(rec.data.value);
-        });
-
-        return {type: 'list', dataIndex: field.key, options: selectFilterFields};
+        return {
+            type: 'list',
+            dataIndex: field.key,
+            labelField: "key",
+            idField: "value",
+            options: store
+        };
     },
 
     getLayoutEdit: function () {
@@ -66,19 +63,21 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
         var restrictTo = null;
 
         if (this.fieldConfig.restrictTo) {
-            restrictTo = this.fieldConfig.restrictTo.split(",");
+            restrictTo = this.fieldConfig.restrictTo;
         }
 
-        for (var i = 0; i < this.fieldConfig.options.length; i++) {
-            var value = this.fieldConfig.options[i].value;
-            if (restrictTo) {
-                if (!in_array(value, restrictTo)) {
-                    continue;
+        if (this.fieldConfig.options) {
+            for (var i = 0; i < this.fieldConfig.options.length; i++) {
+                var value = this.fieldConfig.options[i].value;
+                if (restrictTo) {
+                    if (!in_array(value, restrictTo)) {
+                        continue;
+                    }
                 }
-            }
 
-            storeData.push([value, this.fieldConfig.options[i].key]);
-            validValues.push(value);
+                storeData.push([value, ts(this.fieldConfig.options[i].key)]);
+                validValues.push(value);
+            }
         }
 
         var store = Ext.create('Ext.data.ArrayStore', {
@@ -96,7 +95,21 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
             componentCls: "object_field",
             height: 100,
             valueField: 'id',
-            labelWidth: this.fieldConfig.labelWidth ? this.fieldConfig.labelWidth : 100
+            labelWidth: this.fieldConfig.labelWidth ? this.fieldConfig.labelWidth : 100,
+            listeners: {
+                change : function  ( multiselect , newValue , oldValue , eOpts ) {
+                    if (this.fieldConfig.maxItems && multiselect.getValue().length > this.fieldConfig.maxItems) {
+                        // we need to set a timeout so setValue is applied when change event is totally finished
+                        // without this, multiselect wont be updated visually with oldValue (but internal value will be oldValue)
+                        setTimeout(function(multiselect, oldValue){
+                            multiselect.setValue(oldValue);
+                        }, 100, multiselect, oldValue);
+
+                        Ext.Msg.alert(t("error"),t("limit_reached"));
+                    }
+                    return true;
+                }.bind(this)
+            }
         };
 
         if (this.fieldConfig.width) {
@@ -111,12 +124,11 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
             options.height = this.fieldConfig.height;
         }
 
-
         if (typeof this.data == "string" || typeof this.data == "number") {
             options.value = this.data;
         }
 
-        this.component = new Ext.ux.form.MultiSelect(options);
+        this.component = Ext.create('Ext.ux.form.MultiSelect', options);
 
         return this.component;
     },

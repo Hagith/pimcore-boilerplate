@@ -1,18 +1,17 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Data;
@@ -20,7 +19,8 @@ namespace Pimcore\Model\Object\Data;
 use Pimcore\Model;
 use Pimcore\Model\Asset;
 
-class Hotspotimage {
+class Hotspotimage
+{
 
     /**
      * @var Asset\Image
@@ -48,28 +48,29 @@ class Hotspotimage {
      * @param array $marker
      * @param array $crop
      */
-    public function __construct($image = null, $hotspots = [], $marker = array(), $crop = array()) {
-        if($image instanceof Asset\Image) {
+    public function __construct($image = null, $hotspots = [], $marker = [], $crop = [])
+    {
+        if ($image instanceof Asset\Image) {
             $this->image = $image;
-        } else if (is_numeric($image)){
+        } elseif (is_numeric($image)) {
             $this->image = Asset\Image::getById($image);
         }
 
-        if(is_array($hotspots)) {
-            $this->hotspots = array();
-            foreach($hotspots as $h) {
+        if (is_array($hotspots)) {
+            $this->hotspots = [];
+            foreach ($hotspots as $h) {
                 $this->hotspots[] = $h;
             }
         }
 
-        if(is_array($marker)) {
-            $this->marker = array();
-            foreach($marker as $m) {
+        if (is_array($marker)) {
+            $this->marker = [];
+            foreach ($marker as $m) {
                 $this->marker[] = $m;
             }
         }
 
-        if(is_array($crop)) {
+        if (is_array($crop)) {
             $this->crop = $crop;
         }
     }
@@ -78,15 +79,18 @@ class Hotspotimage {
      * @param $hotspots
      * @return $this
      */
-    public function setHotspots($hotspots) {
+    public function setHotspots($hotspots)
+    {
         $this->hotspots = $hotspots;
+
         return $this;
     }
 
     /**
      * @return array|\array[]
      */
-    public function getHotspots() {
+    public function getHotspots()
+    {
         return $this->hotspots;
     }
 
@@ -94,15 +98,18 @@ class Hotspotimage {
      * @param $marker
      * @return $this
      */
-    public function setMarker($marker) {
+    public function setMarker($marker)
+    {
         $this->marker = $marker;
+
         return $this;
     }
 
     /**
      * @return array|\array[]
      */
-    public function getMarker() {
+    public function getMarker()
+    {
         return $this->marker;
     }
 
@@ -126,60 +133,66 @@ class Hotspotimage {
      * @param $image
      * @return $this
      */
-    public function setImage($image) {
+    public function setImage($image)
+    {
         $this->image = $image;
+
         return $this;
     }
 
     /**
      * @return Asset|Asset\Image
      */
-    public function getImage() {
+    public function getImage()
+    {
         return $this->image;
     }
 
     /**
      * @param null $thumbnailName
-     * @return mixed
+     * @param bool $deferred
+     * @return Asset\Image\Thumbnail|string
      */
-    public function getThumbnail($thumbnailName = null) {
-
-        if(!$this->getImage()) {
+    public function getThumbnail($thumbnailName = null, $deferred = true)
+    {
+        if (!$this->getImage()) {
             return "";
         }
 
         $crop = null;
-        if(is_array($this->getCrop())) {
+        if (is_array($this->getCrop())) {
             $crop = $this->getCrop();
         }
 
         $thumbConfig = $this->getImage()->getThumbnailConfig($thumbnailName);
-        if(!$thumbConfig && $crop) {
+        if (!$thumbConfig && $crop) {
             $thumbConfig = new Asset\Image\Thumbnail\Config();
         }
 
-        if($crop) {
-            $thumbConfig->addItemAt(0,"cropPercent", array(
+        if ($crop) {
+            $thumbConfig->addItemAt(0, "cropPercent", [
                 "width" => $crop["cropWidth"],
                 "height" => $crop["cropHeight"],
                 "y" => $crop["cropTop"],
                 "x" => $crop["cropLeft"]
-            ));
+            ]);
 
             $hash = md5(\Pimcore\Tool\Serialize::serialize($thumbConfig->getItems()));
             $thumbConfig->setName($thumbConfig->getName() . "_auto_" . $hash);
         }
 
-        return $this->getImage()->getThumbnail($thumbConfig);
+        return $this->getImage()->getThumbnail($thumbConfig, $deferred);
     }
 
     /**
      * @return string
      */
-    public function __toString() {
-        if($this->image) {
+    public function __toString()
+    {
+        if ($this->image) {
             return $this->image->__toString();
         }
-        return ""; 
+
+        return "";
     }
 }

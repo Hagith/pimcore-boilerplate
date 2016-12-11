@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 // debug
@@ -38,10 +37,12 @@ var pimcore_system_i18n = parent.pimcore_system_i18n;
 if (typeof pimcore == "object") {
     pimcore.registerNS("pimcore.globalmanager");
     pimcore.registerNS("pimcore.helpers");
+    pimcore.registerNS("pimcore.treenodelocator");
 
     pimcore.globalmanager = parent.pimcore.globalmanager;
     pimcore.helpers = parent.pimcore.helpers;
     pimcore.settings = parent.pimcore.settings;
+    pimcore.treenodelocator = parent.pimcore.treenodelocator;
 }
 
 if (pimcore_document_id) {
@@ -51,6 +52,9 @@ if (pimcore_document_id) {
 
     window.onbeforeunload = editWindow.iframeOnbeforeunload.bind(editWindow);
 }
+
+// overwrite default z-index of windows, this ensures that CKEditor is above ExtJS Windows
+Ext.WindowManager.zseed = 200;
 
 
 Ext.Loader.setConfig({
@@ -101,6 +105,7 @@ Ext.onReady(function () {
     window.setInterval(pimcore.edithelpers.setBodyHeight, 1000);
 
     Ext.QuickTips.init();
+    Ext.MessageBox.minPromptWidth = 500;
     
     function getEditable(config) {
         var id = config.id;
@@ -166,7 +171,8 @@ Ext.onReady(function () {
                     new Ext.ToolTip({
                         target: tmpEl,
                         showDelay: 100,
-                        anchor: "left",
+                        hideDelay: 0,
+                        trackMouse: true,
                         html: t("click_right_for_more_options")
                     });
                 }

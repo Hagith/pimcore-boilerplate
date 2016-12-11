@@ -2,28 +2,31 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document;
 
 use Pimcore\Model;
-use Pimcore\Tool\Serialize;
-use Pimcore\View;
 use Pimcore\Model\Document;
 use Pimcore\Model\Element;
+use Pimcore\Tool\Serialize;
+use Pimcore\View;
 
-class Service extends Model\Element\Service {
+/**
+ * @method \Pimcore\Model\Document\Service\Dao getDao()
+ */
+class Service extends Model\Element\Service
+{
 
     /**
      * @var User
@@ -37,7 +40,8 @@ class Service extends Model\Element\Service {
     /**
      * @param null $user
      */
-    public function __construct($user = null) {
+    public function __construct($user = null)
+    {
         $this->_user = $user;
     }
 
@@ -50,19 +54,19 @@ class Service extends Model\Element\Service {
      * @param bool $useLayout
      * @return string
      */
-    public static function render(Document $document, $params = array(), $useLayout = false)
+    public static function render(Document $document, $params = [], $useLayout = false)
     {
         $layout = null;
         $existingActionHelper = null;
 
-        if(\Zend_Controller_Action_HelperBroker::hasHelper("layout")) {
+        if (\Zend_Controller_Action_HelperBroker::hasHelper("layout")) {
             $existingActionHelper = \Zend_Controller_Action_HelperBroker::getExistingHelper("layout");
         }
         $layoutInCurrentAction = (\Zend_Layout::getMvcInstance() instanceof \Zend_Layout) ? \Zend_Layout::getMvcInstance()->getLayout() : false;
-        
+
         $viewHelper = \Zend_Controller_Action_HelperBroker::getExistingHelper("ViewRenderer");
-        if($viewHelper) {
-            if($viewHelper->view === null) {
+        if ($viewHelper) {
+            if ($viewHelper->view === null) {
                 $viewHelper->initView(PIMCORE_WEBSITE_PATH . "/views");
             }
             $view = $viewHelper->view;
@@ -82,16 +86,16 @@ class Service extends Model\Element\Service {
         }
 
         $documentBackup = null;
-        if($view->document) {
+        if ($view->document) {
             $documentBackup = $view->document;
         }
         $view->document = $document;
 
         if ($useLayout) {
-            if(!$layout = \Zend_Layout::getMvcInstance()) {
+            if (!$layout = \Zend_Layout::getMvcInstance()) {
                 $layout = \Zend_Layout::startMvc();
                 $layout->setViewSuffix(View::getViewScriptSuffix());
-                if($layoutHelper = $view->getHelper("layout")) {
+                if ($layoutHelper = $view->getHelper("layout")) {
                     $layoutHelper->setLayout($layout);
                 }
             }
@@ -101,9 +105,9 @@ class Service extends Model\Element\Service {
         $params["document"] = $document;
 
         foreach ($params as $key => $value) {
-             if (!$view->$key) {
-                 $view->$key = $value;
-             }
+            if (!$view->$key) {
+                $view->$key = $value;
+            }
         }
 
         $content = $view->action($document->getAction(), $document->getController(), $document->getModule(), $params);
@@ -114,12 +118,12 @@ class Service extends Model\Element\Service {
                 $layout->{$layout->getContentKey()} = $content;
                 if (is_array($params)) {
                     foreach ($params as $key => $value) {
-                            $layout->getView()->$key = $value;
+                        $layout->getView()->$key = $value;
                     }
                 }
 
                 // when using Document\Service::render() you have to set a layout in the view ($this->layout()->setLayout("mylayout"))
-                if($layout->getLayout() != "--modification-indicator--") {
+                if ($layout->getLayout() != "--modification-indicator--") {
                     $content = $layout->render();
                 }
 
@@ -134,7 +138,7 @@ class Service extends Model\Element\Service {
                     $layout->setLayout($layoutInCurrentAction);
                     $view->getHelper("Layout")->setLayout($layout);
 
-                    if($existingActionHelper) {
+                    if ($existingActionHelper) {
                         \Zend_Controller_Action_HelperBroker::removeHelper("layout");
                         \Zend_Controller_Action_HelperBroker::addHelper($existingActionHelper);
 
@@ -147,15 +151,14 @@ class Service extends Model\Element\Service {
                     }
                 }
                 $layout->{$layout->getContentKey()} = null; //reset content
-
             }
         }
 
-        if($documentBackup) {
+        if ($documentBackup) {
             $view->document = $documentBackup;
         }
 
-        if(\Pimcore\Config::getSystemConfig()->outputfilters->less){
+        if (\Pimcore\Config::getSystemConfig()->outputfilters->less) {
             $content = \Pimcore\Tool\Less::processHtml($content);
         }
 
@@ -169,25 +172,26 @@ class Service extends Model\Element\Service {
      * @param int $collectGarbageAfterIteration
      * @param int $saved
      */
-    public static function saveRecursive($document,$collectGarbageAfterIteration = 25, &$saved = 0){
-        if($document instanceof Document){
+    public static function saveRecursive($document, $collectGarbageAfterIteration = 25, &$saved = 0)
+    {
+        if ($document instanceof Document) {
             $document->save();
             $saved++;
-            if($saved%$collectGarbageAfterIteration === 0){
+            if ($saved%$collectGarbageAfterIteration === 0) {
                 \Pimcore::collectGarbage();
             }
         }
 
-        foreach($document->getChilds() as $child){
-            if(!$child->hasChilds()){
+        foreach ($document->getChilds() as $child) {
+            if (!$child->hasChilds()) {
                 $child->save();
                 $saved++;
-                if($saved%$collectGarbageAfterIteration === 0){
+                if ($saved%$collectGarbageAfterIteration === 0) {
                     \Pimcore::collectGarbage();
                 }
             }
-            if($child->hasChilds()){
-              self::saveRecursive($child,$collectGarbageAfterIteration,$saved);
+            if ($child->hasChilds()) {
+                self::saveRecursive($child, $collectGarbageAfterIteration, $saved);
             }
         }
     }
@@ -197,11 +201,12 @@ class Service extends Model\Element\Service {
      * @param  Document $source
      * @return Document copied document
      */
-    public function copyRecursive($target, $source) {
+    public function copyRecursive($target, $source)
+    {
 
         // avoid recursion
         if (!$this->_copyRecursiveIds) {
-            $this->_copyRecursiveIds = array();
+            $this->_copyRecursiveIds = [];
         }
         if (in_array($source->getId(), $this->_copyRecursiveIds)) {
             return;
@@ -217,14 +222,14 @@ class Service extends Model\Element\Service {
         $new = clone $source;
         $new->id = null;
         $new->setChilds(null);
-        $new->setKey(Element\Service::getSaveCopyName("document",$new->getKey(), $target));
+        $new->setKey(Element\Service::getSaveCopyName("document", $new->getKey(), $target));
         $new->setParentId($target->getId());
         $new->setUserOwner($this->_user->getId());
         $new->setUserModification($this->_user->getId());
-        $new->setResource(null);
+        $new->setDao(null);
         $new->setLocked(false);
         $new->setCreationDate(time());
-        if(method_exists($new, "setPrettyUrl")) {
+        if (method_exists($new, "setPrettyUrl")) {
             $new->setPrettyUrl(null);
         }
 
@@ -237,18 +242,26 @@ class Service extends Model\Element\Service {
             $this->copyRecursive($new, $child);
         }
 
-        $this->updateChilds($target,$new);
+        $this->updateChilds($target, $new);
+
+        // triggers actions after the complete document cloning
+        \Pimcore::getEventManager()->trigger('document.postCopy', $new, [
+            'base_element' => $source // the element used to make a copy
+        ]);
 
         return $new;
     }
 
     /**
-     * @param  Document $target
-     * @param  Document $source
-     * @return Document copied document
+     * @param $target
+     * @param $source
+     * @param bool $enableInheritance
+     * @param bool $resetIndex
+     * @return Document
+     * @throws \Exception
      */
-    public function copyAsChild($target, $source, $enableInheritance = false) {
-
+    public function copyAsChild($target, $source, $enableInheritance = false, $resetIndex = false)
+    {
         if (method_exists($source, "getElements")) {
             $source->getElements();
         }
@@ -258,25 +271,36 @@ class Service extends Model\Element\Service {
         $new = clone $source;
         $new->id = null;
         $new->setChilds(null);
-        $new->setKey(Element\Service::getSaveCopyName("document",$new->getKey(), $target));
+        $new->setKey(Element\Service::getSaveCopyName("document", $new->getKey(), $target));
         $new->setParentId($target->getId());
         $new->setUserOwner($this->_user->getId());
         $new->setUserModification($this->_user->getId());
-        $new->setResource(null);
+        $new->setDao(null);
         $new->setLocked(false);
         $new->setCreationDate(time());
-        if(method_exists($new, "setPrettyUrl")) {
+
+        if ($resetIndex) {
+            // this needs to be after $new->setParentId($target->getId()); -> dependency!
+            $new->setIndex($new->getDao()->getNextIndex());
+        }
+
+        if (method_exists($new, "setPrettyUrl")) {
             $new->setPrettyUrl(null);
         }
 
-        if($enableInheritance && ($new instanceof Document\PageSnippet)) {
-            $new->setElements(array());
+        if ($enableInheritance && ($new instanceof Document\PageSnippet)) {
+            $new->setElements([]);
             $new->setContentMasterDocumentId($source->getId());
         }
 
         $new->save();
 
-        $this->updateChilds($target,$new);
+        $this->updateChilds($target, $new);
+
+        // triggers actions after the complete document cloning
+        \Pimcore::getEventManager()->trigger('document.postCopy', $new, [
+            'base_element' => $source // the element used to make a copy
+        ]);
 
         return $new;
     }
@@ -287,7 +311,8 @@ class Service extends Model\Element\Service {
      * @return mixed
      * @throws \Exception
      */
-    public function copyContents($target, $source) {
+    public function copyContents($target, $source)
+    {
 
         // check if the type is the same
         if (get_class($source) != get_class($target)) {
@@ -304,10 +329,8 @@ class Service extends Model\Element\Service {
             if ($source instanceof Document\Page) {
                 $target->setTitle($source->getTitle());
                 $target->setDescription($source->getDescription());
-                $target->setKeywords($source->getKeywords());
             }
-        }
-        else if ($source instanceof Document\Link) {
+        } elseif ($source instanceof Document\Link) {
             $target->setInternalType($source->getInternalType());
             $target->setInternal($source->getInternal());
             $target->setDirect($source->getDirect());
@@ -332,17 +355,16 @@ class Service extends Model\Element\Service {
      * @param  Document $document
      * @return void
      */
-    public static function gridDocumentData($document) {
+    public static function gridDocumentData($document)
+    {
         $data = Element\Service::gridElementData($document);
 
         if ($document instanceof Document\Page) {
             $data["title"] = $document->getTitle();
             $data["description"] = $document->getDescription();
-            $data["keywords"] = $document->getKeywords();
         } else {
             $data["title"] = "";
             $data["description"] = "";
-            $data["keywords"] = "";
             $data["name"] = "";
         }
 
@@ -354,13 +376,13 @@ class Service extends Model\Element\Service {
      * @param $doc
      * @return mixed
      */
-    public static function loadAllDocumentFields ( $doc ) {
-
+    public static function loadAllDocumentFields($doc)
+    {
         $doc->getProperties();
 
-        if($doc instanceof Document\PageSnippet) {
-            foreach($doc->getElements() as $name => $data) {
-                if(method_exists($data, "load")) {
+        if ($doc instanceof Document\PageSnippet) {
+            foreach ($doc->getElements() as $name => $data) {
+                if (method_exists($data, "load")) {
                     $data->load();
                 }
             }
@@ -374,20 +396,19 @@ class Service extends Model\Element\Service {
      * @param $path
      * @return bool
      */
-    public static function pathExists($path, $type = null) {
-
+    public static function pathExists($path, $type = null)
+    {
         $path = Element\Service::correctPath($path);
 
         try {
             $document = new Document();
             // validate path
             if (\Pimcore\Tool::isValidPath($path)) {
-                $document->getResource()->getByPath($path);
+                $document->getDao()->getByPath($path);
+
                 return true;
             }
-        }
-        catch (\Exception $e) {
-
+        } catch (\Exception $e) {
         }
 
         return false;
@@ -397,7 +418,8 @@ class Service extends Model\Element\Service {
      * @param $type
      * @return bool
      */
-    public static function isValidType ($type) {
+    public static function isValidType($type)
+    {
         return in_array($type, Document::getTypes());
     }
 
@@ -415,47 +437,48 @@ class Service extends Model\Element\Service {
      * @param $rewriteConfig
      * @return Document
      */
-    public static function rewriteIds($document, $rewriteConfig, $params = array()) {
+    public static function rewriteIds($document, $rewriteConfig, $params = [])
+    {
 
         // rewriting elements only for snippets and pages
-        if($document instanceof Document\PageSnippet) {
-            if(array_key_exists("enableInheritance", $params) && $params["enableInheritance"]) {
+        if ($document instanceof Document\PageSnippet) {
+            if (array_key_exists("enableInheritance", $params) && $params["enableInheritance"]) {
                 $elements = $document->getElements();
-                $changedElements = array();
+                $changedElements = [];
                 $contentMaster = $document->getContentMasterDocument();
-                if($contentMaster instanceof Document\PageSnippet) {
+                if ($contentMaster instanceof Document\PageSnippet) {
                     $contentMasterElements = $contentMaster->getElements();
                     foreach ($contentMasterElements as $contentMasterElement) {
-                        if(method_exists($contentMasterElement, "rewriteIds")) {
+                        if (method_exists($contentMasterElement, "rewriteIds")) {
                             $element = clone $contentMasterElement;
                             $element->rewriteIds($rewriteConfig);
 
-                            if(Serialize::serialize($element) != Serialize::serialize($contentMasterElement)) {
+                            if (Serialize::serialize($element) != Serialize::serialize($contentMasterElement)) {
                                 $changedElements[] = $element;
                             }
                         }
                     }
                 }
 
-                if(count($changedElements) > 0) {
+                if (count($changedElements) > 0) {
                     $elements = $changedElements;
                 }
             } else {
                 $elements = $document->getElements();
                 foreach ($elements as &$element) {
-                    if(method_exists($element, "rewriteIds")) {
+                    if (method_exists($element, "rewriteIds")) {
                         $element->rewriteIds($rewriteConfig);
                     }
                 }
             }
 
             $document->setElements($elements);
-        } else if ($document instanceof Document\Hardlink) {
-            if(array_key_exists("document", $rewriteConfig) && $document->getSourceId() && array_key_exists((int) $document->getSourceId(), $rewriteConfig["document"])) {
+        } elseif ($document instanceof Document\Hardlink) {
+            if (array_key_exists("document", $rewriteConfig) && $document->getSourceId() && array_key_exists((int) $document->getSourceId(), $rewriteConfig["document"])) {
                 $document->setSourceId($rewriteConfig["document"][(int) $document->getSourceId()]);
             }
-        } else if ($document instanceof Document\Link) {
-            if(array_key_exists("document", $rewriteConfig) && $document->getLinktype() == "internal" && $document->getInternalType() == "document" && array_key_exists((int) $document->getInternal(), $rewriteConfig["document"])) {
+        } elseif ($document instanceof Document\Link) {
+            if (array_key_exists("document", $rewriteConfig) && $document->getLinktype() == "internal" && $document->getInternalType() == "document" && array_key_exists((int) $document->getInternal(), $rewriteConfig["document"])) {
                 $document->setInternal($rewriteConfig["document"][(int) $document->getInternal()]);
             }
         }
@@ -474,19 +497,20 @@ class Service extends Model\Element\Service {
      * @param $url
      * @return Document
      */
-    public static function getByUrl($url) {
+    public static function getByUrl($url)
+    {
         $urlParts = parse_url($url);
-        if($urlParts["path"]) {
+        if ($urlParts["path"]) {
             $document = Document::getByPath($urlParts["path"]);
 
             // search for a page in a site
-            if(!$document) {
+            if (!$document) {
                 $sitesList = new Model\Site\Listing();
                 $sitesObjects = $sitesList->load();
 
                 foreach ($sitesObjects as $site) {
-                    if ($site->getRootDocument() && (in_array($urlParts["host"],$site->getDomains()) || $site->getMainDomain() == $urlParts["host"])) {
-                        if($document = Document::getByPath($site->getRootDocument() . $urlParts["path"])) {
+                    if ($site->getRootDocument() && (in_array($urlParts["host"], $site->getDomains()) || $site->getMainDomain() == $urlParts["host"])) {
+                        if ($document = Document::getByPath($site->getRootDocument() . $urlParts["path"])) {
                             break;
                         }
                     }
@@ -495,5 +519,36 @@ class Service extends Model\Element\Service {
         }
 
         return $document;
+    }
+
+    public static function getUniqueKey($item, $nr = 0)
+    {
+        $list = new Listing();
+        $list->setUnpublished(true);
+        $key = Element\Service::getValidKey($item->getKey(), "document");
+        if (!$key) {
+            throw new \Exception("No item key set.");
+        }
+        if ($nr) {
+            $key = $key . '_' . $nr;
+        }
+
+        $parent = $item->getParent();
+        if (!$parent) {
+            throw new \Exception("You have to set a parent document to determine a unique Key");
+        }
+
+        if (!$item->getId()) {
+            $list->setCondition('parentId = ? AND `key` = ? ', [$parent->getId(), $key]);
+        } else {
+            $list->setCondition('parentId = ? AND `key` = ? AND id != ? ', [$parent->getId(), $key, $item->getId()]);
+        }
+        $check = $list->loadIdList();
+        if (!empty($check)) {
+            $nr++;
+            $key = self::getUniqueKey($item, $nr);
+        }
+
+        return $key;
     }
 }

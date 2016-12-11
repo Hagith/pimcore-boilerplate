@@ -1,18 +1,17 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
@@ -20,7 +19,8 @@ namespace Pimcore\Model\Object\ClassDefinition\Data;
 use Pimcore\Model;
 use Pimcore\Model\Object;
 
-class Multiselect extends Model\Object\ClassDefinition\Data {
+class Multiselect extends Model\Object\ClassDefinition\Data
+{
 
     /**
      * Static type of this element
@@ -35,17 +35,22 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @var array
      */
     public $options;
-    
+
     /**
      * @var integer
      */
-    public $width;    
-    
+    public $width;
+
     /**
      * @var integer
      */
-    public $height; 
-    
+    public $height;
+
+    /**
+     * @var int
+     */
+    public $maxItems;
+
     /**
      * Type for the column to query
      *
@@ -70,71 +75,104 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
     /**
      * @return array
      */
-    public function getOptions() {
+    public function getOptions()
+    {
         return $this->options;
     }
 
     /**
      * @param array $options
-     * @return void
+     * @return $this
      */
-    public function setOptions($options) {
+    public function setOptions($options)
+    {
         $this->options = $options;
+
         return $this;
     }
-    
+
     /**
      * @return integer
      */
-    public function getWidth() {
+    public function getWidth()
+    {
         return $this->width;
     }
 
     /**
      * @param array $width
-     * @return void
+     * @return $this
      */
-    public function setWidth($width) {
+    public function setWidth($width)
+    {
         $this->width = $this->getAsIntegerCast($width);
+
         return $this;
     }
-    
+
     /**
      * @return integer
      */
-    public function getHeight() {
+    public function getHeight()
+    {
         return $this->height;
     }
 
     /**
      * @param array $height
-     * @return void
+     * @return $this
      */
-    public function setHeight($height) {
+    public function setHeight($height)
+    {
         $this->height = $this->getAsIntegerCast($height);
+
         return $this;
+    }
+
+    /**
+     * @param $maxItems
+     * @return $this
+     */
+    public function setMaxItems($maxItems)
+    {
+        $this->maxItems = $this->getAsIntegerCast($maxItems);
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxItems()
+    {
+        return $this->maxItems;
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForResource($data, $object = null) {
-        if(is_array($data)) {
-            return implode(",",$data);
+    public function getDataForResource($data, $object = null, $params = [])
+    {
+        if (is_array($data)) {
+            return implode(",", $data);
         }
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param string $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromResource($data) {
-        if($data) {
-            return explode(",",$data);
+    public function getDataFromResource($data, $object = null, $params = [])
+    {
+        if (strlen($data)) {
+            return explode(",", $data);
         } else {
             return null;
         }
@@ -144,12 +182,15 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForQueryResource($data, $object = null) {
-        if(!empty($data) && is_array($data)) {
-            return ",".implode(",",$data).",";
+    public function getDataForQueryResource($data, $object = null, $params = [])
+    {
+        if (!empty($data) && is_array($data)) {
+            return ",".implode(",", $data).",";
         }
+
         return;
     }
 
@@ -158,11 +199,13 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForEditmode($data, $object = null) {
-        if(is_array($data)) {
-           return implode(",",$data); 
+    public function getDataForEditmode($data, $object = null, $params = [])
+    {
+        if (is_array($data)) {
+            return implode(",", $data);
         }
     }
 
@@ -170,28 +213,31 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @see Model\Object\ClassDefinition\Data::getDataFromEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromEditmode($data, $object = null) {
-        if($data) {
-            if (\Pimcore\Tool\Admin::isExtJS6()) {
-                return $data;
-            } else {
-                return explode(",", $data);
-            }
-        } else {
-            return null;
+    public function getDataFromEditmode($data, $object = null, $params = [])
+    {
+        if (\Pimcore\Tool\Admin::isExtJS6()) {
+            return $data;
+        } elseif (strlen($data)) {
+            return explode(",", $data);
         }
+
+        return null;
     }
 
     /**
      * @see Object\ClassDefinition\Data::getVersionPreview
      * @param string $data
+     * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getVersionPreview($data) {
-        if(is_array($data)) {
-            return implode(",",$data);
+    public function getVersionPreview($data, $object = null, $params = [])
+    {
+        if (is_array($data)) {
+            return implode(",", $data);
         }
     }
 
@@ -202,13 +248,13 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @param boolean $omitMandatoryCheck
      * @throws \Exception
      */
-    public function checkValidity($data, $omitMandatoryCheck = false){
-
-        if(!$omitMandatoryCheck and $this->getMandatory() and empty($data)){
+    public function checkValidity($data, $omitMandatoryCheck = false)
+    {
+        if (!$omitMandatoryCheck and $this->getMandatory() and empty($data)) {
             throw new \Exception("Empty mandatory field [ ".$this->getName()." ]");
         }
 
-        if(!is_array($data) and !empty($data)){
+        if (!is_array($data) and !empty($data)) {
             throw new \Exception("Invalid multiselect data");
         }
     }
@@ -216,22 +262,29 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
     /**
      * converts object data to a simple string value or CSV Export
      * @abstract
-     * @param Model\Object\AbstractObject $object
+     * @param Object\AbstractObject $object
+     * @param array $params
      * @return string
      */
-    public function getForCsvExport($object) {
-        $data = $this->getDataFromObjectParam($object);
+    public function getForCsvExport($object, $params = [])
+    {
+        $data = $this->getDataFromObjectParam($object, $params);
         if (is_array($data)) {
             return implode(",", $data);
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
      * @param $importValue
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return array|mixed
      */
-    public function getFromCsvImport($importValue) {
-        return explode(",",$importValue);
+    public function getFromCsvImport($importValue, $object = null, $params = [])
+    {
+        return explode(",", $importValue);
     }
 
     /**
@@ -239,19 +292,38 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * @param  $value
      * @param  $operator
      * @return string
-     *
      */
-    public function getFilterCondition($value,$operator){
+    public function getFilterCondition($value, $operator)
+    {
+        return $this->getFilterConditionExt($value, $operator, [
+                "name" => $this->name]
+        );
+    }
+
+    /**
+     * returns sql query statement to filter according to this data types value(s)
+     * @param  $value
+     * @param  $operator
+     * @param  $params optional params used to change the behavior
+     * @return string
+     */
+    public function getFilterConditionExt($value, $operator, $params = [])
+    {
         if ($operator == "=") {
+            $name = $params["name"] ? $params["name"] : $this->name;
             $value = "'%".$value."%'";
-            return "`".$this->name."` LIKE ".$value." ";
+
+            return "`".$name."` LIKE ".$value." ";
         }
     }
 
     /** True if change is allowed in edit mode.
+     * @param string $object
+     * @param mixed $params
      * @return bool
      */
-    public function isDiffChangeAllowed() {
+    public function isDiffChangeAllowed($object, $params = [])
+    {
         return true;
     }
 
@@ -259,11 +331,13 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
      * a image URL. See the ObjectMerger plugin documentation for details
      * @param $data
      * @param null $object
+     * @param mixed $params
      * @return array|string
      */
-    public function getDiffVersionPreview($data, $object = null) {
+    public function getDiffVersionPreview($data, $object = null, $params = [])
+    {
         if ($data) {
-            $map = array();
+            $map = [];
             foreach ($data as $value) {
                 $map[$value] = $value;
             }
@@ -279,9 +353,10 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
 
             $html .= "</ul>";
 
-            $value = array();
+            $value = [];
             $value["html"] = $html;
             $value["type"] = "html";
+
             return $value;
         } else {
             return "";
@@ -291,8 +366,9 @@ class Multiselect extends Model\Object\ClassDefinition\Data {
     /**
      * @param Object\ClassDefinition\Data $masterDefinition
      */
-    public function synchronizeWithMasterDefinition(Object\ClassDefinition\Data $masterDefinition) {
+    public function synchronizeWithMasterDefinition(Object\ClassDefinition\Data $masterDefinition)
+    {
+        $this->maxItems = $masterDefinition->maxItems;
         $this->options = $masterDefinition->options;
     }
-
 }

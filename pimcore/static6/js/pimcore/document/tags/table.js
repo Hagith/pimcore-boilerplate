@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.table");
@@ -105,23 +104,23 @@ pimcore.document.tags.table = Class.create(pimcore.document.tag, {
             ],
             tbar: [
                 {
-                    iconCls: "pimcore_tag_table_addcol",
+                    iconCls: "pimcore_icon_table_col pimcore_icon_overlay_add",
                     handler: this.addColumn.bind(this)
                 },
                 {
-                    iconCls: "pimcore_tag_table_delcol",
+                    iconCls: "pimcore_icon_table_col pimcore_icon_overlay_delete",
                     handler: this.deleteColumn.bind(this)
                 },
                 {
-                    iconCls: "pimcore_tag_table_addrow",
+                    iconCls: "pimcore_icon_table_row pimcore_icon_overlay_add",
                     handler: this.addRow.bind(this)
                 },
                 {
-                    iconCls: "pimcore_tag_table_delrow",
+                    iconCls: "pimcore_icon_table_row pimcore_icon_overlay_delete",
                     handler: this.deleteRow.bind(this)
                 },
                 {
-                    iconCls: "pimcore_tag_table_empty",
+                    iconCls: "pimcore_icon_empty",
                     handler: this.initStore.bind(this, [
                         [" "]
                     ])

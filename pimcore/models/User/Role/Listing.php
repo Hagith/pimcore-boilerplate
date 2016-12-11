@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    User
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\User\Role;
 
 use Pimcore\Model;
 
-class Listing extends Model\User\Listing\AbstractListing {
+/**
+ * @method \Pimcore\Model\User\Role\Listing\Dao getDao()
+ */
+class Listing extends Model\User\Listing\AbstractListing
+{
 
     /**
      * @var string
@@ -30,7 +33,8 @@ class Listing extends Model\User\Listing\AbstractListing {
      * Alias for $this->getItems()
      * @return array
      */
-    public function getRoles() {
+    public function getRoles()
+    {
         return $this->getItems();
     }
 }

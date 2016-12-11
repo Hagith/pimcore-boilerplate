@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.keyvalue.propertiespanel");
@@ -50,7 +49,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             readerFields.push({name: this.fields[i]});
         }
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize(-1);
         var url = "/admin/key-value/properties?";
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -58,7 +57,10 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             readerFields,
             itemsPerPage
         );
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store,
+            {
+                pageSize: itemsPerPage
+            });
 
 
         var listeners = {};
@@ -98,7 +100,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             items: [
                 {
                     tooltip: t("keyvalue_detailed_configuration"),
-                    icon: "/pimcore/static6/img/icon/building_edit.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/department.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
                         var id = data.data.id;
@@ -159,7 +161,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             items: [
                 {
                     tooltip: t('keyvalue_find_group'),
-                    icon: "/pimcore/static6/img/icon/magnifier.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/search.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
                         var id = data.data.id;
@@ -178,7 +180,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             items: [
                 {
                     tooltip: t('remove'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
                         var id = data.data.id;
@@ -212,6 +214,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             columnLines: true,
             plugins: plugins,
             stripeRows: true,
+            bodyCls: "pimcore_editable_grid",
             trackMouseOver: true,
             viewConfig: {
                 forceFit: false
@@ -327,15 +330,15 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
                 {
                     xtype: "button",
                     text: t("search"),
-                    icon: "/pimcore/static6/img/icon/magnifier.png",
+                    iconCls: "pimcore_icon_search",
                     handler: function () {
                         var formValue = this.searchfield.getValue();
 
                         var filter = [{
-                            "field": "description",
+                            "property": "description",
                             "value" :formValue},
                             {
-                                "field": "name",
+                                "property": "name",
                                 "value" :formValue}
                         ];
                         this.groupStore.baseparams = {};
@@ -348,7 +351,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             bbar: ["->",{
                 xtype: "button",
                 text: t("cancel"),
-                icon: "/pimcore/static6/img/icon/cancel.png",
+                iconCls: "pimcore_icon_cancel",
                 handler: function () {
                     this.searchWindow.close();
                 }.bind(this)
@@ -386,9 +389,9 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
     },
 
     getData: function () {
-        var selected = this.groupGridPanel.getSelectionModel().getSelected();
+        var selected = this.groupGridPanel.getSelection();
         if(selected) {
-            return selected.data;
+            return selected.first();
         }
         return null;
     },
@@ -408,8 +411,6 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
         gridColumns.push({header: t("name"), width: 200, sortable: true, dataIndex: 'name'});
         gridColumns.push({header: t("description"), width: 340, sortable: true, dataIndex: 'description'});
 
-
-
         var proxy = {
             type: 'ajax',
             url: "/admin/key-value/groups",
@@ -427,13 +428,7 @@ pimcore.object.keyvalue.propertiespanel = Class.create({
             fields: readerFields
         });
 
-        this.groupPagingtoolbar = new Ext.PagingToolbar({
-            pageSize: 50,
-            store: this.groupStore,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: t("keyvalue_no_groups")
-        });
+        this.groupPagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.groupStore, { hideSelection: true });
 
         this.groupGridPanel = new Ext.grid.GridPanel({
             store: this.groupStore,

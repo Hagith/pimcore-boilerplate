@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition;
 
 use Pimcore\Model;
 
-class Listing extends Model\Listing\AbstractListing {
+/**
+ * @method \Pimcore\Model\Object\ClassDefinition\Listing\Dao getDao()
+ */
+class Listing extends Model\Listing\AbstractListing
+{
 
     /**
      * Contains the results of the list. They are all an instance of Object|Class
@@ -33,14 +36,16 @@ class Listing extends Model\Listing\AbstractListing {
      * @param $key
      * @return bool
      */
-    public function isValidOrderKey($key) {
+    public function isValidOrderKey($key)
+    {
         return true;
     }
 
     /**
      * @return array
      */
-    function getClasses() {
+    public function getClasses()
+    {
         return $this->classes;
     }
 
@@ -48,8 +53,10 @@ class Listing extends Model\Listing\AbstractListing {
      * @param $classes
      * @return $this
      */
-    function setClasses($classes) {
+    public function setClasses($classes)
+    {
         $this->classes = $classes;
+
         return $this;
     }
 }

@@ -1,30 +1,29 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.element.selector.abstract");
 pimcore.element.selector.abstract = Class.create({
 
-    
+
     initialize: function (parent) {
         this.parent = parent;
-        
+
         this.initStore();
 
         if(this.parent.multiselect) {
             this.searchPanel = new Ext.Panel({
                 layout: "border",
-                items: [this.getForm(), this.getSelectionPanel(), this.getResultPanel()],
+                items: [this.getForm(), this.getSelectionPanel(), this.getResultPanel()]
             });
         } else {
             this.searchPanel = new Ext.Panel({
@@ -32,29 +31,84 @@ pimcore.element.selector.abstract = Class.create({
                 items: [this.getForm(), this.getResultPanel()]
             });
         }
-        
+
+        var user = pimcore.globalmanager.get("user");
+        if(user.isAllowed("tags_search")) {
+            this.searchPanel.add(this.getTagsPanel());
+        }
+
+
         this.parent.setSearch(this.searchPanel);
     },
-    
+
     addToSelection: function (data) {
-        
+
         // check for dublicates
         var existingItem = this.selectionStore.find("id", data.id);
-        
+
         if(existingItem < 0) {
             this.selectionStore.add(data);
         }
     },
-    
+
+    getTagsPanel: function() {
+
+        if(!this.tagsPanel) {
+
+            var considerAllChildTags = Ext.create("Ext.form.Checkbox", {
+                style: "margin-bottom: 0; margin-left: 5px",
+                fieldStyle: "margin-top: 0",
+                cls: "tag-tree-topbar",
+                boxLabel: t("consider_child_tags"),
+                listeners: {
+                    change: function (field, checked) {
+                        var proxy = this.store.getProxy();
+                        proxy.setExtraParam("considerChildTags", checked);
+                        this.search();
+                    }.bind(this)
+                }
+            });
+
+
+            var tree = new pimcore.element.tag.tree();
+            tree.setAllowAdd(false);
+            tree.setAllowDelete(false);
+            tree.setAllowDnD(false);
+            tree.setAllowRename(false);
+            tree.setShowSelection(true);
+            tree.setCheckChangeCallback(function(tree) {
+                var tagIds = tree.getCheckedTagIds();
+                var proxy = this.store.getProxy();
+                proxy.setExtraParam("tagIds[]", tagIds);
+                this.search();
+            }.bind(this, tree));
+
+            this.tagsPanel = Ext.create("Ext.Panel", {
+                region: "west",
+                width: 300,
+                collapsedCls: "tag-tree-toolbar-collapsed",
+                collapsible: true,
+                collapsed: true,
+                autoScroll: true,
+                items: [tree.getLayout()],
+                title: t('filter_tags'),
+                tbar: [considerAllChildTags],
+                iconCls: "pimcore_icon_element_tags"
+            });
+        }
+
+        return this.tagsPanel;
+    },
+
     getData: function () {
         if(this.parent.multiselect) {
             this.tmpData = [];
-            
+
             if(this.selectionStore.getCount() > 0) {
                 this.selectionStore.each(function (rec) {
                     this.tmpData.push(rec.data);
                 }.bind(this));
-                
+
                 return this.tmpData;
             } else {
                 // is the store is empty and a item is selected take this
@@ -63,7 +117,7 @@ pimcore.element.selector.abstract = Class.create({
                     this.tmpData.push(selected.data);
                 }
             }
-            
+
             return this.tmpData;
         } else {
             var selected = this.getGrid().getSelectionModel().getSelected();
@@ -75,41 +129,7 @@ pimcore.element.selector.abstract = Class.create({
     },
 
     getPagingToolbar: function(label) {
-        var pagingToolbar = new Ext.PagingToolbar({
-            pageSize: 50,
-            store: this.store,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: label
-        });
-
-        // add per-page selection
-        pagingToolbar.add("-");
-
-        pagingToolbar.add(new Ext.Toolbar.TextItem({
-            text: t("items_per_page")
-        }));
-
-        pagingToolbar.add(new Ext.form.ComboBox({
-            store: [
-                [50, "50"],
-                [100, "100"],
-                [200, "200"],
-                [999999, t("all")]
-            ],
-            mode: "local",
-            width: 80,
-            value: 50,
-            triggerAction: "all",
-            listeners: {
-                select: function (box, rec, index) {
-                    var store = this.pagingtoolbar.getStore();
-                    store.setPageSize(intval(rec.data.field1));
-                    this.pagingtoolbar.moveFirst();
-                }.bind(this)
-            }
-        }));
-
+        var pagingToolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
         return pagingToolbar;
     },
 

@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Webservice
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Webservice\Data\Document;
@@ -20,7 +19,8 @@ namespace Pimcore\Model\Webservice\Data\Document;
 use Pimcore\Model;
 use Pimcore\Model\Webservice;
 
-class PageSnippet extends Model\Webservice\Data\Document {
+class PageSnippet extends Model\Webservice\Data\Document
+{
     
     /**
      * @var string
@@ -43,24 +43,22 @@ class PageSnippet extends Model\Webservice\Data\Document {
     public $elements;
 
 
-    public function map($object, $options = null) {
-
-        $originalElements = array();
-        if(is_array($object->getElements())){
+    public function map($object, $options = null)
+    {
+        $originalElements = [];
+        if (is_array($object->getElements())) {
             $originalElements=$object->getElements();
         }
 
         parent::map($object);
 
-        $this->elements = array();
-        foreach($originalElements as $element) {
-
+        $this->elements = [];
+        foreach ($originalElements as $element) {
             $el = new Webservice\Data\Document\Element();
             $el->name = $element->getName();
             $el->type = $element->getType();
             $el->value = $element->getForWebserviceExport();
             $this->elements[] = $el;
-
         }
     }
 
@@ -70,17 +68,17 @@ class PageSnippet extends Model\Webservice\Data\Document {
      * @param null $idMapper
      * @throws \Exception
      */
-    public function reverseMap ($object, $disableMappingExceptions = false, $idMapper = null) {
+    public function reverseMap($object, $disableMappingExceptions = false, $idMapper = null)
+    {
         parent::reverseMap($object, $disableMappingExceptions, $idMapper);
         
         $object->childs = null;
-        $object->elements = array();
+        $object->elements = [];
 
-        if(is_array($this->elements)) {
+        if (is_array($this->elements)) {
             foreach ($this->elements as $element) {
-
-                $tag = Model\Document\Tag::factory($element->type,$element->name,$this->id);
-                $tag->getFromWebserviceImport($element, $idMapper);
+                $tag = Model\Document\Tag::factory($element->type, $element->name, $this->id);
+                $tag->getFromWebserviceImport($element, $object, [], $idMapper);
 
                 $object->elements[$element->name] = $tag;
             }

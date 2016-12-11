@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Metadata
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Metadata;
@@ -20,7 +19,11 @@ namespace Pimcore\Model\Metadata;
 use Pimcore\Model;
 use Pimcore\Model\Element;
 
-class Predefined extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Metadata\Predefined\Dao getDao()
+ */
+class Predefined extends Model\AbstractModel
+{
 
     /**
      * @var integer
@@ -89,31 +92,41 @@ class Predefined extends Model\AbstractModel {
      * @param integer $id
      * @return self
      */
-    public static function getById($id) {
-        $metadata = new self();
-        $metadata->setId($id);
-        $metadata->getResource()->getById();
+    public static function getById($id)
+    {
+        try {
+            $metadata = new self();
+            $metadata->setId($id);
+            $metadata->getDao()->getById();
 
-        return $metadata;
+            return $metadata;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
      * @param string $key
      * @return self
      */
-    public static function getByName($name, $language = "") {
+    public static function getByName($name, $language = "")
+    {
+        try {
+            $metadata = new self();
+            $metadata->setName($name);
+            $metadata->getDao()->getByNameAndLanguage($name, $language);
 
-        $metadata = new self();
-        $metadata->setName($name);
-        $metadata->getResource()->getByNameAndLanguage($name, $language);
-
-        return $metadata;
+            return $metadata;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
      * @return self
      */
-    public static function create() {
+    public static function create()
+    {
         $type = new self();
         $type->save();
 
@@ -124,40 +137,47 @@ class Predefined extends Model\AbstractModel {
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
     /**
      * @return string
      */
-    public function getType() {
+    public function getType()
+    {
         return $this->type;
     }
 
     /**
      * @return string
      */
-    public function getData() {
+    public function getData()
+    {
         return $this->data;
     }
 
 
     /**
      * @param string $name
-     * @return void
+     * @return $this
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * @param string $type
-     * @return void
+     * @return $this
      */
-    public function setType($type) {
+    public function setType($type)
+    {
         $this->type = $type;
+
         return $this;
     }
 
@@ -165,15 +185,18 @@ class Predefined extends Model\AbstractModel {
      * @param string $data
      * @return void
      */
-    public function setData($data) {
+    public function setData($data)
+    {
         $this->data = $data;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
@@ -181,8 +204,10 @@ class Predefined extends Model\AbstractModel {
      * @param integer $id
      * @return void
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
@@ -194,6 +219,7 @@ class Predefined extends Model\AbstractModel {
     public function setDescription($description)
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -212,6 +238,7 @@ class Predefined extends Model\AbstractModel {
     public function setCreationDate($creationDate)
     {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -230,6 +257,7 @@ class Predefined extends Model\AbstractModel {
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -293,7 +321,8 @@ class Predefined extends Model\AbstractModel {
     /**
      *
      */
-    public function minimize() {
+    public function minimize()
+    {
         switch ($this->type) {
             case "document":
             case "asset":
@@ -321,7 +350,8 @@ class Predefined extends Model\AbstractModel {
     /**
      *
      */
-    public function expand() {
+    public function expand()
+    {
         switch ($this->type) {
             case "document":
             case "asset":
@@ -331,7 +361,7 @@ class Predefined extends Model\AbstractModel {
                     $element = Element\Service::getElementById($this->type, $this->data);
                 }
                 if ($element) {
-                    $this->data = $element->getFullPath();
+                    $this->data = $element->getRealFullPath();
                 } else {
                     $this->data = "";
                 }

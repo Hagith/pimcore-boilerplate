@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.keyValue");
@@ -62,6 +61,7 @@ pimcore.object.classes.data.keyValue = Class.create(pimcore.object.classes.data.
         var groupDescWidth = 200;
         var valueWidth = 500;
         var descWidth = 200;
+        var unitWidth = 200;
         var height = 200;
         var maxheight = 0;
         var multivalent = 0;
@@ -79,6 +79,10 @@ pimcore.object.classes.data.keyValue = Class.create(pimcore.object.classes.data.
 
         if (this.datax.descWidth) {
             descWidth = this.datax.descWidth;
+        }
+
+        if (this.datax.unitWidth) {
+            unitWidth = this.datax.unitWidth;
         }
 
         if (this.datax.groupDescWidth) {
@@ -140,6 +144,12 @@ pimcore.object.classes.data.keyValue = Class.create(pimcore.object.classes.data.
                 value: descWidth
             },
             {
+                xtype: "spinnerfield",
+                fieldLabel: t("TEMP_unitwidth"),
+                name: "unitWidth",
+                value: unitWidth
+            },
+            {
                 xtype: "checkbox",
                 fieldLabel: t("keyvalue_data_metavisible"),
                 name: "metaVisible",
@@ -190,6 +200,7 @@ pimcore.object.classes.data.keyValue = Class.create(pimcore.object.classes.data.
                     keyWidth: source.datax.keyWidth,
                     valueWidth: source.datax.valueWidth,
                     descWidth: source.datax.descWidth,
+                    unitWidth: source.datax.unitWidth,
                     height: source.datax.height,
                     maxheight: source.datax.maxheight,
                     groupWidth: source.datax.groupWidth,

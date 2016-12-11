@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.multihref");
@@ -23,13 +22,23 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
         object: true,
         objectbrick: true,
         fieldcollection: true,
-        localizedfield: true
+        localizedfield: true,
+        classificationstore : false,
+        block: true
     },
 
     initialize: function (treeNode, initData) {
         this.type = "multihref";
 
         this.initData(initData);
+
+        if (typeof this.datax.lazyLoading == "undefined") {
+            this.datax.lazyLoading = true;
+        }
+
+        pimcore.helpers.sanitizeAllowedTypes(this.datax, "classes");
+        pimcore.helpers.sanitizeAllowedTypes(this.datax, "assetTypes");
+        pimcore.helpers.sanitizeAllowedTypes(this.datax, "documentTypes");
 
         // overwrite default settings
         this.availableSettingsFields = ["name","title","tooltip","mandatory","noteditable","invisible",
@@ -63,7 +72,7 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
         if(typeof this.datax.classes == "object") {
             // this is when it comes from the server
             for(i=0; i<this.datax.classes.length; i++) {
-                allowedClasses.push(this.datax.classes[i]["classes"]);
+                allowedClasses.push(this.datax.classes[i]);
             }
         } else if(typeof this.datax.classes == "string") {
             // this is when it comes from the local store
@@ -74,7 +83,7 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
         if(typeof this.datax.documentTypes == "object") {
             // this is when it comes from the server
             for(i=0; i<this.datax.documentTypes.length; i++) {
-                allowedDocuments.push(this.datax.documentTypes[i]["documentTypes"]);
+                allowedDocuments.push(this.datax.documentTypes[i]);
             }
         } else if(typeof this.datax.documentTypes == "string") {
             // this is when it comes from the local store
@@ -85,7 +94,7 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
         if(typeof this.datax.assetTypes == "object") {
             // this is when it comes from the server
             for(i=0; i<this.datax.assetTypes.length; i++) {
-                allowedAssets.push(this.datax.assetTypes[i]["assetTypes"]);
+                allowedAssets.push(this.datax.assetTypes[i]);
             }
         } else if(typeof this.datax.assetTypes == "string") {
             // this is when it comes from the local store
@@ -101,8 +110,10 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
             fields: ["text"]
         });
         classesStore.load({
-            "callback": function (allowedClasses) {
-                Ext.getCmp('class_allowed_object_classes_' + this.uniqeFieldId).setValue(allowedClasses.join(","));
+            "callback": function (allowedClasses, success) {
+                if (success) {
+                    Ext.getCmp('class_allowed_object_classes_' + this.uniqeFieldId).setValue(allowedClasses.join(","));
+                }
             }.bind(this, allowedClasses)
         });
 
@@ -115,8 +126,10 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
             fields: ["text"]
         });
         documentTypeStore.load({
-            "callback": function (allowedDocuments) {
-                Ext.getCmp('class_allowed_document_types_' + this.uniqeFieldId).setValue(allowedDocuments.join(","));
+            "callback": function (allowedDocuments, success) {
+                if (success) {
+                    Ext.getCmp('class_allowed_document_types_' + this.uniqeFieldId).setValue(allowedDocuments.join(","));
+                }
             }.bind(this, allowedDocuments)
         });
 
@@ -129,8 +142,10 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
             fields: ["text"]
         });
         assetTypeStore.load({
-            "callback": function (allowedAssets) {
-                Ext.getCmp('class_allowed_asset_types_' + this.uniqeFieldId).setValue(allowedAssets.join(","));
+            "callback": function (allowedAssets, success) {
+                if (success) {
+                    Ext.getCmp('class_allowed_asset_types_' + this.uniqeFieldId).setValue(allowedAssets.join(","));
+                }
             }.bind(this, allowedAssets)
         });
 
@@ -158,7 +173,8 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
                         xtype: "numberfield",
                         fieldLabel: t("maximum_items"),
                         name: "maxItems",
-                        value: this.datax.maxItems
+                        value: this.datax.maxItems,
+                        minValue: 0
                     },
                     {
                         xtype: "checkbox",
@@ -181,6 +197,13 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
                         value: t('lazy_loading_warning'),
                         cls: "pimcore_extra_label_bottom",
                         style: "color:red; font-weight: bold; padding-bottom:0;"
+                    },
+                    {
+                        xtype: 'textfield',
+                        width: 600,
+                        fieldLabel: t("path_formatter_class"),
+                        name: 'pathFormatterClass',
+                        value: this.datax.pathFormatterClass
                     }
                 ]
             },
@@ -266,7 +289,7 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
                         id: 'class_asset_upload_path_' + this.uniqeFieldId,
                         cls: "input_drop_target",
                         value: this.datax.assetUploadPath,
-                        width: 350,
+                        width: 500,
                         xtype: "textfield",
                         listeners: {
                             "render": function (el) {
@@ -333,8 +356,6 @@ pimcore.object.classes.data.multihref = Class.create(pimcore.object.classes.data
                     })
                 ]
             }
-
-
         ]);
 
         return this.layout;

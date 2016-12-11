@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
@@ -67,11 +66,12 @@ class Checkbox extends Model\Object\ClassDefinition\Data
 
     /**
      * @param integer $defaultValue
-     * @return void
+     * @return $this
      */
     public function setDefaultValue($defaultValue)
     {
         $this->defaultValue = (int)$defaultValue;
+
         return $this;
     }
 
@@ -80,11 +80,11 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param boolean $data
      * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return int
      */
-    public function getDataForResource($data, $object = null)
+    public function getDataForResource($data, $object = null, $params = [])
     {
-
         if (is_bool($data)) {
             $data = (int)$data;
         }
@@ -96,13 +96,16 @@ class Checkbox extends Model\Object\ClassDefinition\Data
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param boolean $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return boolean
      */
-    public function getDataFromResource($data)
+    public function getDataFromResource($data, $object = null, $params = [])
     {
-        if(!is_null($data)) {
+        if (!is_null($data)) {
             $data = (bool) $data;
         }
+
         return $data;
     }
 
@@ -110,44 +113,50 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param boolean $data
      * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return boolean
      */
-    public function getDataForQueryResource($data, $object = null)
+    public function getDataForQueryResource($data, $object = null, $params = [])
     {
-        return $this->getDataForResource($data, $object);
+        return $this->getDataForResource($data, $object, $params);
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param boolean $data
      * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return boolean
      */
-    public function getDataForEditmode($data, $object = null)
+    public function getDataForEditmode($data, $object = null, $params = [])
     {
-        return $this->getDataForResource($data, $object);
+        return $this->getDataForResource($data, $object, $params);
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataFromEditmode
      * @param boolean $data
      * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return boolean
      */
-    public function getDataFromEditmode($data, $object = null)
+    public function getDataFromEditmode($data, $object = null, $params = [])
     {
         if ($data === "false") {
             return false;
         }
-        return (bool)$this->getDataFromResource($data);
+
+        return (bool)$this->getDataFromResource($data, $object, $params);
     }
 
     /**
      * @see Object\ClassDefinition\Data::getVersionPreview
      * @param boolean $data
+     * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return boolean
      */
-    public function getVersionPreview($data)
+    public function getVersionPreview($data, $object = null, $params = [])
     {
         return $data;
     }
@@ -161,9 +170,8 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      */
     public function checkValidity($data, $omitMandatoryCheck = false)
     {
-
         if (!$omitMandatoryCheck and $this->getMandatory() and $data === null) {
-            throw new \Exception("Empty mandatory field [ " . $this->getName() . " ]");
+            throw new Model\Element\ValidationException("Empty mandatory field [ " . $this->getName() . " ]");
         }
 
         /* @todo seems to cause problems with old installations
@@ -176,11 +184,13 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      * converts object data to a simple string value or CSV Export
      * @abstract
      * @param Object\AbstractObject $object
+     * @param array $params
      * @return string
      */
-    public function getForCsvExport($object)
+    public function getForCsvExport($object, $params = [])
     {
-        $data = $this->getDataFromObjectParam($object);
+        $data = $this->getDataFromObjectParam($object, $params);
+
         return strval($data);
     }
 
@@ -188,42 +198,50 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      * fills object field data values from CSV Import String
      * @abstract
      * @param string $importValue
-     * @param Object\AbstractObject $abstract
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return Object\ClassDefinition\Data
      */
-    public function getFromCsvImport($importValue)
+    public function getFromCsvImport($importValue, $object = null, $params = [])
     {
         return (bool)$importValue;
     }
 
-    public function getForWebserviceExport($object)
+    public function getForWebserviceExport($object, $params = [])
     {
-        $data = $this->getDataFromObjectParam($object);
+        $data = $this->getDataFromObjectParam($object, $params);
+
         return (bool) $data;
     }
 
     /**
      * converts data to be imported via webservices
      * @param mixed $value
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return mixed
      */
-    public function getFromWebserviceImport($value, $object = null, $idMapper = null)
+    public function getFromWebserviceImport($value, $object = null, $params = [], $idMapper = null)
     {
         return (bool)$value;
     }
 
 
     /** True if change is allowed in edit mode.
+     * @param string $object
+     * @param mixed $params
      * @return bool
      */
-    public function isDiffChangeAllowed() {
+    public function isDiffChangeAllowed($object, $params = [])
+    {
         return true;
     }
 
     /**
      * @param Object\ClassDefinition\Data $masterDefinition
      */
-    public function synchronizeWithMasterDefinition(Object\ClassDefinition\Data $masterDefinition) {
+    public function synchronizeWithMasterDefinition(Object\ClassDefinition\Data $masterDefinition)
+    {
         $this->defaultValue = $masterDefinition->defaultValue;
     }
 
@@ -234,10 +252,27 @@ class Checkbox extends Model\Object\ClassDefinition\Data
      * @return string
      *
      */
-    public function getFilterCondition($value, $operator) {
-        $db = \Pimcore\Resource::get();
+    public function getFilterCondition($value, $operator)
+    {
+        return $this->getFilterConditionExt($value, $operator, [
+                "name" => $this->name]
+        );
+    }
+
+    /**
+     * returns sql query statement to filter according to this data types value(s)
+     * @param  $value
+     * @param  $operator
+     * @param  $params optional params used to change the behavior
+     * @return string
+     */
+    public function getFilterConditionExt($value, $operator, $params = [])
+    {
+        $db = \Pimcore\Db::get();
+        $name = $params["name"] ? $params["name"] : $this->name;
         $value = $db->quote($value);
-        $key = $db->quoteIdentifier($this->name, $this->name);
+        $key = $db->quoteIdentifier($this->name, $name);
+
         return "IFNULL(" . $key . ", 0) = " . $value . " ";
     }
 }

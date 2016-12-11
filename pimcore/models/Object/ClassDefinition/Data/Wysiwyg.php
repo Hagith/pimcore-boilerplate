@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
@@ -22,8 +21,8 @@ use Pimcore\Model\Object;
 use Pimcore\Model\Element;
 use Pimcore\Tool\Text;
 
-class Wysiwyg extends Model\Object\ClassDefinition\Data {
-
+class Wysiwyg extends Model\Object\ClassDefinition\Data
+{
     use Model\Object\ClassDefinition\Data\Extension\Text;
 
     /**
@@ -72,32 +71,38 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
     /**
      * @return integer
      */
-    public function getWidth() {
+    public function getWidth()
+    {
         return $this->width;
     }
 
     /**
      * @return integer
      */
-    public function getHeight() {
+    public function getHeight()
+    {
         return $this->height;
     }
 
     /**
      * @param integer $width
-     * @return void
+     * @return $this
      */
-    public function setWidth($width) {
+    public function setWidth($width)
+    {
         $this->width = $this->getAsIntegerCast($width);
+
         return $this;
     }
 
     /**
      * @param integer $height
-     * @return void
+     * @return $this
      */
-    public function setHeight($height) {
+    public function setHeight($height)
+    {
         $this->height = $this->getAsIntegerCast($height);
+
         return $this;
     }
 
@@ -106,7 +111,7 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      */
     public function setToolbarConfig($toolbarConfig)
     {
-        if(is_string($toolbarConfig)) {
+        if (is_string($toolbarConfig)) {
             $this->toolbarConfig = $toolbarConfig;
         } else {
             $this->toolbarConfig = "";
@@ -125,18 +130,23 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForResource($data, $object = null) {
+    public function getDataForResource($data, $object = null, $params = [])
+    {
         return Text::wysiwygText($data);
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param string $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromResource($data) {
+    public function getDataFromResource($data, $object = null, $params = [])
+    {
         return Text::wysiwygText($data);
     }
 
@@ -144,18 +154,19 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForQueryResource($data, $object = null) {
-
-        $data = $this->getDataForResource($data);
+    public function getDataForQueryResource($data, $object = null, $params = [])
+    {
+        $data = $this->getDataForResource($data, $object, $params);
 
         $data = strip_tags($data, "<a><img>");
         $data = str_replace("\r\n", " ", $data);
         $data = str_replace("\n", " ", $data);
         $data = str_replace("\r", " ", $data);
         $data = str_replace("\t", "", $data);
-        $data = preg_replace ('#[ ]+#', ' ', $data);
+        $data = preg_replace('#[ ]+#', ' ', $data);
 
         return $data;
     }
@@ -165,26 +176,31 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForEditmode($data, $object = null) {
-        return $this->getDataForResource($data, $object);
+    public function getDataForEditmode($data, $object = null, $params = [])
+    {
+        return $this->getDataForResource($data, $object, $params);
     }
 
     /**
      * @see Model\Object\ClassDefinition\Data::getDataFromEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromEditmode($data, $object = null) {
+    public function getDataFromEditmode($data, $object = null, $params = [])
+    {
         return $data;
     }
 
     /**
      * @param mixed $data
      */
-    public function resolveDependencies($data) {
+    public function resolveDependencies($data)
+    {
         return Text::getDependenciesOfWysiwygText($data);
     }
 
@@ -195,7 +211,8 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @param array $tags
      * @return array
      */
-    public function getCacheTags($data, $tags = array()) {
+    public function getCacheTags($data, $tags = [])
+    {
         return Text::getCacheTagsOfWysiwygText($data, $tags);
     }
 
@@ -207,17 +224,17 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @param boolean $omitMandatoryCheck
      * @throws \Exception
      */
-    public function checkValidity($data, $omitMandatoryCheck = false){
-
-        if(!$omitMandatoryCheck and $this->getMandatory() and empty($data)){
-           throw new \Exception("Empty mandatory field [ ".$this->getName()." ]");
+    public function checkValidity($data, $omitMandatoryCheck = false)
+    {
+        if (!$omitMandatoryCheck and $this->getMandatory() and empty($data)) {
+            throw new Element\ValidationException("Empty mandatory field [ ".$this->getName()." ]");
         }
         $dependencies = Text::getDependenciesOfWysiwygText($data);
         if (is_array($dependencies)) {
             foreach ($dependencies as $key => $value) {
                 $el = Element\Service::getElementById($value['type'], $value['id']);
-                if (!$el) {              
-                    throw new \Exception("invalid dependency in wysiwyg text");
+                if (!$el) {
+                    throw new Element\ValidationException("Invalid dependency in wysiwyg text");
                 }
             }
         }
@@ -227,16 +244,16 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @param Object\Concrete $object
      * @return string
      */
-    public function preGetData ($object, $params = array()) {
-
+    public function preGetData($object, $params = [])
+    {
         $data = "";
-        if($object instanceof Object\Concrete) {
+        if ($object instanceof Object\Concrete) {
             $data = $object->{$this->getName()};
-        } else if ($object instanceof Object\Localizedfield || $object instanceof Object\Classificationstore) {
+        } elseif ($object instanceof Object\Localizedfield || $object instanceof Object\Classificationstore) {
             $data = $params["data"];
-        } else if ($object instanceof Object\Fieldcollection\Data\AbstractData) {
+        } elseif ($object instanceof Object\Fieldcollection\Data\AbstractData) {
             $data = $object->{$this->getName()};
-        } else if ($object instanceof Object\Objectbrick\Data\AbstractData) {
+        } elseif ($object instanceof Object\Objectbrick\Data\AbstractData) {
             $data = $object->{$this->getName()};
         }
 
@@ -247,13 +264,16 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * a image URL. See the ObjectMerger plugin documentation for details
      * @param $data
      * @param null $object
+     * @param mixed $params
      * @return array|string
      */
-    public function getDiffVersionPreview($data, $object = null) {
+    public function getDiffVersionPreview($data, $object = null, $params = [])
+    {
         if ($data) {
-            $value = array();
+            $value = [];
             $value["html"] = $data;
             $value["type"] = "html";
+
             return $value;
         } else {
             return "";
@@ -276,23 +296,23 @@ class Wysiwyg extends Model\Object\ClassDefinition\Data {
      * @param array $params
      * @return Element\ElementInterface
      */
-    public function rewriteIds($object, $idMapping, $params = array()) {
-
+    public function rewriteIds($object, $idMapping, $params = [])
+    {
         include_once("simple_html_dom.php");
 
         $data = $this->getDataFromObjectParam($object, $params);
         $html = str_get_html($data);
-        if($html) {
+        if ($html) {
             $s = $html->find("a[pimcore_id],img[pimcore_id]");
 
-            if($s) {
+            if ($s) {
                 foreach ($s as $el) {
                     if ($el->href || $el->src) {
                         $type = $el->pimcore_type;
                         $id = (int) $el->pimcore_id;
 
-                        if(array_key_exists($type, $idMapping)) {
-                            if(array_key_exists($id, $idMapping[$type])) {
+                        if (array_key_exists($type, $idMapping)) {
+                            if (array_key_exists($id, $idMapping[$type])) {
                                 $el->outertext = str_replace('="' . $el->pimcore_id . '"', '="' . $idMapping[$type][$id] . '"', $el->outertext);
                             }
                         }

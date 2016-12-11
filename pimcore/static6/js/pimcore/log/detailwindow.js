@@ -1,3 +1,16 @@
+/**
+ * Pimcore
+ *
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
+ *
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
+ */
+
 pimcore.registerNS("pimcore.log.detailwindow");
 pimcore.log.detailwindow = Class.create({
     getClassName: function (){
@@ -17,7 +30,7 @@ pimcore.log.detailwindow = Class.create({
             this.detailWindow = new Ext.Window({
 				width: 600,
 				height: 420,
-                iconCls: "errorlog-icon",
+                iconCls: "pimcore_icon_log",
                 title: t('log_detailinformation'),
 				closeAction:'close',
 				plain: true,
@@ -49,7 +62,7 @@ pimcore.log.detailwindow = Class.create({
 			name: "timestamp",
             readOnly: true,
 			value: this.data.timestamp,
-			width: 400
+			width: 540
 		});
 		items.push({
 			xtype: "textarea",
@@ -57,7 +70,7 @@ pimcore.log.detailwindow = Class.create({
 			name: "message",
             readOnly: true,
 			value: this.data.message,
-			width: 400,
+			width: 540,
             height: 200
 		});
 		items.push({
@@ -66,7 +79,7 @@ pimcore.log.detailwindow = Class.create({
 			name: "type",
             readOnly: true,
 			value: this.data.priority,
-			width: 400
+			width: 540
 		});
         items.push({
             xtype: "textfield",
@@ -74,7 +87,7 @@ pimcore.log.detailwindow = Class.create({
             name: "component",
             readOnly: true,
             value: this.data.component,
-            width: 400
+            width: 540
         });
         items.push(new Ext.form.FieldContainer({
             layout: 'hbox',
@@ -100,13 +113,14 @@ pimcore.log.detailwindow = Class.create({
             text = text.substr(0, 60) + "...";
         }
 
+        var html = Ext.String.format('<a href="{0}" target="_blank">{1}</a>', this.data.fileobject, text);
         items.push({
             xtype: "displayfield",
             fieldLabel: t('log_fileobject'),
             name: "fileobject",
             readOnly: true,
-            html: Ext.String.format('<a href="{0}" target="_blank">{1}</a>', this.data.fileobject, text),
-            width: 400
+            value: html,
+            width: 540
         });
 
 

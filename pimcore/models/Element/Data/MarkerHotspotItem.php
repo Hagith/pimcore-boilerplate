@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Element
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Element\Data;
 
 use Pimcore\Model;
 
-class MarkerHotspotItem implements \ArrayAccess {
+class MarkerHotspotItem implements \ArrayAccess
+{
 
     /**
      * @var string
@@ -39,10 +39,11 @@ class MarkerHotspotItem implements \ArrayAccess {
     /**
      * @param $data
      */
-    public function __construct($data) {
-        foreach($data as $key => $value) {
+    public function __construct($data)
+    {
+        foreach ($data as $key => $value) {
             $setter = "set" . $key;
-            if(method_exists($this, $setter)) {
+            if (method_exists($this, $setter)) {
                 $this->$setter($value);
             }
         }
@@ -124,8 +125,8 @@ class MarkerHotspotItem implements \ArrayAccess {
      */
     public function offsetGet($offset)
     {
-        if($this->offsetExists($offset)) {
-            if($offset == "value" && in_array($this->type, ["object","asset","document"])) {
+        if ($this->offsetExists($offset)) {
+            if ($offset == "value" && in_array($this->type, ["object", "asset", "document"])) {
                 return Model\Element\Service::getElementById($this->type, $this->value);
             } else {
                 return $this->$offset;
@@ -149,8 +150,8 @@ class MarkerHotspotItem implements \ArrayAccess {
      */
     public function offsetSet($offset, $value)
     {
-        if($this->offsetExists($offset)) {
-            if($value instanceof Model\Element\ElementInterface) {
+        if ($this->offsetExists($offset)) {
+            if ($value instanceof Model\Element\ElementInterface) {
                 $value = $value->getId();
             }
 
@@ -169,7 +170,7 @@ class MarkerHotspotItem implements \ArrayAccess {
      */
     public function offsetUnset($offset)
     {
-        if($this->offsetExists($offset)) {
+        if ($this->offsetExists($offset)) {
             $this->$offset = null;
         }
     }

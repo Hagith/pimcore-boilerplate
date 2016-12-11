@@ -1,22 +1,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.recyclebin");
 pimcore.settings.recyclebin = Class.create({
 
     initialize: function () {
-
         this.getTabPanel();
     },
 
@@ -55,7 +53,7 @@ pimcore.settings.recyclebin = Class.create({
 
     getGrid: function () {
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize();
         this.store = pimcore.helpers.grid.buildDefaultStore(
             '/admin/recyclebin/list?',
             [
@@ -94,11 +92,11 @@ pimcore.settings.recyclebin = Class.create({
             }
         });
 
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
 
         var typesColumns = [
-            {header: t("type"), flex: 50, sortable: true, dataIndex: 'subtype', renderer: function(d) {
-                return '<img src="/pimcore/static6/img/icon/' + d + '.png" />';
+            {header: t("type"), width: 50, sortable: true, dataIndex: 'subtype', renderer: function(d) {
+                return '<img src="/pimcore/static6/img/flat-color-icons/' + d + '.svg" style="height: 16px" />';
             }},
             {header: t("path"), flex: 200, sortable: true, dataIndex: 'path', filter: 'string'},
             {header: t("amount"), flex: 60, sortable: true, dataIndex: 'amount'},
@@ -116,7 +114,7 @@ pimcore.settings.recyclebin = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('delete'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         grid.getStore().removeAt(rowIndex);
                     }.bind(this)
@@ -164,7 +162,7 @@ pimcore.settings.recyclebin = Class.create({
             bbar: this.pagingtoolbar,
             stripeRows: true,
             selModel: Ext.create('Ext.selection.RowModel', {}),
-            plugins: ['gridfilters'],
+            plugins: ['pimcore.gridfilters'],
             columns : typesColumns,
             tbar: toolbar,
             listeners: {
@@ -210,9 +208,9 @@ pimcore.settings.recyclebin = Class.create({
         Ext.getCmp("pimcore_recyclebin_button_restore").disable();
         Ext.getCmp("pimcore_recyclebin_button_delete").disable();
     },
-    
+
     onRestore: function () {
-        
+
         pimcore.helpers.loadingShow();
 
         var selections = this.grid.getSelectionModel().getSelected();
@@ -229,7 +227,7 @@ pimcore.settings.recyclebin = Class.create({
             success: function () {
                 this.store.reload();
                 this.grid.getView().refresh();
-                
+
                 // refresh all trees
                 try {
                     if(pimcore.globalmanager.get("layout_document_tree").tree.rendered) {
@@ -255,7 +253,7 @@ pimcore.settings.recyclebin = Class.create({
                 catch (e) {
                     console.log(e);
                 }
-                
+
                 pimcore.helpers.loadingHide();
             }.bind(this)
         });

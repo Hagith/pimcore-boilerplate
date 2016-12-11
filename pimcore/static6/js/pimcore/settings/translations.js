@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.translations");
@@ -33,7 +32,9 @@ pimcore.settings.translations = Class.create({
                         var input = field;
                         var proxy = this.store.getProxy();
                         proxy.extraParams.searchString = input.getValue();
-                        this.store.load();
+                        this.store.load({
+                            page: 1
+                        });
                     }
                 }.bind(this)
             }
@@ -79,21 +80,25 @@ pimcore.settings.translations = Class.create({
         };
 
         var readerFields = [
+            {name: 'id', persist: false},
             {name: 'key', allowBlank: false},
-            {name: 'creationDate', allowBlank: true, type: 'date', convert: dateConverter},
-            {name: 'modificationDate', allowBlank: true, type: 'date', convert: dateConverter}
+            {name: 'creationDate', allowBlank: true, type: 'date', convert: dateConverter, persist: false},
+            {name: 'modificationDate', allowBlank: true, type: 'date', convert: dateConverter, persist: false}
         ];
 
         var typesColumns = [
-            {header: t("key"), sortable: true, dataIndex: 'key', editable: false}
-
+            {header: t("key"), sortable: true, dataIndex: 'key', editable: false, filter: 'string'}
         ];
 
         for (var i = 0; i < languages.length; i++) {
-
             readerFields.push({name: languages[i]});
             //TODO do we really need the id attribute?
-            var columnConfig = {cls: "x-column-header_" + languages[i].toLowerCase() , header: pimcore.available_languages[languages[i]], sortable: false, dataIndex: languages[i],
+            var columnConfig = {
+                cls: "x-column-header_" + languages[i].toLowerCase(),
+                header: pimcore.available_languages[languages[i]],
+                sortable: true,
+                dataIndex: languages[i],
+                filter: 'string',
                 editor: new Ext.form.TextField({}), id: "translation_column_" + this.translationType + "_" + languages[i].toLowerCase()};
             if (applyInitialSettings) {
                 var hidden = i >= maxLanguages;
@@ -124,118 +129,28 @@ pimcore.settings.translations = Class.create({
             width: 30,
             items: [{
                 tooltip: t('delete'),
-                icon: "/pimcore/static6/img/icon/cross.png",
+                icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                 handler: function (grid, rowIndex) {
                     grid.getStore().removeAt(rowIndex);
                 }.bind(this)
             }]
         });
 
-        this.modelName = 'pimcore.model.translations.' + this.translationType;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize(-1);
 
-        if (!Ext.ClassManager.get(this.modelName)) {
-
-            var url = this.dataUrl;
-            if(url.indexOf('?') === -1) {
-                url = url + "?";
-            } else {
-                url = url + "&";
+        this.store = pimcore.helpers.grid.buildDefaultStore(
+            this.dataUrl,
+            readerFields,
+            itemsPerPage, {
+                idProperty: 'key'
             }
+        );
 
-            Ext.define(this.modelName, {
-                extend: 'Ext.data.Model',
-                idProperty: 'key',
-                fields: readerFields,
-
-                proxy: {
-                    type: 'ajax',
-                    api: {
-                        create  : url + "xaction=create",
-                        read    : url + "xaction=read",
-                        update  : url + "xaction=update",
-                        destroy : url + "xaction=destroy"
-                    },
-                    actionMethods: {
-                        create : 'POST',
-                        read   : 'POST',
-                        update : 'POST',
-                        destroy: 'POST'
-                    },
-                    extraParams: {
-                        limit: itemsPerPage,
-                        searchString: this.preconfiguredFilter
-                    },
-
-                    // Reader is now on the proxy, as the message was explaining
-                    reader: {
-                        type: 'json',
-                        rootProperty: 'data'
-                    },                                     // default
-                    writer: {
-                        type: 'json',
-                        writeAllFields: true,
-                        rootProperty: 'data',
-                        encode: 'true'
-                    },
-                    listeners: {
-                        exception: function(proxy, response, operation){
-                            Ext.MessageBox.show({
-                                title: 'REMOTE EXCEPTION',
-                                msg: operation.getError(),
-                                icon: Ext.MessageBox.ERROR,
-                                buttons: Ext.Msg.OK
-                            });
-                        }
-                    }
-                }
-            });
+        if(this.preconfiguredFilter) {
+            this.store.getProxy().extraParams.searchString = this.preconfiguredFilter;
         }
 
-
-        var itemsPerPage = 20;
-        this.store = new Ext.data.Store({
-            id: 'translation_store',
-            model: this.modelName,
-            remoteSort: true,
-            remoteFilter: true,
-            autoSync: true
-        });
-
-        this.pagingtoolbar = Ext.create('Ext.toolbar.Paging', {
-            pageSize: itemsPerPage,
-            store: this.store,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: t("no_items_found")
-        });
-
-        // add per-page selection
-        this.pagingtoolbar.add("-");
-
-        this.pagingtoolbar.add(new Ext.Toolbar.TextItem({
-            text: t("items_per_page")
-        }));
-        this.pagingtoolbar.add(new Ext.form.ComboBox({
-            store: [
-                [10, "10"],
-                [20, "20"],
-                [40, "40"],
-                [60, "60"],
-                [80, "80"],
-                [100, "100"]
-            ],
-            mode: "local",
-            width: 80,
-            value: 20,
-            triggerAction: "all",
-            listeners: {
-                select: function (box, rec, index) {
-                    var store = this.pagingtoolbar.getStore();
-                    store.setPageSize(intval(rec.data.field1));
-                    this.pagingtoolbar.moveFirst();
-                }.bind(this)
-            }
-        }));
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, {pageSize: itemsPerPage});
 
         this.cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
             clicksToEdit: 1
@@ -266,12 +181,6 @@ pimcore.settings.translations = Class.create({
                     handler: this.doMerge.bind(this),
                     iconCls: "pimcore_icon_merge"
                 },
-                "-",
-                {
-                    text: t('import_csv'),
-                    handler: this.doImport.bind(this),
-                    iconCls: "pimcore_icon_import"
-                },
                 '-',
                 {
                     text: t('export_csv'),
@@ -287,6 +196,7 @@ pimcore.settings.translations = Class.create({
 
         this.grid = Ext.create('Ext.grid.Panel', {
             frame: false,
+            bodyCls: "pimcore_editable_grid",
             autoScroll: true,
             store: this.store,
             columnLines: true,
@@ -304,17 +214,14 @@ pimcore.settings.translations = Class.create({
             stateEvents: ['columnmove', 'columnresize', 'sortchange', 'groupchange'],
             selModel: Ext.create('Ext.selection.RowModel', {}),
             plugins: [
-                "gridfilters",
-                this.cellEditing,
-                {
-                    ptype: 'datatip',
-                    tpl: t('click_to_edit')
-                }
+                "pimcore.gridfilters",
+                this.cellEditing
             ],
             tbar: toolbar,
             viewConfig: {
                 forceFit: true,
-                loadingText: t('loading_texts')
+                loadingText: t('loading_texts'),
+                enableTextSelection: true
             }
         });
 
@@ -377,9 +284,9 @@ pimcore.settings.translations = Class.create({
             if(button == "ok") {
                 this.cellEditing.cancelEdit();
 
-                var u = Ext.create(this.modelName);
-                u.set("key", value);
-                this.grid.store.insert(0, [u]);
+                this.grid.store.insert(0, {
+                    key: value
+                });
 
                 this.cellEditing.startEditByPosition({
                     row: 0,

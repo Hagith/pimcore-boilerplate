@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.layout.layout");
@@ -92,13 +91,13 @@ pimcore.object.classes.layout.layout = Class.create({
                             value: this.datax.title
                         },
                         {
-                            xtype: "spinnerfield",
+                            xtype: "numberfield",
                             fieldLabel: t("width"),
                             name: "width",
                             value: this.datax.width
                         },
                         {
-                            xtype: "spinnerfield",
+                            xtype: "numberfield",
                             fieldLabel: t("height"),
                             name: "height",
                             value: this.datax.height
@@ -107,13 +106,29 @@ pimcore.object.classes.layout.layout = Class.create({
                             xtype: "checkbox",
                             fieldLabel: t("collapsible"),
                             name: "collapsible",
-                            checked: this.datax.collapsible
+                            checked: this.datax.collapsible || this.datax.collapsed,
+                            listeners: {
+                                change: function (row, checked) {
+                                    if(!checked) {
+                                        //force uncheck on collapsed checkbox
+                                        row.nextNode().setValue(false);
+                                    }
+                                }
+                            }
                         },
                         {
                             xtype: "checkbox",
                             fieldLabel: t("collapsed"),
                             name: "collapsed",
-                            checked: this.datax.collapsed
+                            checked: this.datax.collapsed,
+                            listeners: {
+                                change: function (row, checked) {
+                                    if(checked) {
+                                        //force check on collapsible checkbox
+                                        row.previousNode().setValue(true);
+                                    }
+                                }
+                            }
                         },
                         {
                             xtype: "textfield",

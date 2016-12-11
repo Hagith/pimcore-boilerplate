@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.translation.admin");
@@ -18,8 +17,8 @@ pimcore.settings.translation.admin = Class.create(pimcore.settings.translations,
     translationType: 'admin',
     dataUrl: '/admin/translation/translations?admin=1',
     exportUrl: '/admin/translation/export/?admin=1',
-    importUrl:'/admin/translation/import/?admin=1&pimcore_admin_sid=' + pimcore.settings.sessionId,
-    mergeUrl:'/admin/translation/import/?admin=1&merge=1&pimcore_admin_sid=' + pimcore.settings.sessionId,
+    importUrl:'/admin/translation/import/?admin=1',
+    mergeUrl:'/admin/translation/import/?admin=1&merge=1',
     cleanupUrl: "/admin/translation/cleanup/type/admin",
 
     activate: function (filter) {

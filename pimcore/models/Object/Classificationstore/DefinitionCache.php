@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Classificationstore;
@@ -21,25 +20,25 @@ use Pimcore\Model;
 use Pimcore\Model\Object;
 use Pimcore\Tool;
 
-class DefinitionCache {
+class DefinitionCache
+{
+    public static $cache = [];
 
-    static $cache = array();
-
-    public static function get($id, $type = "key") {
+    public static function get($id, $type = "key")
+    {
         $key = $type . $id;
         $config = self::$cache[$key];
         if ($config) {
-            \Logger::debug("#### matched " . $key);
             return $config;
         }
 
         $config = KeyConfig::getById($id);
-        if (!$config->getId()) {
+        if (!$config) {
             return;
         }
         self::put($config);
-        return $config;
 
+        return $config;
     }
 
     public static function put($config)
@@ -52,8 +51,8 @@ class DefinitionCache {
         self::$cache[$key] = $config;
     }
 
-    public static function clear($config) {
-
+    public static function clear($config)
+    {
         if ($config) {
             $type = self::getType($config);
             if (!$type) {
@@ -63,19 +62,18 @@ class DefinitionCache {
 
             unset(self::$cache[$key]);
         } else {
-            self::$cache = array();
+            self::$cache = [];
         }
-
     }
 
-    protected static function getType($config) {
+    protected static function getType($config)
+    {
         if ($config instanceof KeyConfig) {
             $type = "key";
-        } else if ($config instanceof GroupConfig) {
+        } elseif ($config instanceof GroupConfig) {
             $type = "group";
         }
+
         return $type;
     }
-
-
 }

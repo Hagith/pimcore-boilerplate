@@ -1,17 +1,16 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
- 
+
 pimcore.registerNS("pimcore.document.properties");
 pimcore.document.properties = Class.create(pimcore.element.properties,{
 
@@ -84,64 +83,67 @@ pimcore.document.properties = Class.create(pimcore.element.properties,{
                 items: [language]
             });
 
-            var navigationBasic = new Ext.form.FieldSet({
-                title: t('basic'),
-                autoHeight:true,
-                collapsible: true,
-                collapsed: false,
-                defaults: {
-                    width: 230
-                },
-                items :[{
-                            xtype: "textfield",
-                            fieldLabel: t("name"),
-                            value: this.getPropertyData("navigation_name"),
-                            name: "navigation_name"
-                        },{
-                            xtype: "textfield",
-                            fieldLabel: t('title'),
-                            name: "navigation_title",
-                            value: this.getPropertyData("navigation_title")
-                        },{
-                            xtype: "combo",
-                            fieldLabel: t('navigation_target'),
-                            name: "navigation_target",
-                            store: ["","_blank","_self","_top","_parent"],
-                            value: this.getPropertyData("navigation_target"),
-                            editable: false,
-                            triggerAction: 'all',
-                            mode: "local",
-                            width: 200,
-                            listWidth: 200
-                        },{
-                            xtype: "checkbox",
-                            fieldLabel: t('navigation_exclude'),
-                            name: "navigation_exclude",
-                            checked: this.getPropertyData("navigation_exclude")
+            var systempropertiesItems = [this.languagesPanel];
 
-                }]
+            if(this.element.type == "page" || this.element.type == "link") {
+                var navigationBasic = new Ext.form.FieldSet({
+                    title: t('basic'),
+                    autoHeight:true,
+                    collapsible: true,
+                    collapsed: false,
+                    defaults: {
+                        width: 230
+                    },
+                    items :[{
+                        xtype: "textfield",
+                        fieldLabel: t("name"),
+                        value: this.getPropertyData("navigation_name"),
+                        name: "navigation_name"
+                    },{
+                        xtype: "textfield",
+                        fieldLabel: t('title'),
+                        name: "navigation_title",
+                        value: this.getPropertyData("navigation_title")
+                    },{
+                        xtype: "combo",
+                        fieldLabel: t('navigation_target'),
+                        name: "navigation_target",
+                        store: ["","_blank","_self","_top","_parent"],
+                        value: this.getPropertyData("navigation_target"),
+                        editable: true,
+                        triggerAction: 'all',
+                        mode: "local",
+                        width: 200,
+                        listWidth: 200
+                    },{
+                        xtype: "checkbox",
+                        fieldLabel: t('navigation_exclude'),
+                        name: "navigation_exclude",
+                        checked: this.getPropertyData("navigation_exclude")
 
-            });
+                    }]
 
-            var navigationEnhanced = new Ext.form.FieldSet({
-                title: t('enhanced'),
-                autoHeight:true,
-                collapsible: true,
-                collapsed: true,
-                defaults: {
-                    width: 230
-                },
-                items :[{
-                            xtype: "textfield",
-                            fieldLabel: t('class'),
-                            name: 'navigation_class',
-                            value: this.getPropertyData("navigation_class")
-                        },{
-                            xtype: "textfield",
-                            fieldLabel: t('anchor'),
-                            name: 'navigation_anchor',
-                            value: this.getPropertyData("navigation_anchor")
-                        },
+                });
+
+                var navigationEnhanced = new Ext.form.FieldSet({
+                    title: t('enhanced'),
+                    autoHeight:true,
+                    collapsible: true,
+                    collapsed: true,
+                    defaults: {
+                        width: 230
+                    },
+                    items :[{
+                        xtype: "textfield",
+                        fieldLabel: t('class'),
+                        name: 'navigation_class',
+                        value: this.getPropertyData("navigation_class")
+                    },{
+                        xtype: "textfield",
+                        fieldLabel: t('anchor'),
+                        name: 'navigation_anchor',
+                        value: this.getPropertyData("navigation_anchor")
+                    },
                         {
                             xtype: "textfield",
                             fieldLabel: t('parameters'),
@@ -167,20 +169,18 @@ pimcore.document.properties = Class.create(pimcore.element.properties,{
                             value: this.getPropertyData("navigation_tabindex")
                         }]
 
-            });
+                });
 
-            this.navigationPanel =  new Ext.form.FormPanel({
-                title: t("navigation_settings"),
-                bodyStyle: "padding: 10px;",
-                autoWidth: true,
-                autoHeight:true,
-                collapsible: false,
-                items: [navigationBasic,navigationEnhanced]
-            });
+                this.navigationPanel =  new Ext.form.FormPanel({
+                    title: t("navigation_settings"),
+                    bodyStyle: "padding: 10px;",
+                    autoWidth: true,
+                    autoHeight:true,
+                    collapsible: false,
+                    items: [navigationBasic,navigationEnhanced]
+                });
 
-            var systempropertiesItems = [this.languagesPanel];
-            if(this.element.type == "page" || this.element.type == "link") {
-                systempropertiesItems = [this.languagesPanel,this.navigationPanel];
+                systempropertiesItems.push(this.navigationPanel);
             }
 
             this.systemPropertiesPanel = new Ext.Panel({
@@ -200,53 +200,41 @@ pimcore.document.properties = Class.create(pimcore.element.properties,{
     getValues : function ($super) {
 
         var values = $super();
+        var record;
 
+        var systemValues = this.languagesPanel.getForm().getFieldValues();
 
-        var languageValues = this.languagesPanel.getForm().getFieldValues();
-        var navigationValues = this.navigationPanel.getForm().getFieldValues();
-
-        var systemValues = array_merge(languageValues,navigationValues);
+        if(this["navigationPanel"]) {
+            var navigationValues = this.navigationPanel.getForm().getFieldValues();
+            systemValues = array_merge(systemValues, navigationValues);
+        }
 
         for(var i=0;i<this.disallowedKeys.length;i++){
 
             var name = this.disallowedKeys[i];
 
-            var addProperty = false;
-            var unchanged = false;
+            var addProperty = true;
             if(typeof systemValues[name] != "undefined") {
 
-                var record;
-                var recordIndex = this.propertyGrid.getStore().findBy(function (name,rec, id) {
-                    if(rec.get("name") == name) {
-                        return true;
-                    }
-                }.bind(this,name));
-
-                if(recordIndex >= 0) {
-                    record = this.propertyGrid.getStore().getAt(recordIndex);
-                    if(record.get("data")) {
-                        if(record.get("data") != systemValues[name]) {
-                            addProperty = true;
-                        } else if(record.get("data") == systemValues[name]) {
-                            unchanged=true;
+                if(in_array(name,this.inheritableKeys)) {
+                    if(this.element.data.properties[name]) {
+                        record = this.element.data.properties[name];
+                        if(record["inherited"] && record["data"] == systemValues[name]) {
+                            addProperty = false;
                         }
-                    } else if (systemValues[name]) {
-                        addProperty = true;
                     }
-                } else {
-                    addProperty = true;
                 }
 
                 if(addProperty) {
                     values[name] = {
                         data: systemValues[name],
-                        type: "text",
+                        type: (typeof systemValues[name] === "boolean") ? "bool" : "text",
                         inheritable: in_array(name,this.inheritableKeys)
                     };
                 }
             }
 
-            if(!addProperty && !unchanged) {
+            if(!addProperty) {
                 if(values[name]) {
                     delete values[name];
                 }

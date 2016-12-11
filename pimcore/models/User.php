@@ -2,25 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    User
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model;
 
-use Pimcore\File; 
+use Pimcore\File;
 
-class User extends User\UserRole {
-
+/**
+ * @method \Pimcore\Model\User\Dao getDao()
+ */
+class User extends User\UserRole
+{
     /**
      * @var string
      */
@@ -64,7 +66,7 @@ class User extends User\UserRole {
     /**
      * @var array
      */
-    public $roles = array();
+    public $roles = [];
 
     /**
      * @var bool
@@ -76,33 +78,54 @@ class User extends User\UserRole {
      */
     public $closeWarning = true;
 
-
     /**
      * @var bool
      */
     public $memorizeTabs = true;
 
     /**
+     * @var bool
+     */
+    public $allowDirtyClose = true;
+
+    /**
      * @var string|null
      */
     public $apiKey;
 
+    /**
+     * @var string|null
+     */
+    public $contentLanguages;
+
+    /**
+     * @var string|null
+     */
+    public $activePerspective;
+
+    /**
+     * @var null|array
+     */
+    protected $mergedPerspectives = null;
 
     /**
      * @return string
      */
-    public function getPassword() {
+    public function getPassword()
+    {
         return $this->password;
     }
 
     /**
      * @param string $password
-     * @return void
+     * @return $this
      */
-    public function setPassword($password) {
+    public function setPassword($password)
+    {
         if (strlen($password) > 4) {
             $this->password = $password;
         }
+
         return $this;
     }
 
@@ -111,7 +134,8 @@ class User extends User\UserRole {
      * @deprecated
      * @return string
      */
-    public function getUsername () {
+    public function getUsername()
+    {
         return $this->getName();
     }
 
@@ -119,8 +143,10 @@ class User extends User\UserRole {
      * @param $username
      * @return $this
      */
-    public function setUsername ($username) {
+    public function setUsername($username)
+    {
         $this->setName($username);
+
         return $this;
     }
 
@@ -128,7 +154,8 @@ class User extends User\UserRole {
      *
      * @return string
      */
-    public function getFirstname() {
+    public function getFirstname()
+    {
         return $this->firstname;
     }
 
@@ -136,8 +163,10 @@ class User extends User\UserRole {
      * @param $firstname
      * @return $this
      */
-    public function setFirstname($firstname) {
+    public function setFirstname($firstname)
+    {
         $this->firstname = $firstname;
+
         return $this;
     }
 
@@ -145,7 +174,8 @@ class User extends User\UserRole {
      *
      * @return string
      */
-    public function getLastname() {
+    public function getLastname()
+    {
         return $this->lastname;
     }
 
@@ -153,8 +183,10 @@ class User extends User\UserRole {
      * @param $lastname
      * @return $this
      */
-    public function setLastname($lastname) {
+    public function setLastname($lastname)
+    {
         $this->lastname = $lastname;
+
         return $this;
     }
 
@@ -162,7 +194,8 @@ class User extends User\UserRole {
      *
      * @return string
      */
-    public function getEmail() {
+    public function getEmail()
+    {
         return $this->email;
     }
 
@@ -170,15 +203,18 @@ class User extends User\UserRole {
      * @param $email
      * @return $this
      */
-    public function setEmail($email) {
+    public function setEmail($email)
+    {
         $this->email = $email;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getLanguage() {
+    public function getLanguage()
+    {
         return $this->language;
     }
 
@@ -186,10 +222,12 @@ class User extends User\UserRole {
      * @param string $language
      * @return void
      */
-    public function setLanguage($language) {
+    public function setLanguage($language)
+    {
         if ($language) {
             $this->language = $language;
         }
+
         return $this;
     }
 
@@ -197,14 +235,16 @@ class User extends User\UserRole {
      * @see getAdmin()
      * @return boolean
      */
-    public function isAdmin() {
+    public function isAdmin()
+    {
         return $this->getAdmin();
     }
 
     /**
      * @return boolean
      */
-    public function getAdmin() {
+    public function getAdmin()
+    {
         return $this->admin;
     }
 
@@ -212,15 +252,18 @@ class User extends User\UserRole {
      * @param boolean $admin
      * @return void
      */
-    public function setAdmin($admin) {
+    public function setAdmin($admin)
+    {
         $this->admin = (bool) $admin;
+
         return $this;
     }
 
     /**
      * @return boolean
      */
-    public function getActive() {
+    public function getActive()
+    {
         return $this->active;
     }
 
@@ -228,15 +271,18 @@ class User extends User\UserRole {
      * @param boolean $active
      * @return void
      */
-    public function setActive($active) {
+    public function setActive($active)
+    {
         $this->active = (bool) $active;
+
         return $this;
     }
 
     /**
      * @return bool
      */
-    public function isActive(){
+    public function isActive()
+    {
         return $this->getActive();
     }
 
@@ -244,48 +290,51 @@ class User extends User\UserRole {
      * @param String $key
      * @return boolean
      */
-    public function isAllowed($key, $type = "permission") {
-
+    public function isAllowed($key, $type = "permission")
+    {
         if ($this->isAdmin()) {
             return true;
         }
 
-        if($type == "permission") {
-            if(!$this->getPermission($key)) {
+        if ($type == "permission") {
+            if (!$this->getPermission($key)) {
                 // check roles
                 foreach ($this->getRoles() as $roleId) {
                     $role = User\Role::getById($roleId);
-                    if($role->getPermission($key)) {
+                    if ($role->getPermission($key)) {
                         return true;
                     }
                 }
             }
 
             return $this->getPermission($key);
-        } else if ($type == "class") {
+        } elseif ($type == "class") {
             $classes = $this->getClasses();
             foreach ($this->getRoles() as $roleId) {
                 $role = User\Role::getById($roleId);
                 $classes = array_merge($classes, $role->getClasses());
             }
 
-            if(!empty($classes)) {
+            if (!empty($classes)) {
                 return in_array($key, $classes);
             } else {
                 return true;
             }
-        } else  if ($type == "docType") {
+        } elseif ($type == "docType") {
             $docTypes = $this->getDocTypes();
             foreach ($this->getRoles() as $roleId) {
                 $role = User\Role::getById($roleId);
                 $docTypes = array_merge($docTypes, $role->getDocTypes());
             }
 
-            if(!empty($docTypes)) {
+            if (!empty($docTypes)) {
                 return in_array($key, $docTypes);
             } else {
                 return true;
             }
+        } elseif ($type == "perspective") {
+            //returns true if required perspective is allowed to use by the user
+            return in_array($key, $this->getMergedPerspectives());
         }
 
         return false;
@@ -296,8 +345,8 @@ class User extends User\UserRole {
      * @param string $permissionName
      * @return array
      */
-    public function getPermission($permissionName) {
-
+    public function getPermission($permissionName)
+    {
         if ($this->isAdmin()) {
             return true;
         }
@@ -311,13 +360,14 @@ class User extends User\UserRole {
      */
     public function setRoles($roles)
     {
-        if(is_string($roles) && !empty($roles) ) {
+        if (is_string($roles) && !empty($roles)) {
             $this->roles = explode(",", $roles);
-        } else if (is_array($roles)) {
+        } elseif (is_array($roles)) {
             $this->roles = $roles;
-        } else if (empty($roles)) {
-            $this->roles = array();
+        } elseif (empty($roles)) {
+            $this->roles = [];
         }
+
         return $this;
     }
 
@@ -326,9 +376,10 @@ class User extends User\UserRole {
      */
     public function getRoles()
     {
-        if(empty($this->roles)) {
-            return array();
+        if (empty($this->roles)) {
+            return [];
         }
+
         return $this->roles;
     }
 
@@ -339,6 +390,7 @@ class User extends User\UserRole {
     public function setWelcomescreen($welcomescreen)
     {
         $this->welcomescreen = (bool) $welcomescreen;
+
         return $this;
     }
 
@@ -357,6 +409,7 @@ class User extends User\UserRole {
     public function setCloseWarning($closeWarning)
     {
         $this->closeWarning = (bool) $closeWarning;
+
         return $this;
     }
 
@@ -375,6 +428,7 @@ class User extends User\UserRole {
     public function setMemorizeTabs($memorizeTabs)
     {
         $this->memorizeTabs = (bool) $memorizeTabs;
+
         return $this;
     }
 
@@ -387,12 +441,31 @@ class User extends User\UserRole {
     }
 
     /**
+     * @param $allowDirtyClose
+     * @return $this
+     */
+    public function setAllowDirtyClose($allowDirtyClose)
+    {
+        $this->allowDirtyClose = (bool)$allowDirtyClose;
+
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getAllowDirtyClose()
+    {
+        return $this->allowDirtyClose;
+    }
+
+    /**
      * @param $apiKey
      * @throws \Exception
      */
     public function setApiKey($apiKey)
     {
-        if(!empty($apiKey) && strlen($apiKey) < 32) {
+        if (!empty($apiKey) && strlen($apiKey) < 32) {
             throw new \Exception("API-Key has to be at least 32 characters long");
         }
         $this->apiKey = $apiKey;
@@ -403,18 +476,20 @@ class User extends User\UserRole {
      */
     public function getApiKey()
     {
-        if(empty($this->apiKey)) {
+        if (empty($this->apiKey)) {
             return null;
         }
+
         return $this->apiKey;
     }
 
     /**
      * @param $path
      */
-    public function setImage($path) {
+    public function setImage($path)
+    {
         $userImageDir = PIMCORE_WEBSITE_VAR . "/user-image";
-        if(!is_dir($userImageDir)) {
+        if (!is_dir($userImageDir)) {
             File::mkdir($userImageDir);
         }
 
@@ -429,23 +504,23 @@ class User extends User\UserRole {
     /**
      * @return string
      */
-    public function getImage($width = null, $height = null) {
-
-        if(!$width) {
+    public function getImage($width = null, $height = null)
+    {
+        if (!$width) {
             $width = 46;
         }
-        if(!$height) {
+        if (!$height) {
             $height = 46;
         }
 
         $id = $this->getId();
         $user = PIMCORE_WEBSITE_VAR . "/user-image/user-" . $id . ".png";
-        if(file_exists($user)) {
+        if (file_exists($user)) {
             $thumb = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/user-thumbnail-" . $id . ".png";
-            if(!file_exists($thumb)) {
+            if (!file_exists($thumb)) {
                 $image = \Pimcore\Image::getInstance();
                 $image->load($user);
-                $image->cover($width,$height);
+                $image->cover($width, $height);
                 $image->save($thumb, "png");
             }
 
@@ -453,5 +528,86 @@ class User extends User\UserRole {
         }
 
         return PIMCORE_PATH . "/static/img/avatar.png";
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getContentLanguages()
+    {
+        if (strlen($this->contentLanguages)) {
+            return explode(',', $this->contentLanguages);
+        }
+
+        return [];
+    }
+
+    /**
+     * @param null|string $contentLanguages
+     */
+    public function setContentLanguages($contentLanguages)
+    {
+        if ($contentLanguages && is_array($contentLanguages)) {
+            $contentLanguages = implode(',', $contentLanguages);
+        }
+        $this->contentLanguages = $contentLanguages;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getActivePerspective()
+    {
+        if (!$this->activePerspective) {
+            $this->activePerspective = "default";
+        }
+
+        return $this->activePerspective;
+    }
+
+    /**
+     * @param null|string $activePerspective
+     */
+    public function setActivePerspective($activePerspective)
+    {
+        $this->activePerspective = $activePerspective;
+    }
+
+    /**
+     * Returns array of perspectives names related to user and all related roles
+     *
+     * @return array|string[]
+     */
+    public function getMergedPerspectives()
+    {
+        if (null === $this->mergedPerspectives) {
+            $this->mergedPerspectives = $this->getPerspectives();
+            foreach ($this->getRoles() as $role) {
+                /** @var User\UserRole $userRole */
+                $userRole = User\UserRole::getById($role);
+                $this->mergedPerspectives = array_merge($this->mergedPerspectives, $userRole->getPerspectives());
+            }
+            $this->mergedPerspectives = array_values($this->mergedPerspectives);
+        }
+
+        return $this->mergedPerspectives;
+    }
+
+    /**
+     * Returns the first perspective name
+     *
+     * @return string
+     */
+    public function getFirstAllowedPerspective()
+    {
+        $perspectives = $this->getMergedPerspectives();
+        if (!empty($perspectives)) {
+            return $perspectives[0];
+        } else {
+            // all perspectives are allowed
+            $perspectives = \Pimcore\Config::getAvailablePerspectives($this);
+
+            return $perspectives[0]["name"];
+        }
     }
 }

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.keyValue");
@@ -199,6 +198,7 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
         var gridHeight = 150;
         var keyWidth = 150;
         var descWidth = 300;
+        var unitWidth = 200;
         var groupWidth = 200;
         var groupDescWidth = 200;
         var valueWidth = 600;
@@ -228,6 +228,10 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
 
         if (this.fieldConfig.descWidth) {
             descWidth = this.fieldConfig.descWidth;
+        }
+
+        if (this.fieldConfig.unitWidth) {
+            unitWidth = this.fieldConfig.unitWidth;
         }
 
         if (this.fieldConfig.metawidth) {
@@ -269,6 +273,10 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
                 colWidth = groupDescWidth;
             } else if (col == "metadata") {
                 colWidth = metawidth;
+            }else if (col == "keyDesc"){
+                colWidth = descWidth;
+            }else if (col == "unit"){
+                colWidth = unitWidth;
             }
 
             if (col == 'value') {
@@ -290,6 +298,11 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
                     return value;
                 }
 
+            }
+
+            // skip non-visible columns set to a negative size
+            if (colWidth < 0) {
+                continue;
             }
 
             gridWidth += colWidth;

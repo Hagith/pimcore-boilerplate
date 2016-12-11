@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.keyvalue.columnConfigDialog");
@@ -18,7 +17,8 @@ pimcore.object.keyvalue.columnConfigDialog = Class.create({
     keysAdded: 0,
     requestIsPending: false,
 
-    getConfigDialog: function(node, selectionPanel) {
+    getConfigDialog: function(ownerTree, node, selectionPanel) {
+        this.ownerTree = ownerTree;
         this.node = node;
         this.selectionPanel = selectionPanel;
 
@@ -31,6 +31,7 @@ pimcore.object.keyvalue.columnConfigDialog = Class.create({
         if (this.keysAdded == 0 && !this.requestIsPending) {
             // no keys added, remove the node
             this.node.remove();
+
         }
     },
 
@@ -41,7 +42,10 @@ pimcore.object.keyvalue.columnConfigDialog = Class.create({
     handleAddKeys: function (response) {
         var data = Ext.decode(response.responseText);
 
-        var originalKey =  this.node.attributes.key;
+        var originalKey =  this.node.key;
+
+        var store = this.ownerTree.getStore();
+        var targetNode = store.getById(this.node.id);
 
         if(data && data.success) {
             for (var i=0; i < data.data.length; i++) {
@@ -55,27 +59,27 @@ pimcore.object.keyvalue.columnConfigDialog = Class.create({
                 }
 
                 if (this.keysAdded > 0) {
-                    var configEncoded = Ext.encode(this.node.attributes);
+                    var configEncoded = Ext.encode(this.node);
                     var configDecoded = Ext.decode(configEncoded);
 
                     var copy = new Ext.tree.TreeNode( // copy it
                         Ext.apply({}, configDecoded)
                     );
                     this.node = copy;
-                    delete this.node.attributes.layout.options;
-                    delete this.node.attributes.layout.gridType;
+                    delete this.node.layout.options;
+                    delete this.node.layout.gridType;
                 }
 
 
-                this.node.attributes.key = encodedKey;
-                this.node.attributes.layout.gridType = keyDef.type;
+                this.node.set("key", encodedKey);
+                this.node.data.layout.gridType = keyDef.type;
 
                 //TODo  implement all subtypes
                 if (keyDef.type == "select") {
-                    this.node.attributes.layout.options = Ext.decode(keyDef.possiblevalues);
+                    this.node.layout.options = Ext.decode(keyDef.possiblevalues);
                 }
 
-                this.node.setText( "#" + keyDef.name);
+                targetNode.set("text", "#" + keyDef.name);
 
                 if (this.keysAdded > 0) {
                     this.selectionPanel.getRootNode().appendChild(this.node);
@@ -85,7 +89,7 @@ pimcore.object.keyvalue.columnConfigDialog = Class.create({
         }
 
         if (this.keysAdded == 0) {
-             this.node.remove();
+            this.node.remove();
         }
     }
 

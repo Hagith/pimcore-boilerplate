@@ -1,21 +1,21 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Video;
 
-abstract class Adapter {
+abstract class Adapter
+{
 
     /**
      * @var int
@@ -38,6 +38,11 @@ abstract class Adapter {
     public $destinationFile;
 
     /**
+     * @var string
+     */
+    public $storageFile;
+
+    /**
      * length in seconds
      * @var int
      */
@@ -51,6 +56,7 @@ abstract class Adapter {
     public function setAudioBitrate($audioBitrate)
     {
         $this->audioBitrate = $audioBitrate;
+
         return $this;
     }
 
@@ -69,6 +75,7 @@ abstract class Adapter {
     public function setVideoBitrate($videoBitrate)
     {
         $this->videoBitrate = $videoBitrate;
+
         return $this;
     }
 
@@ -84,34 +91,23 @@ abstract class Adapter {
      * @param $file
      * @return mixed
      */
-    public abstract function load($file);
+    abstract public function load($file);
 
     /**
      * @return mixed
      */
-    public abstract function save ();
+    abstract public function save();
 
     /**
      * @abstract
      * @param $timeOffset
      */
-    public abstract function saveImage($file, $timeOffset = null);
+    abstract public function saveImage($file, $timeOffset = null);
 
     /**
      * @abstract
      */
-    public abstract function getConversionStatus();
-
-    /**
-     * @abstract
-     */
-    public abstract function destroy();
-
-    /**
-     * @abstract
-     * @return bool
-     */
-    public abstract function isFinished();
+    abstract public function destroy();
 
     /**
      * @param $format
@@ -120,6 +116,7 @@ abstract class Adapter {
     public function setFormat($format)
     {
         $this->format = $format;
+
         return $this;
     }
 
@@ -138,6 +135,7 @@ abstract class Adapter {
     public function setDestinationFile($destinationFile)
     {
         $this->destinationFile = $destinationFile;
+
         return $this;
     }
 
@@ -156,6 +154,7 @@ abstract class Adapter {
     public function setLength($length)
     {
         $this->length = $length;
+
         return $this;
     }
 
@@ -165,5 +164,21 @@ abstract class Adapter {
     public function getLength()
     {
         return $this->length;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStorageFile()
+    {
+        return $this->storageFile;
+    }
+
+    /**
+     * @param string $storageFile
+     */
+    public function setStorageFile($storageFile)
+    {
+        $this->storageFile = $storageFile;
     }
 }

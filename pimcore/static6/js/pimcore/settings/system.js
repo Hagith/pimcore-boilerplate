@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.system");
@@ -32,10 +31,15 @@ pimcore.settings.system = Class.create({
                     this.adminUsersStore = new Ext.data.JsonStore({
                         autoDestroy: true,
                         data: this.data,
-                        root: 'adminUsers',
+                        proxy: {
+                            type: 'memory',
+                            reader: {
+                                rootProperty: 'adminUsers'
+                            }
+                        },
                         fields: ['id', 'username']
                     });
-                } catch(e) {
+                } catch (e) {
                     this.adminUsersStore = new Ext.data.JsonStore({
                         autoDestroy: true,
                         fields: ['id', 'username']
@@ -55,7 +59,7 @@ pimcore.settings.system = Class.create({
                         },
                         fields: ['language', 'display']
                     });
-                } catch(e2) {
+                } catch (e2) {
                     this.languagesStore = new Ext.data.JsonStore({
                         autoDestroy: true,
                         fields: ['language', 'display']
@@ -69,7 +73,7 @@ pimcore.settings.system = Class.create({
         });
     },
 
-    getValue: function (key) {
+    getValue: function (key, ignoreCheck) {
 
         var nk = key.split("\.");
         var current = this.data.values;
@@ -83,7 +87,7 @@ pimcore.settings.system = Class.create({
             }
         }
 
-        if (typeof current != "object" && typeof current != "array" && typeof current != "function") {
+        if (ignoreCheck || (typeof current != "object" && typeof current != "array" && typeof current != "function")) {
             return current;
         }
 
@@ -99,7 +103,7 @@ pimcore.settings.system = Class.create({
                 iconCls: "pimcore_icon_system",
                 border: false,
                 layout: "fit",
-                closable:true
+                closable: true
             });
 
             this.panel.on("destroy", function () {
@@ -112,7 +116,7 @@ pimcore.settings.system = Class.create({
             }
 
             this.layout = Ext.create('Ext.form.Panel', {
-                bodyStyle:'padding:20px 5px 20px 5px;',
+                bodyStyle: 'padding:20px 5px 20px 5px;',
                 border: false,
                 autoScroll: true,
                 forceLayout: true,
@@ -124,58 +128,57 @@ pimcore.settings.system = Class.create({
                 },
                 buttons: [
                     {
-                        text: "Save",
+                        text: t("save"),
                         handler: this.save.bind(this),
                         iconCls: "pimcore_icon_apply"
                     }
                 ],
                 items: [
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('general'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         defaultType: 'textfield',
                         defaults: {width: 450},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t('timezone'),
                                 name: 'general.timezone',
                                 xtype: "combo",
-                                //editable: true, // If typeAhead is enabled the combo must be editable: true -- please change one of those settings.
+                                forceSelection: true,
                                 triggerAction: 'all',
                                 store: this.data.config.timezones,
                                 value: this.getValue("general.timezone"),
-                                width: 400,
-                                listWidth: 400
+                                width: 600
                             },
                             {
                                 fieldLabel: t("view_suffix"),
                                 xtype: "combo",
-                                width: 450,
-                                //editable: true, // If typeAhead is enabled the combo must be editable: true -- please change one of those settings.
+                                width: 600,
+                                editable: false,
                                 name: "general.viewSuffix",
                                 value: this.getValue("general.viewSuffix"),
                                 store: [
                                     ["", ".php (pimcore standard)"],
-                                    ["phtml","phtml (zend framework standard)"]
+                                    ["phtml", "phtml (zend framework standard)"]
                                 ],
                                 mode: "local",
                                 triggerAction: "all"
-                            },{
-                                fieldLabel: t("absolute_path_to_php_cli_binary"),
+                            }, {
+                                fieldLabel: t("additional_path_variable") + " (" + t(this.data.config.path_separator) + " " + t("separated") + ") (/x/y" + this.data.config.path_separator + "/foo/bar)",
                                 xtype: "textfield",
-                                name: "general.php_cli",
-                                value: this.getValue("general.php_cli"),
+                                name: "general.path_variable",
+                                value: this.getValue("general.path_variable"),
                                 width: 600
                             },
                             {
-                                xtype:'combo',
+                                xtype: 'combo',
                                 fieldLabel: t('language_admin'),
-                                typeAhead:true,
+                                typeAhead: true,
                                 value: this.getValue("general.language"),
-                                mode: 'local',
+                                queryMode: 'local',
                                 listWidth: 100,
                                 //editable: true,     // If typeAhead is enabled the combo must be editable: true -- please change one of those settings.
                                 store: pimcore.globalmanager.get("pimcorelanguages"),
@@ -183,25 +186,7 @@ pimcore.settings.system = Class.create({
                                 valueField: 'language',
                                 forceSelection: true,
                                 triggerAction: 'all',
-                                hiddenName: 'general.language'
-                            },{
-                                fieldLabel: t("contact_email"),
-                                xtype: "textfield",
-                                name: "general.contactemail",
-                                value: this.getValue("general.contactemail"),
-                                width: 450
-                            },
-                            {
-                                fieldLabel: t("extjs_version"),
-                                xtype: "combo",
-                                name: "general.extjs6",
-                                value: this.getValue("general.extjs6"),
-                                store: [
-                                    ["0",t("extjs_34")],
-                                    ["1",t("extjs_6")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all"
+                                name: 'general.language'
                             },
                             {
                                 fieldLabel: t("url_to_custom_image_on_login_screen"),
@@ -235,20 +220,34 @@ pimcore.settings.system = Class.create({
                                 width: 600,
                                 value: t('instance_identifier_info'),
                                 cls: "pimcore_extra_label_bottom"
+                            },
+                            {
+                                fieldLabel: t("user_interface") + " / " + t("extjs_version"),
+                                xtype: "combo",
+                                width: 600,
+                                editable: false,
+                                name: "general.extjs6",
+                                value: this.getValue("general.extjs6"),
+                                store: [
+                                    ["", t("legacy_user_interface") + " (" + t("extjs_34") + ")"],
+                                    ["1", t("new_user_interface") + " (" + t("extjs_6") + ")"]
+                                ],
+                                mode: "local",
+                                triggerAction: "all"
                             }
                         ]
                     }
                     ,
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('localization_and_internationalization') + " (i18n/l10n)",
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 150,
                         defaultType: 'textfield',
                         defaults: {width: 300},
-                        items :[{
+                        items: [{
                             xtype: "displayfield",
                             hideLabel: true,
                             width: 600,
@@ -268,8 +267,7 @@ pimcore.settings.system = Class.create({
                                     xtype: "combo",
                                     id: "system_settings_general_languageSelection",
                                     triggerAction: 'all',
-                                    //resizable: true,
-                                    mode: 'local',
+                                    queryMode: 'local',
                                     store: this.languagesStore,
                                     displayField: 'display',
                                     valueField: 'language',
@@ -304,7 +302,7 @@ pimcore.settings.system = Class.create({
                                     beforerender: function () {
                                         // add existing language entries
                                         var locales = this.getValue("general.validLanguages").split(",");
-                                        if(locales && locales.length > 0) {
+                                        if (locales && locales.length > 0) {
                                             Ext.each(locales, this.addLanguage.bind(this));
                                         }
                                     }.bind(this)
@@ -312,44 +310,15 @@ pimcore.settings.system = Class.create({
                             }]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: "Debug",
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 250,
                         defaultType: 'textfield',
                         defaults: {width: 600},
-                        items :[
-                            {
-                                fieldLabel: t("environment"),
-                                xtype: "combo",
-                                name: "general.environment",
-                                value: this.getValue("general.environment"),
-                                width: 400,
-                                store: [
-                                    ["production", t("production")],
-                                    ["stage", t("stage")],
-                                    ["test", t("test")],
-                                    ["development", t("development")],
-                                    ["local", t("local")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all",
-                                listeners: {
-                                    "select": function (el) {
-                                        if(el.getValue() == "production") {
-                                            var ipField = Ext.getCmp("system.settings.general.debug_ip");
-                                            if(empty(ipField.getValue())) {
-                                                Ext.getCmp("system.settings.general.debug").setValue(false);
-                                            }
-
-                                            Ext.getCmp("system.settings.general.debugloglevel").setValue("error");
-                                            Ext.getCmp("system.settings.general.devmode").setValue(false);
-                                        }
-                                    }
-                                }
-                            },
+                        items: [
                             {
                                 fieldLabel: "DEBUG",
                                 xtype: "checkbox",
@@ -357,10 +326,10 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_general_debug",
                                 checked: this.getValue("general.debug"),
                                 listeners: {
-                                    check: function (el, checked) {
+                                    change: function (el, checked) {
                                         // set the current client ip to the debug ip field
                                         var ipField = Ext.getCmp("system_settings_general_debug_ip");
-                                        if(checked && empty(ipField.getValue())) {
+                                        if (checked && empty(ipField.getValue())) {
                                             ipField.setValue(this.data.config.client_ip);
                                         }
                                     }.bind(this)
@@ -371,7 +340,7 @@ pimcore.settings.system = Class.create({
                                 xtype: "textfield",
                                 id: "system_settings_general_debug_ip",
                                 name: "general.debug_ip",
-                                width: 500,
+                                width: 600,
                                 value: this.getValue("general.debug_ip")
                             },
                             {
@@ -420,6 +389,7 @@ pimcore.settings.system = Class.create({
                                 fieldLabel: "debug.log Log-Level",
                                 xtype: "combo",
                                 name: "general.debugloglevel",
+                                id: "system_settings_general_debugloglevel",
                                 width: 400,
                                 value: this.getValue("general.debugloglevel"),
                                 store: [
@@ -430,12 +400,13 @@ pimcore.settings.system = Class.create({
                                     ["error", "ERROR"]
                                 ],
                                 mode: "local",
-                                triggerAction: "all"
+                                triggerAction: "all",
+                                editable: false,
+                                forceSelection: true
                             },
                             {
                                 fieldLabel: t('log_messages_user_mail_recipient'),
-                                //xtype: "combo",     // If typeAhead is enabled the combo must be editable: true -- please change one of those settings.
-                                editable: false,
+                                xtype: "combo",
                                 triggerAction: 'all',
                                 store: this.adminUsersStore,
                                 value: this.getValue("general.logrecipient"),
@@ -443,7 +414,6 @@ pimcore.settings.system = Class.create({
                                 displayField: 'username',
                                 valueField: 'id',
                                 name: 'general.logrecipient',
-                                typeAhead:true,
                                 mode: 'local',
                                 forceSelection: true
                             },
@@ -482,6 +452,7 @@ pimcore.settings.system = Class.create({
                                     [0, "EMERG"]
                                 ],
                                 mode: "local",
+                                editable: false,
                                 triggerAction: "all"
                             },
                             {
@@ -512,7 +483,7 @@ pimcore.settings.system = Class.create({
                                 width: 600,
                                 value: t('log_config_archive_description'),
                                 cls: "pimcore_extra_label_bottom"
-                            },{
+                            }, {
                                 fieldLabel: t("disable_whoops_error_handler"),
                                 xtype: "checkbox",
                                 name: "general.disable_whoops",
@@ -529,24 +500,25 @@ pimcore.settings.system = Class.create({
                                 + 'DON`T ACTIVATE IT!</span>)',
                                 xtype: "checkbox",
                                 name: "general.devmode",
+                                id: "system_settings_general_devmode",
                                 checked: this.getValue("general.devmode")
                             }
                         ]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('email_settings'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
-                        items : [{
+                        autoHeight: true,
+                        items: [{
                             xtype: "fieldset",
                             title: t("delivery_settings"),
                             collapsible: false,
                             defaults: {width: 600},
                             labelWidth: 250,
                             defaultType: 'textfield',
-                            autoHeight:true,
+                            autoHeight: true,
                             items: [
                                 {
                                     xtype: 'textfield',
@@ -563,12 +535,14 @@ pimcore.settings.system = Class.create({
                                     value: this.getValue("email.method"),
                                     store: [
                                         ["sendmail", "sendmail"],
-                                        ["smtp","smtp"]
+                                        ["smtp", "smtp"]
                                     ],
                                     listeners: {
                                         select: this.emailMethodSelected.bind(this, "email")
                                     },
                                     mode: "local",
+                                    editable: false,
+                                    forceSelection: true,
                                     triggerAction: "all"
                                 },
                                 {
@@ -586,15 +560,17 @@ pimcore.settings.system = Class.create({
                                         {
                                             fieldLabel: t("email_smtp_ssl"),
                                             xtype: "combo",
-                                            width: 130,
+                                            width: 425,
                                             name: "email.smtp.ssl",
                                             value: this.getValue("email.smtp.ssl"),
                                             store: [
                                                 ["", t('no_ssl')],
-                                                ["tls","TLS"],
-                                                ["ssl","SSL"]
+                                                ["tls", "TLS"],
+                                                ["ssl", "SSL"]
                                             ],
                                             mode: "local",
+                                            editable: false,
+                                            forceSelection: true,
                                             triggerAction: "all"
                                         },
                                         {
@@ -610,16 +586,18 @@ pimcore.settings.system = Class.create({
                                         {
                                             fieldLabel: t("email_smtp_auth_method"),
                                             xtype: "combo",
-                                            width: 130,
+                                            width: 425,
                                             name: "email.smtp.auth.method",
                                             value: this.getValue("email.smtp.auth.method"),
                                             store: [
                                                 ["", t('no_authentication')],
-                                                ["login","LOGIN"],
-                                                ["plain","PLAIN"],
+                                                ["login", "LOGIN"],
+                                                ["plain", "PLAIN"],
                                                 ["crammd5", "CRAM-MD5"]
                                             ],
                                             mode: "local",
+                                            editable: false,
+                                            forceSelection: true,
                                             triggerAction: "all",
                                             listeners: {
                                                 select: this.smtpAuthSelected.bind(this, "email")
@@ -670,7 +648,7 @@ pimcore.settings.system = Class.create({
                             defaults: {width: 600},
                             labelWidth: 250,
                             defaultType: 'textfield',
-                            autoHeight:true,
+                            autoHeight: true,
                             items: [{
                                 fieldLabel: t("type"),
                                 xtype: "combo",
@@ -679,7 +657,7 @@ pimcore.settings.system = Class.create({
                                 store: [
                                     ["", ""],
                                     ["Mbox", "Mbox"],
-                                    ["Maildir","Maildir"],
+                                    ["Maildir", "Maildir"],
                                     ["IMAP", "IMAP"]
                                 ],
                                 listeners: {
@@ -693,7 +671,7 @@ pimcore.settings.system = Class.create({
                                         Ext.getCmp("system_settings_email_bounce_imap_password").hide();
                                         Ext.getCmp("system_settings_email_bounce_imap_ssl").hide();
 
-                                        if(el.getValue() == "IMAP") {
+                                        if (el.getValue() == "IMAP") {
                                             Ext.getCmp("system_settings_email_bounce_imap_host").show();
                                             Ext.getCmp("system_settings_email_bounce_imap_port").show();
                                             Ext.getCmp("system_settings_email_bounce_imap_username").show();
@@ -707,6 +685,8 @@ pimcore.settings.system = Class.create({
                                     }.bind(this)
                                 },
                                 mode: "local",
+                                editable: false,
+                                forceSelection: true,
                                 triggerAction: "all"
                             }, {
                                 fieldLabel: t('path'),
@@ -716,20 +696,20 @@ pimcore.settings.system = Class.create({
                                 hidden: (this.getValue("email.bounce.type") == "Maildir") ? false : true
                             }, {
                                 fieldLabel: t('path'),
-                                name: 'email_bounce_mbox',
-                                value: this.getValue("email_bounce_mbox"),
+                                name: 'email.bounce.mbox',
+                                value: this.getValue("email.bounce.mbox"),
                                 id: "system_settings_email_bounce_mbox",
                                 hidden: (this.getValue("email.bounce.type") == "Mbox") ? false : true
                             }, {
                                 fieldLabel: t('host'),
-                                name: 'email_bounce_imap_host',
-                                value: this.getValue("email_bounce_imap_host"),
+                                name: 'email.bounce.imap.host',
+                                value: this.getValue("email.bounce.imap.host"),
                                 id: "system_settings_email_bounce_imap_host",
                                 hidden: (this.getValue("email.bounce.type") == "IMAP") ? false : true
                             }, {
                                 fieldLabel: t('port'),
-                                name: 'email_bounce_imap_port',
-                                value: this.getValue("email_bounce_imap_port"),
+                                name: 'email.bounce.imap.port',
+                                value: this.getValue("email.bounce.imap.port"),
                                 id: "system_settings_email_bounce_imap_port",
                                 hidden: (this.getValue("email.bounce.type") == "IMAP") ? false : true
                             }, {
@@ -755,15 +735,15 @@ pimcore.settings.system = Class.create({
                         }]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('website'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 250,
                         defaultType: 'textfield',
                         defaults: {width: 500},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t("main_domain"),
                                 name: "general.domain",
@@ -787,11 +767,11 @@ pimcore.settings.system = Class.create({
                                         new Ext.dd.DropZone(el.getEl(), {
                                             reference: this,
                                             ddGroup: "element",
-                                            getTargetFromEvent: function(e) {
+                                            getTargetFromEvent: function (e) {
                                                 return this.getEl();
                                             }.bind(el),
 
-                                            onNodeOver : function(target, dd, e, data) {
+                                            onNodeOver: function (target, dd, e, data) {
                                                 return Ext.dd.DropZone.prototype.dropAllowed;
                                             },
 
@@ -808,7 +788,7 @@ pimcore.settings.system = Class.create({
                                         });
                                     }
                                 }
-                            },{
+                            }, {
                                 xtype: "checkbox",
                                 fieldLabel: t("show_cookie_notice"),
                                 name: "general.show_cookie_notice",
@@ -817,21 +797,21 @@ pimcore.settings.system = Class.create({
                         ]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('mysql_database'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 400},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t('adapter'),
                                 disabled: true,
                                 name: 'database.adapter',
                                 value: this.getValue("database.adapter")
-                            },{
+                            }, {
                                 fieldLabel: t('host'),
                                 disabled: true,
                                 name: 'database.params.host',
@@ -866,15 +846,15 @@ pimcore.settings.system = Class.create({
                     }
                     ,
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('documents'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 400},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t('store_version_history_in_days'),
                                 name: 'documents.versions.days',
@@ -883,10 +863,10 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_documents_versions_days",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "documents", "days"),
-                                    "spin": this.checkVersionInputs.bind(this, "documents", "days"),
+                                    "change": this.checkVersionInputs.bind(this, "documents", "days"),
                                     "afterrender": this.checkVersionInputs.bind(this, "documents", "days", "init")
-                                }
+                                },
+                                minValue: 0
                             },
                             {
                                 fieldLabel: t('store_version_history_in_steps'),
@@ -896,10 +876,10 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_documents_versions_steps",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "documents", "steps"),
-                                    "spin": this.checkVersionInputs.bind(this, "documents", "steps"),
+                                    "change": this.checkVersionInputs.bind(this, "documents", "steps"),
                                     "afterrender": this.checkVersionInputs.bind(this, "documents", "steps", "init")
-                                }
+                                },
+                                minValue: 0
                             },
                             {
                                 fieldLabel: t('default_controller'),
@@ -910,70 +890,49 @@ pimcore.settings.system = Class.create({
                                 fieldLabel: t('default_action'),
                                 name: 'documents.default_action',
                                 value: this.getValue("documents.default_action")
-                            },{
+                            }, {
                                 xtype: "displayfield",
                                 hideLabel: true,
                                 style: "margin-top: 10px;",
                                 width: 600,
                                 value: "&nbsp;"
-                            },{
+                            }, {
                                 fieldLabel: t('create_redirect_for_moved_renamed_page'),
                                 xtype: "checkbox",
                                 name: "documents.createredirectwhenmoved",
                                 checked: this.getValue("documents.createredirectwhenmoved")
-                            },{
+                            }, {
                                 fieldLabel: t("allow_trailing_slash_for_documents"),
                                 xtype: "combo",
                                 name: "documents.allowtrailingslash",
                                 value: this.getValue("documents.allowtrailingslash"),
                                 store: [
-                                    ["",t("yes")],
-                                    ["no",t("no")]
+                                    ["", t("yes")],
+                                    ["no", t("no")]
                                 ],
                                 mode: "local",
+                                editable: false,
+                                forceSelection: true,
                                 triggerAction: "all"
-                            },{
-                                fieldLabel: t("allow_capitals_for_documents"),
-                                xtype: "combo",
-                                name: "documents.allowcapitals",
-                                value: this.getValue("documents.allowcapitals"),
-                                store: [
-                                    ["",t("yes")],
-                                    ["no",t("no")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all"
-                            },{
+                            }, {
                                 fieldLabel: t("generate_previews"),
                                 xtype: "checkbox",
                                 name: "documents.generatepreview",
                                 checked: this.getValue("documents.generatepreview")
-                            },
-                            {
-                                fieldLabel: t('absolute_path_to_wkhtmltoimage_binary'),
-                                name: 'documents.wkhtmltoimage',
-                                value: this.getValue("documents.wkhtmltoimage"),
-                                width: 500
-                            },
-                            {
-                                fieldLabel: t('absolute_path_to_wkhtmltopdf_binary'),
-                                name: 'documents.wkhtmltopdf',
-                                value: this.getValue("documents.wkhtmltopdf"),
-                                width: 500
                             }
                         ]
                     }
                     ,
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('objects'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 400},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t('store_version_history_in_days'),
                                 name: 'objects.versions.days',
@@ -982,10 +941,10 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_objects_versions_days",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "objects", "days"),
-                                    "spin": this.checkVersionInputs.bind(this, "objects", "days"),
+                                    "change": this.checkVersionInputs.bind(this, "objects", "days"),
                                     "afterrender": this.checkVersionInputs.bind(this, "objects", "days", "init")
-                                }
+                                },
+                                minValue: 0
                             },
                             {
                                 fieldLabel: t('store_version_history_in_steps'),
@@ -995,29 +954,23 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_objects_versions_steps",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "objects", "steps"),
-                                    "spin": this.checkVersionInputs.bind(this, "objects", "steps"),
+                                    "change": this.checkVersionInputs.bind(this, "objects", "steps"),
                                     "afterrender": this.checkVersionInputs.bind(this, "objects", "steps", "init")
-                                }
+                                },
+                                minValue: 0
                             }
                         ]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('assets'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 250,
                         defaultType: 'textfield',
                         defaults: {width: 600},
-                        items :[
-                            {
-                                fieldLabel: t('hostname_for_webdav'),
-                                name: 'assets.webdav.hostname',
-                                value: this.getValue("assets.webdav.hostname"),
-                                width: 400
-                            },
+                        items: [
                             {
                                 fieldLabel: t('store_version_history_in_days'),
                                 name: 'assets.versions.days',
@@ -1026,11 +979,11 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_assets_versions_days",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "assets", "days"),
-                                    "spin": this.checkVersionInputs.bind(this, "assets", "days"),
+                                    "change": this.checkVersionInputs.bind(this, "assets", "days"),
                                     "afterrender": this.checkVersionInputs.bind(this, "assets", "days", "init")
                                 },
-                                width: 400
+                                width: 400,
+                                minValue: 0
                             },
                             {
                                 fieldLabel: t('store_version_history_in_steps'),
@@ -1040,41 +993,13 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_assets_versions_steps",
                                 enableKeyEvents: true,
                                 listeners: {
-                                    "keyup": this.checkVersionInputs.bind(this, "assets", "steps"),
-                                    "spin": this.checkVersionInputs.bind(this, "assets", "steps"),
+                                    "change": this.checkVersionInputs.bind(this, "assets", "steps"),
                                     "afterrender": this.checkVersionInputs.bind(this, "assets", "steps", "init")
                                 },
-                                width: 400
+                                width: 400,
+                                minValue: 0
                             },
                             {
-                                fieldLabel: t('absolute_path_to_ffmpeg_binary'),
-                                name: 'assets.ffmpeg',
-                                value: this.getValue("assets.ffmpeg")
-                            },{
-                                fieldLabel: t('absolute_path_to_ghostscript'),
-                                name: 'assets.ghostscript',
-                                value: this.getValue("assets.ghostscript")
-                            },{
-                                fieldLabel: t('absolute_path_to_libreoffice'),
-                                name: 'assets.libreoffice',
-                                value: this.getValue("assets.libreoffice")
-                            },{
-                                fieldLabel: t('absolute_path_to_pngcrush'),
-                                name: 'assets.pngcrush',
-                                value: this.getValue("assets.pngcrush")
-                            },{
-                                fieldLabel: t('absolute_path_to_imgmin'),
-                                name: 'assets.imgmin',
-                                value: this.getValue("assets.imgmin")
-                            },{
-                                fieldLabel: t('absolute_path_to_jpegoptim'),
-                                name: 'assets.jpegoptim',
-                                value: this.getValue("assets.jpegoptim")
-                            },{
-                                fieldLabel: t('absolute_path_to_pdftotext'),
-                                name: 'assets.pdftotext',
-                                value: this.getValue("assets.pdftotext")
-                            },{
                                 fieldLabel: t('absolute_path_to_icc_rgb_profile') + " (imagick)",
                                 name: 'assets.icc_rgb_profile',
                                 value: this.getValue("assets.icc_rgb_profile")
@@ -1089,27 +1014,33 @@ pimcore.settings.system = Class.create({
                                 xtype: "checkbox",
                                 name: "assets.hide_edit_image",
                                 checked: this.getValue("assets.hide_edit_image")
+                            },
+                            {
+                                fieldLabel: t("disable_tree_preview"),
+                                xtype: "checkbox",
+                                name: "assets.disable_tree_preview",
+                                checked: this.getValue("assets.disable_tree_preview")
                             }
                         ]
                     }
                     ,
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('google_credentials_and_api_keys'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 800},
-                        items :[
+                        items: [
                             {
                                 xtype: "displayfield",
                                 hideLabel: true,
                                 width: 800,
                                 value: "<b>" + t('google_api_key_service') + "</b>",
                                 cls: "pimcore_extra_label"
-                            },{
+                            }, {
                                 xtype: "displayfield",
                                 hideLabel: true,
                                 width: 800,
@@ -1127,7 +1058,7 @@ pimcore.settings.system = Class.create({
                                 name: 'services.google.email',
                                 value: this.getValue("services.google.email"),
                                 width: 800
-                            },{
+                            }, {
                                 xtype: "displayfield",
                                 hideLabel: true,
                                 width: 800,
@@ -1138,7 +1069,7 @@ pimcore.settings.system = Class.create({
                                 + " <br />" + this.data.config.google_private_key_path
                                 + '</span>'),
                                 cls: "pimcore_extra_label"
-                            },{
+                            }, {
                                 xtype: "displayfield",
                                 hideLabel: true,
                                 style: "margin-top: 10px;",
@@ -1163,39 +1094,20 @@ pimcore.settings.system = Class.create({
                                 name: 'services.google.browserapikey',
                                 value: this.getValue("services.google.browserapikey"),
                                 width: 850
-                            },{
-                                xtype: "displayfield",
-                                hideLabel: true,
-                                style: "margin-top: 10px;",
-                                width: 800,
-                                value: "&nbsp;"
-                            },
-                            {
-                                xtype: "displayfield",
-                                hideLabel: true,
-                                width: 800,
-                                value: "<b>" + t('translate_api_key') + "</b>",
-                                cls: "pimcore_extra_label"
-                            },
-                            {
-                                fieldLabel: t('api_key'),
-                                name: 'services.translate.apikey',
-                                value: this.getValue("services.translate.apikey"),
-                                width: 850
                             }
                         ]
                     }
                     ,
                     {
-                        xtype:'fieldset',
-                        title: t('output_cache'),
+                        xtype: 'fieldset',
+                        title: t('full_page_cache'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 600},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t("cache_enabled"),
                                 xtype: "checkbox",
@@ -1222,11 +1134,12 @@ pimcore.settings.system = Class.create({
                                 width: "100%",
                                 resizable: true,
                                 minChars: 2,
-                                store: Ext.create('Ext.data.Store', {
+                                store: Ext.create('Ext.data.JsonStore', {
                                     proxy: {
                                         type: 'memory'
                                     },
-                                    fields: ['value']
+                                    fields: ['value'],
+                                    data: this.getValue("cache.excludePatternsArray", true)
                                 }),
                                 fieldLabel: t('exclude_patterns'),
                                 name: 'cache.excludePatterns',
@@ -1252,15 +1165,15 @@ pimcore.settings.system = Class.create({
                         ]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('outputfilters'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'checkbox',
                         defaults: {width: 600},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: "LESS",
                                 xtype: "checkbox",
@@ -1276,16 +1189,16 @@ pimcore.settings.system = Class.create({
                             }
                         ]
                     }
-                    ,{
-                        xtype:'fieldset',
+                    , {
+                        xtype: 'fieldset',
                         title: t('webservice'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 300},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t("webservice_enabled"),
                                 xtype: "checkbox",
@@ -1300,16 +1213,16 @@ pimcore.settings.system = Class.create({
                                 cls: "pimcore_extra_label_bottom"
                             }
                         ]
-                    },{
-                        xtype:'fieldset',
+                    }, {
+                        xtype: 'fieldset',
                         title: t('http_connectivity_direct_proxy'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 200,
                         defaultType: 'textfield',
                         defaults: {width: 300},
-                        items :[
+                        items: [
                             {
                                 fieldLabel: t("select_connectivity_type"),
                                 xtype: "combo",
@@ -1318,21 +1231,21 @@ pimcore.settings.system = Class.create({
                                 value: this.getValue("httpclient.adapter"),
                                 store: [
                                     ["Zend_Http_Client_Adapter_Socket", t("direct_socket")],
-                                    ["Zend_Http_Client_Adapter_Proxy",t("proxy")]
+                                    ["Zend_Http_Client_Adapter_Proxy", t("proxy")]
                                 ],
                                 mode: "local",
                                 triggerAction: "all",
                                 editable: false,
                                 listeners: {
                                     afterrender: function (el) {
-                                        if(el.getValue() == "Zend_Http_Client_Adapter_Proxy") {
+                                        if (el.getValue() == "Zend_Http_Client_Adapter_Proxy") {
                                             Ext.getCmp("system_settings_proxy_settings").show();
                                         } else {
                                             Ext.getCmp("system_settings_proxy_settings").hide();
                                         }
                                     },
                                     select: function (el) {
-                                        if(el.getValue() == "Zend_Http_Client_Adapter_Proxy") {
+                                        if (el.getValue() == "Zend_Http_Client_Adapter_Proxy") {
                                             Ext.getCmp("system_settings_proxy_settings").show();
                                         } else {
                                             Ext.getCmp("system_settings_proxy_settings").hide();
@@ -1346,51 +1259,47 @@ pimcore.settings.system = Class.create({
                                 id: "system_settings_proxy_settings",
                                 collapsible: false,
                                 title: t("proxy_settings"),
-                                width: 400,
-                                labelWidth: 130,
+                                width: 600,
+                                defaults: {width: 565},
                                 items: [{
                                     xtype: "textfield",
                                     fieldLabel: t('proxy_host'),
                                     name: 'httpclient.proxy_host',
-                                    width: 200,
                                     value: this.getValue("httpclient.proxy_host")
-                                },{
+                                }, {
                                     xtype: "textfield",
                                     fieldLabel: t('proxy_port'),
                                     name: 'httpclient.proxy_port',
-                                    width: 200,
                                     value: this.getValue("httpclient.proxy_port")
-                                },{
+                                }, {
                                     xtype: "textfield",
                                     fieldLabel: t('proxy_user'),
                                     name: 'httpclient.proxy_user',
-                                    width: 200,
                                     value: this.getValue("httpclient.proxy_user")
-                                },{
+                                }, {
                                     xtype: "textfield",
                                     fieldLabel: t('proxy_pass'),
                                     name: 'httpclient.proxy_pass',
-                                    width: 200,
                                     value: this.getValue("httpclient.proxy_pass")
                                 }]
                             }
                         ]
                     },
                     {
-                        xtype:'fieldset',
+                        xtype: 'fieldset',
                         title: t('newsletter'),
                         collapsible: true,
                         collapsed: true,
-                        autoHeight:true,
+                        autoHeight: true,
                         labelWidth: 350,
-                        items : [{
+                        items: [{
                             xtype: "checkbox",
                             fieldLabel: t("use_different_email_delivery_settings"),
                             name: "newsletter.usespecific",
                             checked: this.getValue("newsletter.usespecific"),
                             listeners: {
                                 "change": function (el, checked) {
-                                    if(checked) {
+                                    if (checked) {
                                         Ext.getCmp("system_settings_newsletter_fieldset").show();
                                     } else {
                                         Ext.getCmp("system_settings_newsletter_fieldset").hide();
@@ -1401,12 +1310,12 @@ pimcore.settings.system = Class.create({
                             xtype: "fieldset",
                             title: t("delivery_settings"),
                             collapsible: false,
-                            defaults: {width: 150},
+                            defaults: {width: 600},
                             labelWidth: 250,
                             hidden: !this.getValue("newsletter.usespecific"),
                             id: "system_settings_newsletter_fieldset",
                             defaultType: 'textfield',
-                            autoHeight:true,
+                            autoHeight: true,
                             items: [
                                 {
                                     fieldLabel: t("email_method") + ' <span style="color:red;">*</span>',
@@ -1415,11 +1324,13 @@ pimcore.settings.system = Class.create({
                                     value: this.getValue("newsletter.method"),
                                     store: [
                                         ["sendmail", "sendmail"],
-                                        ["smtp","smtp"]
+                                        ["smtp", "smtp"]
                                     ],
                                     listeners: {
                                         select: this.emailMethodSelected.bind(this, "newsletter")
                                     },
+                                    editable: false,
+                                    forceSelection: true,
                                     mode: "local",
                                     triggerAction: "all"
                                 },
@@ -1427,6 +1338,7 @@ pimcore.settings.system = Class.create({
                                     xtype: "fieldset",
                                     title: "SMTP",
                                     width: 600,
+                                    defaults: {width: 565},
                                     itemId: "newsletterSmtpSettings",
                                     defaultType: 'textfield',
                                     hidden: (this.getValue("newsletter.method") == "smtp") ? false : true,
@@ -1438,14 +1350,15 @@ pimcore.settings.system = Class.create({
                                         {
                                             fieldLabel: t("email_smtp_ssl"),
                                             xtype: "combo",
-                                            width: 130,
                                             name: "newsletter.smtp.ssl",
                                             value: this.getValue("newsletter.smtp.ssl"),
                                             store: [
                                                 ["", t('no_ssl')],
-                                                ["tls","TLS"],
-                                                ["ssl","SSL"]
+                                                ["tls", "TLS"],
+                                                ["ssl", "SSL"]
                                             ],
+                                            editable: false,
+                                            forceSelection: true,
                                             mode: "local",
                                             triggerAction: "all"
                                         },
@@ -1462,16 +1375,17 @@ pimcore.settings.system = Class.create({
                                         {
                                             fieldLabel: t("email_smtp_auth_method"),
                                             xtype: "combo",
-                                            width: 130,
                                             name: "newsletter.smtp.auth.method",
                                             value: this.getValue("newsletter.smtp.auth.method"),
                                             store: [
                                                 ["", t('no_authentication')],
-                                                ["login","LOGIN"],
-                                                ["plain","PLAIN"],
+                                                ["login", "LOGIN"],
+                                                ["plain", "PLAIN"],
                                                 ["cram-md5", "CRAM-MD5"]
                                             ],
                                             mode: "local",
+                                            editable: false,
+                                            forceSelection: true,
                                             triggerAction: "all",
                                             listeners: {
                                                 select: this.smtpAuthSelected.bind(this, "newsletter")
@@ -1535,19 +1449,11 @@ pimcore.settings.system = Class.create({
 
     activate: function () {
         var tabPanel = Ext.getCmp("pimcore_panel_tabs");
-        tabPanel.activate("pimcore_settings_system");
+        tabPanel.setActiveItem("pimcore_settings_system");
     },
 
     save: function () {
         var values = this.layout.getForm().getFieldValues();
-
-        // check for mandatory fields
-        if(empty(values["general.validLanguages"])) {
-            Ext.MessageBox.alert(t("error"), t("mandatory_field_empty"));
-            return;
-        }
-
-
 
         Ext.Ajax.request({
             url: "/admin/settings/set-system",
@@ -1570,7 +1476,7 @@ pimcore.settings.system = Class.create({
                         pimcore.helpers.showNotification(t("error"), t("system_settings_save_error"),
                             "error", t(res.message));
                     }
-                } catch(e) {
+                } catch (e) {
                     pimcore.helpers.showNotification(t("error"), t("system_settings_save_error"), "error");
                 }
             }
@@ -1578,7 +1484,7 @@ pimcore.settings.system = Class.create({
     },
 
 
-    emailMethodSelected: function(type, combo) {
+    emailMethodSelected: function (type, combo) {
 
         var smtpFieldSet = combo.ownerCt.getComponent(type + "SmtpSettings");
 
@@ -1595,7 +1501,7 @@ pimcore.settings.system = Class.create({
 
     },
 
-    smtpAuthSelected: function(type, combo) {
+    smtpAuthSelected: function (type, combo) {
 
         var username = combo.ownerCt.getComponent(type + "_username");
         var pass = combo.ownerCt.getComponent(type + "_password");
@@ -1620,13 +1526,13 @@ pimcore.settings.system = Class.create({
 
         var value = Ext.getCmp("system_settings_" + elementType + "_versions_" + type).getValue();
 
-        if(event == "init") {
-            if(!value) {
+        if (event == "init") {
+            if (!value) {
                 return;
             }
         }
 
-        if(value) {
+        if (value) {
             Ext.getCmp("system_settings_" + elementType + "_versions_" + mappingOpposite[type]).disable();
             Ext.getCmp("system_settings_" + elementType + "_versions_" + mappingOpposite[type]).setValue("");
         } else {
@@ -1636,17 +1542,17 @@ pimcore.settings.system = Class.create({
 
     addLanguage: function (language) {
 
-        if(empty(language)) {
+        if (empty(language)) {
             return;
         }
 
         // find the language entry in the store, because "language" can be the display value too
         var index = this.languagesStore.findExact("language", language);
-        if(index < 0) {
+        if (index < 0) {
             index = this.languagesStore.findExact("display", language)
         }
 
-        if(index >= 0) {
+        if (index >= 0) {
 
             var rec = this.languagesStore.getAt(index);
             language = rec.get("language");
@@ -1654,7 +1560,7 @@ pimcore.settings.system = Class.create({
             // add the language to the hidden field used to send the languages to the action
             var languageField = Ext.getCmp("system_settings_general_validLanguages");
             var addedLanguages = languageField.getValue().split(",");
-            if(!in_array(language, addedLanguages)) {
+            if (!in_array(language, addedLanguages)) {
                 addedLanguages.push(language);
                 languageField.setValue(addedLanguages.join(","));
             }
@@ -1662,7 +1568,7 @@ pimcore.settings.system = Class.create({
             // add the language to the container, so that further settings for the language can be set (eg. fallback, ...)
             var container = Ext.getCmp("system_settings_general_languageContainer");
             var lang = container.getComponent(language);
-            if(lang) {
+            if (lang) {
                 return;
             }
 
@@ -1679,20 +1585,20 @@ pimcore.settings.system = Class.create({
                     fieldLabel: t("fallback_languages"),
                     name: "general.fallbackLanguages." + language,
                     value: this.getValue("general.fallbackLanguages." + language)
-                },{
+                }, {
                     xtype: "radio",
                     name: "general.defaultLanguageRadio",
                     fieldLabel: t("default_language"),
                     checked: this.getValue("general.defaultLanguage") == language || (!this.getValue("general.defaultLanguage") && container.items.length == 0 ),
                     listeners: {
-                        check: function (el, checked) {
+                        change: function (el, checked) {
                             if (checked) {
                                 var defaultLanguageField = Ext.getCmp("system_settings_general_defaultLanguage");
                                 defaultLanguageField.setValue(language);
                             }
                         }.bind(this)
                     }
-                },{
+                }, {
                     xtype: "button",
                     title: t("delete"),
                     iconCls: "pimcore_icon_delete",
@@ -1709,8 +1615,8 @@ pimcore.settings.system = Class.create({
         // remove the language out of the hidden field
         var languageField = Ext.getCmp("system_settings_general_validLanguages");
         var addedLanguages = languageField.getValue().split(",");
-        if(in_array(language, addedLanguages)) {
-            addedLanguages.splice(array_search(language, addedLanguages),1);
+        if (in_array(language, addedLanguages)) {
+            addedLanguages.splice(array_search(language, addedLanguages), 1);
             languageField.setValue(addedLanguages.join(","));
         }
 
@@ -1723,7 +1629,7 @@ pimcore.settings.system = Class.create({
         // remove the language from the container
         var container = Ext.getCmp("system_settings_general_languageContainer");
         var lang = container.getComponent(language);
-        if(lang) {
+        if (lang) {
             container.remove(lang);
         }
         container.updateLayout();

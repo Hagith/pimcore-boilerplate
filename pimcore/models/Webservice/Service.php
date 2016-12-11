@@ -2,38 +2,37 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Webservice
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Webservice;
 
-use Pimcore\Tool; 
 use Pimcore\Model\Document;
 use Pimcore\Model\Webservice;
 use Pimcore\Model\User;
 use Pimcore\Model\Object;
 use Pimcore\Model\Asset;
+use Pimcore\Logger;
 
 class Service
 {
 
     /**
-     * @return Tool\User
+     * @return User
      * @throws \Exception
      */
     public function getUser()
     {
-        if($user = Tool\Admin::getCurrentUser()) {
+        if ($user = \Pimcore\Tool\Admin::getCurrentUser()) {
             return $user;
         }
 
@@ -51,12 +50,13 @@ class Service
             if ($folder instanceof Document\Folder) {
                 $className = Webservice\Data\Mapper::findWebserviceClass($folder, "out");
                 $apiFolder = Webservice\Data\Mapper::map($folder, $className, "out");
+
                 return $apiFolder;
             }
 
             throw new \Exception("Document Folder with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -72,12 +72,13 @@ class Service
             if ($link instanceof Document\Link) {
                 $className = Webservice\Data\Mapper::findWebserviceClass($link, "out");
                 $apiLink = Webservice\Data\Mapper::map($link, $className, "out");
+
                 return $apiLink;
             }
 
             throw new \Exception("Document Link with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -93,12 +94,13 @@ class Service
             if ($link instanceof Document\Hardlink) {
                 $className = Webservice\Data\Mapper::findWebserviceClass($link, "out");
                 $apiLink = Webservice\Data\Mapper::map($link, $className, "out");
+
                 return $apiLink;
             }
 
             throw new \Exception("Document Hardlink with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -114,12 +116,13 @@ class Service
             if ($link instanceof Document\Email) {
                 $className = Webservice\Data\Mapper::findWebserviceClass($link, "out");
                 $apiLink = Webservice\Data\Mapper::map($link, $className, "out");
+
                 return $apiLink;
             }
 
             throw new \Exception("Document Email with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -137,12 +140,13 @@ class Service
                 Document\Service::loadAllDocumentFields($page);
                 $className = Webservice\Data\Mapper::findWebserviceClass($page, "out");
                 $apiPage = Webservice\Data\Mapper::map($page, $className, "out");
+
                 return $apiPage;
             }
 
             throw new \Exception("Document Page with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -166,7 +170,7 @@ class Service
 
             throw new \Exception("Document Snippet with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -183,17 +187,17 @@ class Service
     public function getDocumentList($condition = null, $order = null, $orderKey = null, $offset = null, $limit = null, $groupBy = null)
     {
         try {
-            $list = Document::getList(array(
+            $list = Document::getList([
                 "condition" => $condition,
                 "order" => $order,
                 "orderKey" => $orderKey,
                 "offset" => $offset,
                 "limit" => $limit,
                 "groupBy" => $groupBy
-            ));
+            ]);
             $list->setUnpublished(1);
 
-            $items = array();
+            $items = [];
             /** @var  $doc Document */
             foreach ($list as $doc) {
                 $item = new Webservice\Data\Document\Listing\Item();
@@ -209,7 +213,7 @@ class Service
 
             return $items;
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -220,19 +224,20 @@ class Service
      */
     public function unpublishDocument($id)
     {
-    	try {
-    		$doc = Document::getById($id);
-    		if ($doc instanceof Document) {
-    			$doc->setPublished(false);
-    			$doc->save();
-    			return true;
-    		}
+        try {
+            $doc = Document::getById($id);
+            if ($doc instanceof Document) {
+                $doc->setPublished(false);
+                $doc->save();
 
-    		throw new \Exception("Document with given ID (" . $id . ") does not exist.");
-    	} catch (\Exception $e) {
-    		\Logger::error($e);
-    		throw $e;
-    	}
+                return true;
+            }
+
+            throw new \Exception("Document with given ID (" . $id . ") does not exist.");
+        } catch (\Exception $e) {
+            Logger::error($e);
+            throw $e;
+        }
     }
 
     /**
@@ -245,12 +250,13 @@ class Service
             $doc = Document::getById($id);
             if ($doc instanceof Document) {
                 $doc->delete();
+
                 return true;
             }
 
             throw new \Exception("Document with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -268,7 +274,7 @@ class Service
                 throw new \Exception("Unable to update Document Page. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -286,7 +292,7 @@ class Service
                 throw new \Exception("Unable to update Document Folder. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -304,7 +310,7 @@ class Service
                 throw new \Exception("Unable to update Document Snippet. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -322,7 +328,7 @@ class Service
                 throw new \Exception("Unable to update Document Link. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -340,7 +346,7 @@ class Service
                 throw new \Exception("Unable to update Document Hardlink. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -358,7 +364,7 @@ class Service
                 throw new \Exception("Unable to update Document Email. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -377,7 +383,7 @@ class Service
                 throw new \Exception("Unable to update Object Folder. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -395,7 +401,7 @@ class Service
                 throw new \Exception("Unable to update Object Concrete. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -406,7 +412,6 @@ class Service
      */
     public function updateAssetFolder($wsDocument)
     {
-
         try {
             if ($wsDocument instanceof Webservice\Data\Asset\Folder\In) {
                 return $this->updateAsset($wsDocument);
@@ -414,7 +419,7 @@ class Service
                 throw new \Exception("Unable to update Asset Folder. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -432,7 +437,7 @@ class Service
                 throw new \Exception("Unable to update Asset Folder. Inappropriate Data given");
             }
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -447,11 +452,12 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Page\In) {
                 $wsDocument->type = "page";
                 $document = new Document\Page();
+
                 return $this->create($wsDocument, $document);
             }
             throw new \Exception("Unable to create new Document Page.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -466,12 +472,13 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Snippet\In) {
                 $wsDocument->type = "snippet";
                 $document = new Document\Snippet();
+
                 return $this->create($wsDocument, $document);
             }
 
             throw new \Exception("Unable to create new Document Snippet.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -486,12 +493,13 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Email\In) {
                 $wsDocument->type = "email";
                 $document = new Document\Email();
+
                 return $this->create($wsDocument, $document);
             }
 
             throw new \Exception("Unable to create new Document Snippet.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -507,11 +515,12 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Folder\In) {
                 $wsDocument->type = "folder";
                 $document = new Document\Folder();
+
                 return $this->create($wsDocument, $document);
             }
             throw new \Exception("Unable to create new Document Folder.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -526,11 +535,12 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Link\In) {
                 $wsDocument->type = "link";
                 $document = new Document\Link();
+
                 return $this->create($wsDocument, $document);
             }
             throw new \Exception("Unable to create new Document Link.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -545,11 +555,12 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Document\Hardlink\In) {
                 $wsDocument->type = "hardlink";
                 $document = new Document\Hardlink();
+
                 return $this->create($wsDocument, $document);
             }
             throw new \Exception("Unable to create new Document Hardlink.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -565,11 +576,12 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Asset\Folder\In) {
                 $wsDocument->type = "folder";
                 $asset = new Asset\Folder();
+
                 return $this->create($wsDocument, $asset);
             }
             throw new \Exception("Unable to create new Asset Folder.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -580,10 +592,8 @@ class Service
      */
     public function createAssetFile($wsDocument)
     {
-
         try {
             if ($wsDocument instanceof Webservice\Data\Asset\File\In) {
-
                 $type = $wsDocument->type;
                 if (!empty($type)) {
                     $type = "\\Pimcore\\Model\\Asset\\" . ucfirst($type);
@@ -601,7 +611,7 @@ class Service
 
             throw new \Exception("Unable to create new Asset File.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -616,12 +626,13 @@ class Service
             if ($wsDocument instanceof Webservice\Data\Object\Folder\In) {
                 $wsDocument->type = "folder";
                 $object = new Object\Folder();
+
                 return $this->create($wsDocument, $object);
             }
 
             throw new \Exception("Unable to create new Object Folder.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -634,23 +645,18 @@ class Service
     {
         try {
             if ($wsDocument instanceof Webservice\Data\Object\Concrete\In) {
-                $classname = Tool::getModelClassMapping("\\Pimcore\\Model\\Object\\" . ucfirst($wsDocument->className));
-                if (Tool::classExists($classname)) {
-                    $object = new $classname();
-
-                    if ($object instanceof Object\Concrete) {
-                        return $this->create($wsDocument, $object);
-                    } else {
-                        throw new \Exception("Unable to create new Object Concrete, could not instantiate Object with given class name [ $classname ]");
-                    }
+                $className = "Pimcore\\Model\\Object\\" . ucfirst($wsDocument->className);
+                $object = \Pimcore::getDiContainer()->make($className);
+                if ($object instanceof Object\Concrete) {
+                    return $this->create($wsDocument, $object);
                 } else {
-                    throw new \Exception("Unable to create new Object Concrete, no class name provided");
+                    throw new \Exception("Unable to create new Object Concrete, could not instantiate Object with given class name [ $classname ]");
                 }
             }
 
             throw new \Exception("Unable to create new Object Concrete.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -667,12 +673,13 @@ class Service
             if ($asset instanceof Asset\Folder) {
                 $className = Webservice\Data\Mapper::findWebserviceClass($asset, "out");
                 $apiAsset = Webservice\Data\Mapper::map($asset, $className, "out");
+
                 return $apiAsset;
             }
 
             throw new \Exception("Asset Folder with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -688,12 +695,13 @@ class Service
             $asset = Asset::getById($id);
             if ($asset instanceof Asset) {
                 $apiAsset = Webservice\Data\Mapper::map($asset, "\\Pimcore\\Model\\Webservice\\Data\\Asset\\File\\Out", "out", $options);
+
                 return $apiAsset;
             }
 
             throw new \Exception("Asset File with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -710,19 +718,31 @@ class Service
     public function getAssetList($condition = null, $order = null, $orderKey = null, $offset = null, $limit = null, $groupBy = null)
     {
         try {
-            $params = array();
+            $params = [];
 
-            if (!empty($condition)) $params["condition"] = $condition;
-            if (!empty($order)) $params["order"] = $order;
-            if (!empty($orderKey)) $params["orderKey"] = $orderKey;
-            if (!empty($offset)) $params["offset"] = $offset;
-            if (!empty($limit)) $params["limit"] = $limit;
-            if (!empty($groupBy)) $params["groupBy"] = $groupBy;
+            if (!empty($condition)) {
+                $params["condition"] = $condition;
+            }
+            if (!empty($order)) {
+                $params["order"] = $order;
+            }
+            if (!empty($orderKey)) {
+                $params["orderKey"] = $orderKey;
+            }
+            if (!empty($offset)) {
+                $params["offset"] = $offset;
+            }
+            if (!empty($limit)) {
+                $params["limit"] = $limit;
+            }
+            if (!empty($groupBy)) {
+                $params["groupBy"] = $groupBy;
+            }
 
 
             $list = Asset::getList($params);
 
-            $items = array();
+            $items = [];
             foreach ($list as $asset) {
                 $item = new Webservice\Data\Asset\Listing\Item();
                 $item->id = $asset->getId();
@@ -733,7 +753,7 @@ class Service
 
             return $items;
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -744,17 +764,17 @@ class Service
      */
     public function deleteAsset($id)
     {
-
         try {
             $asset = Asset::getById($id);
             if ($asset instanceof Asset) {
                 $asset->delete();
+
                 return true;
             }
 
             throw new \Exception("Asset with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -769,12 +789,13 @@ class Service
             $folder = Object::getById($id);
             if ($folder instanceof Object\Folder) {
                 $apiFolder = Webservice\Data\Mapper::map($folder, "\\Pimcore\\Model\\Webservice\\Data\\Object\\Folder\\Out", "out");
+
                 return $apiFolder;
             }
 
             throw new \Exception("Object Folder with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -792,12 +813,13 @@ class Service
                 // load all data (eg. lazy loaded fields like multihref, object, ...)
                 Object\Service::loadAllObjectFields($object);
                 $apiObject = Webservice\Data\Mapper::map($object, "\\Pimcore\\Model\\Webservice\\Data\\Object\\Concrete\\Out", "out");
+
                 return $apiObject;
             }
 
             throw new \Exception("Object with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -815,20 +837,31 @@ class Service
     public function getObjectList($condition = null, $order = null, $orderKey = null, $offset = null, $limit = null, $groupBy = null, $objectClass = null)
     {
         try {
-            $params = array("objectTypes" => array(Object\AbstractObject::OBJECT_TYPE_FOLDER, Object\AbstractObject::OBJECT_TYPE_OBJECT, Object\AbstractObject::OBJECT_TYPE_VARIANT));
+            $params = ["objectTypes" => [Object\AbstractObject::OBJECT_TYPE_FOLDER, Object\AbstractObject::OBJECT_TYPE_OBJECT, Object\AbstractObject::OBJECT_TYPE_VARIANT]];
 
-            if (!empty($condition)) $params["condition"] = $condition;
-            if (!empty($order)) $params["order"] = $order;
-            if (!empty($orderKey)) $params["orderKey"] = $orderKey;
-            if (!empty($offset)) $params["offset"] = $offset;
-            if (!empty($limit)) $params["limit"] = $limit;
-            if (!empty($groupBy)) $params["groupBy"] = $groupBy;
+            if (!empty($condition)) {
+                $params["condition"] = $condition;
+            }
+            if (!empty($order)) {
+                $params["order"] = $order;
+            }
+            if (!empty($orderKey)) {
+                $params["orderKey"] = $orderKey;
+            }
+            if (!empty($offset)) {
+                $params["offset"] = $offset;
+            }
+            if (!empty($limit)) {
+                $params["limit"] = $limit;
+            }
+            if (!empty($groupBy)) {
+                $params["groupBy"] = $groupBy;
+            }
 
             $listClassName = "\\Pimcore\\Model\\Object";
-            if(!empty($objectClass)) {
-
+            if (!empty($objectClass)) {
                 $listClassName = "\\Pimcore\\Model\\Object\\" . ucfirst($objectClass);
-                if(!Tool::classExists($listClassName)) {
+                if (!\Pimcore\Tool::classExists($listClassName)) {
                     $listClassName = "\\Pimcore\\Model\\Object";
                 }
             }
@@ -836,7 +869,7 @@ class Service
             $list = $listClassName::getList($params);
             $list->setUnpublished(1);
 
-            $items = array();
+            $items = [];
             foreach ($list as $object) {
                 $item = new Webservice\Data\Object\Listing\Item();
                 $item->id = $object->getId();
@@ -850,7 +883,7 @@ class Service
 
             return $items;
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -861,19 +894,20 @@ class Service
      */
     public function unpublishObject($id)
     {
-    	try {
-    		$object = Object\AbstractObject::getById($id);
-    		if ($object instanceof Object\AbstractObject) {
-    			$object->setPublished(false);
-    			$object->save();
-    			return true;
-    		}
+        try {
+            $object = Object\AbstractObject::getById($id);
+            if ($object instanceof Object\AbstractObject) {
+                $object->setPublished(false);
+                $object->save();
 
-    		throw new \Exception("Object with given ID (" . $id . ") does not exist.");
-    	} catch (\Exception $e) {
-    		\Logger::error($e);
-    		throw $e;
-    	}
+                return true;
+            }
+
+            throw new \Exception("Object with given ID (" . $id . ") does not exist.");
+        } catch (\Exception $e) {
+            Logger::error($e);
+            throw $e;
+        }
     }
 
     /**
@@ -886,12 +920,13 @@ class Service
             $object = Object\AbstractObject::getById($id);
             if ($object instanceof Object\AbstractObject) {
                 $object->delete();
+
                 return true;
             }
 
             throw new \Exception("Object with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -904,14 +939,13 @@ class Service
      */
     protected function create($wsDocument, $element)
     {
-
         $wsDocument->reverseMap($element);
         $element->setId(null);
         $element->setCreationDate(time());
         $this->setModificationParams($element, true);
         $key = $element->getKey();
         if (empty($key)) {
-            throw new \Exception ("Cannot create element without key");
+            throw new \Exception("Cannot create element without key");
         }
 
         $element->save();
@@ -927,22 +961,21 @@ class Service
      */
     protected function getSaveCopyName($element, $key, $path)
     {
-
-
         if ($element instanceof Object\AbstractObject) {
             $equal = Object\AbstractObject::getByPath($path . "/" . $key);
-        } else  if ($element instanceof Document) {
+        } elseif ($element instanceof Document) {
             $equal = Document::getByPath($path . "/" . $key);
-        } else if ($element instanceof Asset) {
+        } elseif ($element instanceof Asset) {
             $equal = Asset::getByPath($path . "/" . $key);
         }
 
         if ($equal) {
             $key .= "_WScopy";
+
             return $this->getSaveCopyName($element, $key, $path);
         }
-        return $key;
 
+        return $key;
     }
 
 
@@ -954,14 +987,16 @@ class Service
     {
         $document = Document::getById($wsDocument->id);
 
-        if ($document === NULL)
+        if ($document === null) {
             throw new \Exception("Document with given ID (" . $wsDocument->id . ") does not exist.");
+        }
 
         $this->setModificationParams($document, false);
 
         if ($document instanceof Document and strtolower($wsDocument->type) == $document->getType()) {
             $wsDocument->reverseMap($document);
             $document->save();
+
             return true;
         } else {
             throw new \Exception("Type mismatch for given document with ID [" . $wsDocument->id . "] and existing document with id [" . $document->getId() . "]");
@@ -977,18 +1012,20 @@ class Service
     {
         $object = Object\AbstractObject::getById($wsDocument->id);
 
-        if ($object === NULL)
+        if ($object === null) {
             throw new \Exception("Object with given ID (" . $wsDocument->id . ") does not exist.");
+        }
 
         $this->setModificationParams($object, false);
         if ($object instanceof Object\Concrete and $object->getClassName() == $wsDocument->className) {
+            $wsDocument->reverseMap($object);
+            $object->save();
 
-            $wsDocument->reverseMap($object);
-            $object->save();
             return true;
-        } else if ($object instanceof Object\Folder and $object->getType() == strtolower($wsDocument->type)) {
+        } elseif ($object instanceof Object\Folder and $object->getType() == strtolower($wsDocument->type)) {
             $wsDocument->reverseMap($object);
             $object->save();
+
             return true;
         } else {
             throw new \Exception("Type/Class mismatch for given object with ID [" . $wsDocument->id . "] and existing object with id [" . $object->getId() . "]");
@@ -1002,21 +1039,21 @@ class Service
      */
     protected function updateAsset($wsDocument)
     {
-
         $asset = Asset::getById($wsDocument->id);
 
-        if ($asset === NULL)
+        if ($asset === null) {
             throw new \Exception("Asset with given ID (" . $wsDocument->id . ") does not exist.");
+        }
 
         $this->setModificationParams($asset, false);
         if ($asset instanceof Asset and $asset->getType() == strtolower($wsDocument->type)) {
             $wsDocument->reverseMap($asset);
             $asset->save();
+
             return true;
         } else {
             throw new \Exception("Type mismatch for given asset with ID [" . $wsDocument->id . "] and existing asset with id [" . $asset->getId() . "]");
         }
-
     }
 
     /**
@@ -1036,6 +1073,7 @@ class Service
         }
         $element->setUserModification($user->getId());
         $element->setModificationDate(time());
+
         return $this;
     }
 
@@ -1050,12 +1088,13 @@ class Service
             if ($class instanceof Object\ClassDefinition) {
                 $apiClass = Webservice\Data\Mapper::map($class, "\\Pimcore\\Model\\Webservice\\Data\\ClassDefinition\\Out", "out");
                 unset($apiClass->fieldDefinitions);
+
                 return $apiClass;
             }
 
             throw new \Exception("Class with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
@@ -1073,25 +1112,27 @@ class Service
             if ($object instanceof Object\Concrete) {
                 // load all data (eg. lazy loaded fields like multihref, object, ...)
                 $classId = $object->getClassId();
+
                 return $this->getClassById($classId);
             }
 
             throw new \Exception("Object with given ID (" . $id . ") does not exist.");
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
             throw $e;
         }
     }
 
-    public function getTranslations($type,$params){
-        if(in_array($type,array('website','admin'))){
+    public function getTranslations($type, $params)
+    {
+        if (in_array($type, ['website', 'admin'])) {
             $listClass = '\\Pimcore\\Model\\Translation\\' . ucfirst($type) .'\\Listing';
             /**
              * @var $list \Pimcore\Model\Translation\Website\Listing
              */
             $list = new $listClass();
-            if($key = $params['key']){
-                $list->addConditionParam(" `key` LIKE " . \Pimcore\Resource::get()->quote("%" . $key . "%"),'');
+            if ($key = $params['key']) {
+                $list->addConditionParam(" `key` LIKE " . \Pimcore\Db::get()->quote("%" . $key . "%"), '');
             }
 
             $list->addConditionParam(" `creationDate` >= ? ", $params['creationDateFrom']);
@@ -1101,12 +1142,13 @@ class Service
             $list->addConditionParam(" `modificationDate` <= ? ", $params['modificationDateTill']);
             $data = $list->load();
 
-            $result = array();
-            foreach($data as $obj){
+            $result = [];
+            foreach ($data as $obj) {
                 $result[] = $obj->getForWebserviceExport();
             }
+
             return $result;
-        }else{
+        } else {
             throw new \Exception("Parameter 'type' has to be 'website' or 'admin'");
         }
     }

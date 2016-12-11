@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.versions");
@@ -56,45 +55,46 @@ pimcore.object.versions = Class.create({
                     reader: {
                         type: 'json',
                         rootProperty: 'versions'
-
-                        //totalProperty:'total',            // default
-                        //successProperty:'success'         // default
                     }
-                    //,                                     // default
-                    //writer: {
-                    //    type: 'json'
-                    //}
+
                 }
+            });
+
+            this.store.on("update", this.dataUpdate.bind(this));
+
+            this.cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
+                clicksToEdit: 2
             });
 
             var grid = Ext.create('Ext.grid.Panel', {
                 store: this.store,
+                plugins: [this.cellEditing],
                 columns: [
-                    {header: t("date"), width:130, sortable: true, dataIndex: 'date', renderer: function(d) {
+                    {header: t("published"), width:50, sortable: false, dataIndex: 'date', renderer: function(d, metaData) {
+                        if (d == this.object.data.general.o_modificationDate) {
+                            metaData.tdCls = "pimcore_icon_publish";
+                        }
+                        return "";
+                    }.bind(this), editable: false},
+                    {header: t("date"), width:150, sortable: true, dataIndex: 'date', renderer: function(d) {
                         var date = new Date(d * 1000);
                         return Ext.Date.format(date, "Y-m-d H:i:s");
                     }},
+                    {header: "ID", sortable: true, dataIndex: 'id', editable: false, width: 60},
                     {header: t("user"), sortable: true, dataIndex: 'name'},
                     {header: t("scheduled"), width:130, sortable: true, dataIndex: 'scheduled', renderer: function(d) {
                     	if (d != null){
                         	var date = new Date(d * 1000);
                             return Ext.Date.format(date, "Y-m-d H:i:s");
                     	}
-                    }, editable: false}
-                    //Not used: {header: t("note"), sortable: true, dataIndex: 'note'}
+                    }, editable: false},
+                    {header: t("note"), sortable: true, dataIndex: 'note', editor: new Ext.form.TextField()}
                 ],
                 stripeRows: true,
-                width:360,
-                title: t('available_versions'),
+                width: 450,
+                title: t('available_versions') + " (" + t("press_crtl_and_select_to_compare") + ")",
                 region: "west",
-                viewConfig: {
-                    getRowClass: function(record, rowIndex, rp, ds) {
-                        if (record.data.date == this.object.data.general.o_modificationDate) {
-                            return "version_published";
-                        }
-                        return "";
-                    }.bind(this)
-                },
+                split: true,
                 selModel: new Ext.selection.RowModel({
                     mode: 'MULTI'
                 })
@@ -111,8 +111,8 @@ pimcore.object.versions = Class.create({
             var preview = new Ext.Panel({
                 title: t("preview"),
                 region: "center",
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
-                html: '<iframe src="about:blank" frameborder="0" id="object_version_iframe_' + this.object.id
+                bodyCls: "pimcore_overflow_scrolling",
+                html: '<iframe src="about:blank" frameborder="0" style="width:100%;" id="object_version_iframe_' + this.object.id
                                                                 + '"></iframe>'
             });
 
@@ -121,37 +121,33 @@ pimcore.object.versions = Class.create({
                 bodyStyle:'padding:20px 5px 20px 5px;',
                 border: false,
                 layout: "border",
-                iconCls: "pimcore_icon_tab_versions",
+                iconCls: "pimcore_icon_versions",
                 items: [grid,preview]
             });
 
-            preview.on("resize", this.onLayoutResize.bind(this));
+            preview.on("resize", this.setLayoutFrameDimensions.bind(this));
         }
 
         return this.layout;
     },
 
-    onLayoutResize: function (el, width, height, rWidth, rHeight) {
-        this.setLayoutFrameDimensions(width, height);
-    },
-
-    setLayoutFrameDimensions: function (width, height) {
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
         Ext.get("object_version_iframe_" + this.object.id).setStyle({
-            width: width + "px",
-            height: (height - 25) + "px"
+            height: (height - 38) + "px"
         });
     },
 
     onRowClick: function(grid, record, tr, rowIndex, e, eOpts ) {
-        if (grid.getSelectionModel().getCount() > 1) {
-            if (grid.getSelectionModel().getCount() > 2) {
-                grid.getSelectionModel().clearSelections();
-                return;
-            }
-            this.compareVersions(grid, rowIndex, event);
+        var selModel = grid.getSelectionModel();
+        if (selModel.getCount() > 2) {
+            selModel.select(record);
+        }
+
+        if (selModel.getCount() > 1) {
+            this.compareVersions(grid, rowIndex, e);
         }
         else {
-            this.showVersionPreview(grid, rowIndex, event);
+            this.showVersionPreview(grid, rowIndex, e);
         }
     },
 
@@ -225,12 +221,35 @@ pimcore.object.versions = Class.create({
         Ext.Ajax.request({
             url: "/admin/object/publish-version",
             params: {id: versionId},
-            success: this.object.reload.bind(this.object)
+            success: function(response) {
+                this.object.reload();
+
+                var rdata = Ext.decode(response.responseText);
+                if (rdata && rdata.success) {
+                    pimcore.helpers.updateObjectStyle(this.object.id, rdata.treeData);
+                }
+
+            }.bind(this)
         });
     },
 
     reload: function () {
         this.store.reload();
+    },
+
+    dataUpdate: function (store, record, operation) {
+
+        if (operation == "edit") {
+            Ext.Ajax.request({
+                url: "/admin/element/version-update",
+                params: {
+                    data: Ext.encode(record.data)
+                }
+            });
+        }
+
+        store.commitChanges();
     }
-    
+
+
 });

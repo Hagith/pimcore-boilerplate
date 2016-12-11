@@ -2,20 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
 
-class Transliteration {
+class Transliteration
+{
 
     /**
      * @static
@@ -23,12 +23,13 @@ class Transliteration {
      * @param null $language
      * @return string
      */
-    public static function toASCII ($value, $language = null) {
+    public static function toASCII($value, $language = null)
+    {
 
         // the transliteration is based on the locale
         // äüö is in EN auo in DE  aeueoe
-        if(!$language) {
-            if(\Zend_Registry::isRegistered("Zend_Locale")) {
+        if (!$language) {
+            if (\Zend_Registry::isRegistered("Zend_Locale")) {
                 $locale = \Zend_Registry::get("Zend_Locale");
                 $language = $locale->getLanguage();
             } else {
@@ -37,11 +38,18 @@ class Transliteration {
             }
         }
 
-        $value = self::_transliterationProcess($value,"~",$language);
-        
+        $value = self::_transliterationProcess($value, "~", $language);
+
+        $value = trim($value);
+
         // then use iconv
-        $value = trim(iconv("utf-8","ASCII//IGNORE//TRANSLIT",$value));
-        
+        $result = iconv("utf-8", "ASCII//IGNORE//TRANSLIT", $value);
+        if (empty($result)) {
+            // TRANSLIT doesn't work in musl's iconv, see #859.
+            $result = iconv("utf-8", "ASCII//IGNORE", $value);
+        }
+        $value = $result;
+
         return $value;
     }
 
@@ -63,7 +71,8 @@ class Transliteration {
      * @param null $source_langcode
      * @return string
      */
-    private static function _transliterationProcess($string, $unknown = '?', $source_langcode = NULL) {
+    private static function _transliterationProcess($string, $unknown = '?', $source_langcode = null)
+    {
         // ASCII is always valid NFC! If we're only ever given plain ASCII, we can
         // avoid the overhead of initializing the decomposition tables by skipping
         // out early.
@@ -75,27 +84,21 @@ class Transliteration {
 
         if (!isset($tail_bytes)) {
             // Each UTF-8 head byte is followed by a certain number of tail bytes.
-            $tail_bytes = array();
+            $tail_bytes = [];
             for ($n = 0; $n < 256; $n++) {
                 if ($n < 0xc0) {
                     $remaining = 0;
-                }
-                elseif ($n < 0xe0) {
+                } elseif ($n < 0xe0) {
                     $remaining = 1;
-                }
-                elseif ($n < 0xf0) {
+                } elseif ($n < 0xf0) {
                     $remaining = 2;
-                }
-                elseif ($n < 0xf8) {
+                } elseif ($n < 0xf8) {
                     $remaining = 3;
-                }
-                elseif ($n < 0xfc) {
+                } elseif ($n < 0xfc) {
                     $remaining = 4;
-                }
-                elseif ($n < 0xfe) {
+                } elseif ($n < 0xfe) {
                     $remaining = 5;
-                }
-                else {
+                } else {
                     $remaining = 0;
                 }
                 $tail_bytes[chr($n)] = $remaining;
@@ -128,7 +131,7 @@ class Transliteration {
             // Counting down is faster. I'm *so* sorry.
             $len = $chunk + 1;
 
-            for ($i = -1; --$len; ) {
+            for ($i = -1; --$len;) {
                 $c = $str[++$i];
                 if ($remaining = $tail_bytes[$c]) {
                     // UTF-8 head byte!
@@ -138,15 +141,13 @@ class Transliteration {
                         if (--$len && ($c = $str[++$i]) >= "\x80" && $c < "\xc0") {
                             // Legal tail bytes are nice.
                             $sequence .= $c;
-                        }
-                        else {
+                        } else {
                             if ($len == 0) {
                                 // Premature end of string! Drop a replacement character into
                                 // output to represent the invalid UTF-8 sequence.
                                 $result .= $unknown;
                                 break 2;
-                            }
-                            else {
+                            } else {
                                 // Illegal tail byte; abandon the sequence.
                                 $result .= $unknown;
                                 // Back up and reprocess this byte; it may itself be a legal
@@ -161,40 +162,34 @@ class Transliteration {
                     $n = ord($head);
                     if ($n <= 0xdf) {
                         $ord = ($n - 192) * 64 + (ord($sequence[1]) - 128);
-                    }
-                    elseif ($n <= 0xef) {
+                    } elseif ($n <= 0xef) {
                         $ord = ($n - 224) * 4096 + (ord($sequence[1]) - 128) * 64 + (ord($sequence[2]) - 128);
-                    }
-                    elseif ($n <= 0xf7) {
+                    } elseif ($n <= 0xf7) {
                         $ord = ($n - 240) * 262144 + (ord($sequence[1]) - 128) * 4096 + (ord($sequence[2]) - 128) * 64 + (ord($sequence[3]) - 128);
-                    }
-                    elseif ($n <= 0xfb) {
+                    } elseif ($n <= 0xfb) {
                         $ord = ($n - 248) * 16777216 + (ord($sequence[1]) - 128) * 262144 + (ord($sequence[2]) - 128) * 4096 + (ord($sequence[3]) - 128) * 64 + (ord($sequence[4]) - 128);
-                    }
-                    elseif ($n <= 0xfd) {
+                    } elseif ($n <= 0xfd) {
                         $ord = ($n - 252) * 1073741824 + (ord($sequence[1]) - 128) * 16777216 + (ord($sequence[2]) - 128) * 262144 + (ord($sequence[3]) - 128) * 4096 + (ord($sequence[4]) - 128) * 64 + (ord($sequence[5]) - 128);
                     }
                     $result .= self::_transliterationReplace($ord, $unknown, $source_langcode);
                     $head = '';
-                }
-                elseif ($c < "\x80") {
+                } elseif ($c < "\x80") {
                     // ASCII byte.
                     $result .= $c;
                     $head = '';
-                }
-                elseif ($c < "\xc0") {
+                } elseif ($c < "\xc0") {
                     // Illegal tail bytes.
                     if ($head == '') {
                         $result .= $unknown;
                     }
-                }
-                else {
+                } else {
                     // Miscellaneous freaks.
                     $result .= $unknown;
                     $head = '';
                 }
             }
         }
+
         return $result;
     }
 
@@ -206,8 +201,9 @@ class Transliteration {
      * @param null $langcode
      * @return string
      */
-    private static function _transliterationReplace($ord, $unknown = '?', $langcode = NULL) {
-        $map = array();
+    private static function _transliterationReplace($ord, $unknown = '?', $langcode = null)
+    {
+        $map = [];
 
         if (!isset($langcode)) {
             $langcode = "en";
@@ -218,19 +214,17 @@ class Transliteration {
         if (!isset($map[$bank][$langcode])) {
             $file = __DIR__ . '/Transliteration/Data/' . sprintf('x%02x', $bank) . '.php';
             if (file_exists($file)) {
-                $base = array();
+                $base = [];
                 // contains the $base variable
-                include ($file);
+                include($file);
                 if ($langcode != 'en' && isset($variant[$langcode])) {
                     // Merge in language specific mappings.
                     $map[$bank][$langcode] = $variant[$langcode] + $base;
-                }
-                else {
+                } else {
                     $map[$bank][$langcode] = $base;
                 }
-            }
-            else {
-                $map[$bank][$langcode] = array();
+            } else {
+                $map[$bank][$langcode] = [];
             }
         }
 
@@ -238,6 +232,4 @@ class Transliteration {
 
         return isset($map[$bank][$langcode][$ord]) ? $map[$bank][$langcode][$ord] : $unknown;
     }
-
-
 }

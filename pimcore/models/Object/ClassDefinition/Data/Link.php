@@ -1,18 +1,17 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
@@ -24,7 +23,8 @@ use Pimcore\Model\Document;
 use Pimcore\Model\Element;
 use Pimcore\Tool\Serialize;
 
-class Link extends Model\Object\ClassDefinition\Data {
+class Link extends Model\Object\ClassDefinition\Data
+{
 
     /**
      * Static type of this element
@@ -58,14 +58,16 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param Object\Data\Link $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForResource($data, $object = null) {
-        if($data instanceof Object\Data\Link and isset($data->object)){
+    public function getDataForResource($data, $object = null, $params = [])
+    {
+        if ($data instanceof Object\Data\Link and isset($data->object)) {
             unset($data->object);
         }
 
-        if($data) {
+        if ($data) {
             try {
                 $this->checkValidity($data, true);
             } catch (\Exception $e) {
@@ -80,9 +82,12 @@ class Link extends Model\Object\ClassDefinition\Data {
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param string $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return Object\Data\Link
      */
-    public function getDataFromResource($data) {
+    public function getDataFromResource($data, $object = null, $params = [])
+    {
         $link = Serialize::unserialize($data);
 
         if ($link instanceof Object\Data\Link) {
@@ -105,9 +110,11 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForQueryResource($data, $object = null) {
+    public function getDataForQueryResource($data, $object = null, $params = [])
+    {
         return Serialize::serialize($data);
     }
 
@@ -115,13 +122,16 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForEditmode($data, $object = null) {
+    public function getDataForEditmode($data, $object = null, $params = [])
+    {
         if (!$data instanceof Object\Data\Link) {
             return false;
         }
         $data->path = $data->getPath();
+
         return $data;
     }
 
@@ -129,25 +139,30 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @see Model\Object\ClassDefinition\Data::getDataFromEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromEditmode($data, $object = null) {
-
+    public function getDataFromEditmode($data, $object = null, $params = [])
+    {
         $link = new Object\Data\Link();
         $link->setValues($data);
 
         if ($link->isEmpty()) {
             return false;
         }
+
         return $link;
     }
 
     /**
      * @see Object\ClassDefinition\Data::getVersionPreview
      * @param string $data
+     * @param null|Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getVersionPreview($data) {
+    public function getVersionPreview($data, $object = null, $params = [])
+    {
         return $data;
     }
 
@@ -158,23 +173,23 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @param boolean $omitMandatoryCheck
      * @throws \Exception
      */
-    public function checkValidity($data, $omitMandatoryCheck = false){
+    public function checkValidity($data, $omitMandatoryCheck = false)
+    {
         if ($data) {
             if ($data instanceof Object\Data\Link) {
                 if (intval($data->getInternal()) > 0) {
                     if ($data->getInternalType() == "document") {
                         $doc = Document::getById($data->getInternal());
                         if (!$doc instanceof Document) {
-                            throw new \Exception("invalid internal link, referenced document with id [" . $data->getInternal() . "] does not exist");
+                            throw new Element\ValidationException("invalid internal link, referenced document with id [" . $data->getInternal() . "] does not exist");
                         }
-                    }
-                    else if ($data->getInternalType() == "asset") {
+                    } elseif ($data->getInternalType() == "asset") {
                         $asset = Asset::getById($data->getInternal());
                         if (!$asset instanceof Asset) {
-                            throw new \Exception("invalid internal link, referenced asset with id [" . $data->getInternal() . "] does not exist");
+                            throw new Element\ValidationException("invalid internal link, referenced asset with id [" . $data->getInternal() . "] does not exist");
                         }
                     }
-                } 
+                }
             }
         }
     }
@@ -183,31 +198,28 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @param $data
      * @return array
      */
-    public function resolveDependencies($data) {
-        $dependencies = array();
+    public function resolveDependencies($data)
+    {
+        $dependencies = [];
 
         if ($data instanceof Object\Data\Link and $data->getInternal()) {
-
             if (intval($data->getInternal()) > 0) {
                 if ($data->getInternalType() == "document") {
-
                     if ($doc = Document::getById($data->getInternal())) {
-
                         $key = "document_" . $doc->getId();
-                        $dependencies[$key] = array(
+                        $dependencies[$key] = [
                             "id" => $doc->getId(),
                             "type" => "document"
-                        );
+                        ];
                     }
-                }
-                else if ($data->getInternalType() == "asset") {
+                } elseif ($data->getInternalType() == "asset") {
                     if ($asset = Asset::getById($data->getInternal())) {
                         $key = "asset_" . $asset->getId();
 
-                        $dependencies[$key] = array(
+                        $dependencies[$key] = [
                             "id" => $asset->getId(),
                             "type" => "asset"
-                        );
+                        ];
                     }
                 }
             }
@@ -223,22 +235,19 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @param array $tags
      * @return array
      */
-    public function getCacheTags($data, $tags = array()) {
-
-        $tags = is_array($tags) ? $tags : array();
+    public function getCacheTags($data, $tags = [])
+    {
+        $tags = is_array($tags) ? $tags : [];
 
         if ($data instanceof Object\Data\Link and $data->getInternal()) {
-
             if (intval($data->getInternal()) > 0) {
                 if ($data->getInternalType() == "document") {
-
                     if ($doc = Document::getById($data->getInternal())) {
                         if (!array_key_exists($doc->getCacheTag(), $tags)) {
                             $tags = $doc->getCacheTags($tags);
                         }
                     }
-                }
-                else if ($data->getInternalType() == "asset") {
+                } elseif ($data->getInternalType() == "asset") {
                     if ($asset = Asset::getById($data->getInternal())) {
                         if (!array_key_exists($asset->getCacheTag(), $tags)) {
                             $tags = $asset->getCacheTags($tags);
@@ -254,38 +263,47 @@ class Link extends Model\Object\ClassDefinition\Data {
     /**
      * converts object data to a simple string value or CSV Export
      * @abstract
-     * @param Model\Object\AbstractObject $object
+     * @param Object\AbstractObject $object
+     * @param array $params
      * @return string
      */
-    public function getForCsvExport($object) {
-        $data = $this->getDataFromObjectParam($object);
+    public function getForCsvExport($object, $params = [])
+    {
+        $data = $this->getDataFromObjectParam($object, $params);
         if ($data instanceof Object\Data\Link) {
             return base64_encode(Serialize::serialize($data));
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
      * fills object field data values from CSV Import String
      * @param string $importValue
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return Object\ClassDefinition\Data\Link
      */
-    public function getFromCsvImport($importValue) {
+    public function getFromCsvImport($importValue, $object = null, $params = [])
+    {
         $value = Serialize::unserialize(base64_decode($importValue));
         if ($value instanceof Object\Data\Link) {
             return $value;
-        } else return null;
-
+        } else {
+            return null;
+        }
     }
 
     /**
      * converts data to be exposed via webservices
      * @param string $object
+     * @param mixed $params
      * @return mixed
      */
-    public function getForWebserviceExport($object) {
-        $data = $this->getDataFromObjectParam($object);
+    public function getForWebserviceExport($object, $params = [])
+    {
+        $data = $this->getDataFromObjectParam($object, $params);
         if ($data instanceof Object\Data\Link) {
-
             $keys = get_object_vars($data);
             foreach ($keys as $key => $value) {
                 $method = "get" . ucfirst($key);
@@ -293,37 +311,42 @@ class Link extends Model\Object\ClassDefinition\Data {
                     unset($keys[$key]);
                 }
             }
+
             return $keys;
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
      * @param mixed $value
      * @param null $relatedObject
+     * @param mixed $params
      * @param null $idMapper
      * @return mixed|void
      * @throws \Exception
      */
-    public function getFromWebserviceImport($value, $relatedObject = null, $idMapper = null) {
+    public function getFromWebserviceImport($value, $relatedObject = null, $params = [], $idMapper = null)
+    {
         if ($value instanceof \stdclass) {
             $value = (array) $value;
         }
 
         if (empty($value)) {
             return null;
-        } else if (is_array($value) and !empty($value['text']) and !empty($value['direct'])) {
+        } elseif (is_array($value) and !empty($value['text']) and !empty($value['direct'])) {
             $link = new Object\Data\Link();
-            foreach ($value as $key => $value) {
+            foreach ($value as $key => $v) {
                 $method = "set" . ucfirst($key);
                 if (method_exists($link, $method)) {
-                    $link->$method($value);
+                    $link->$method($v);
                 } else {
                     throw new \Exception("cannot get values from web service import - invalid data. Unknown Object\\Data\\Link setter [ " . $method . " ]");
                 }
             }
-            return $link;
 
-        } else if (is_array($value) and !empty($value['text']) and !empty($value['internalType']) and !empty($value['internal'])) {
+            return $link;
+        } elseif (is_array($value) and !empty($value['text']) and !empty($value['internalType']) and !empty($value['internal'])) {
             $id = $value['internal'];
 
             if ($idMapper) {
@@ -331,10 +354,11 @@ class Link extends Model\Object\ClassDefinition\Data {
             }
 
 
-            $element = Element\Service::getElementById($value['internalType'],$id);
-            if(!$element){
+            $element = Element\Service::getElementById($value['internalType'], $id);
+            if (!$element) {
                 if ($idMapper && $idMapper->ignoreMappingFailures()) {
-                    $idMapper->recordMappingFailure("object", $relatedObject->getId(),$value['internalType'], $value['internal']);
+                    $idMapper->recordMappingFailure("object", $relatedObject->getId(), $value['internalType'], $value['internal']);
+
                     return null;
                 } else {
                     throw new \Exception("cannot get values from web service import - referencing unknown internal element with type [ ".$value['internalType']." ] and id [ ".$value['internal']." ]");
@@ -342,26 +366,40 @@ class Link extends Model\Object\ClassDefinition\Data {
             }
 
             $link = new Object\Data\Link();
-            foreach ($value as $key => $value) {
+            foreach ($value as $key => $v) {
                 $method = "set" . ucfirst($key);
                 if (method_exists($link, $method)) {
-                    $link->$method($value);
+                    $link->$method($v);
                 } else {
                     throw new \Exception("cannot get values from web service import - invalid data. Unknown Object\\Data\\Link setter [ " . $method . " ]");
                 }
             }
-            return $link;
 
+            return $link;
+        } elseif (is_array($value)) {
+            $link = new Object\Data\Link();
+            foreach ($value as $key => $v) {
+                $method = "set" . ucfirst($key);
+                if (method_exists($link, $method)) {
+                    $link->$method($v);
+                } else {
+                    throw new \Exception("cannot get values from web service import - invalid data. Unknown Object\\Data\\Link setter [ " . $method . " ]");
+                }
+            }
+
+            return $link;
         } else {
             throw new \Exception("cannot get values from web service import - invalid data");
         }
-
     }
 
     /** True if change is allowed in edit mode.
+     * @param string $object
+     * @param mixed $params
      * @return bool
      */
-    public function isDiffChangeAllowed() {
+    public function isDiffChangeAllowed($object, $params = [])
+    {
         return true;
     }
 
@@ -369,15 +407,17 @@ class Link extends Model\Object\ClassDefinition\Data {
      * a image URL. See the ObjectMerger plugin documentation for details
      * @param $data
      * @param null $object
+     * @param mixed $params
      * @return array|string
      */
-    public function getDiffVersionPreview($data, $object = null) {
+    public function getDiffVersionPreview($data, $object = null, $params = [])
+    {
         if ($data) {
-           if ($data->text) {
-               return $data->text;
-           } else if ($data->direct) {
-               return $data->direct;
-           }
+            if ($data->text) {
+                return $data->text;
+            } elseif ($data->direct) {
+                return $data->direct;
+            }
         }
     }
 
@@ -396,16 +436,18 @@ class Link extends Model\Object\ClassDefinition\Data {
      * @param array $params
      * @return Element\ElementInterface
      */
-    public function rewriteIds($object, $idMapping, $params = array()) {
+    public function rewriteIds($object, $idMapping, $params = [])
+    {
         $data = $this->getDataFromObjectParam($object, $params);
-        if($data instanceof Object\Data\Link && $data->getLinktype() == "internal") {
+        if ($data instanceof Object\Data\Link && $data->getLinktype() == "internal") {
             $id = $data->getInternal();
             $type = $data->getInternalType();
 
-            if(array_key_exists($type, $idMapping) and array_key_exists($id, $idMapping[$type])) {
+            if (array_key_exists($type, $idMapping) and array_key_exists($id, $idMapping[$type])) {
                 $data->setInternal($idMapping[$type][$id]);
             }
         }
+
         return $data;
     }
 }

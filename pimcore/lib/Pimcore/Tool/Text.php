@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
@@ -25,9 +24,9 @@ class Text
      * @param string $text
      * @return mixed|string
      */
-    public static function removeLineBreaks ($text = "") {
-
-        $text = str_replace(array("\r\n", "\n", "\r", "\t"), " ", $text);
+    public static function removeLineBreaks($text = "")
+    {
+        $text = str_replace(["\r\n", "\n", "\r", "\t"], " ", $text);
         $text = preg_replace('#[ ]+#', ' ', $text);
 
         return $text;
@@ -39,47 +38,47 @@ class Text
      */
     public static function wysiwygText($text)
     {
-        if(empty($text)) {
+        if (empty($text)) {
             return $text;
         }
 
         $matches = self::getElementsTagsInWysiwyg($text);
 
-        if(count($matches[2]) > 0) {
-            for($i=0; $i<count($matches[2]); $i++) {
-                preg_match("/[0-9]+/",$matches[2][$i], $idMatches);
-                preg_match("/asset|object|document/",$matches[3][$i], $typeMatches);
+        if (count($matches[2]) > 0) {
+            for ($i=0; $i<count($matches[2]); $i++) {
+                preg_match("/[0-9]+/", $matches[2][$i], $idMatches);
+                preg_match("/asset|object|document/", $matches[3][$i], $typeMatches);
 
                 $id = $idMatches[0];
                 $type = $typeMatches[0];
                 $element = Element\Service::getElementById($type, $id);
 
-                if($element instanceof Element\ElementInterface) {
+                if ($element instanceof Element\ElementInterface) {
                     $path = "";
                     $oldTag = $matches[0][$i];
 
-                    if($matches[1][$i] == "a") {
+                    if ($matches[1][$i] == "a") {
                         $linkAttr = "href";
                         $path = $element->getFullPath();
 
-                        if($element instanceof Document) {
+                        if ($element instanceof Document) {
                             // get parameters
                             preg_match("/href=\"([^\"]+)*\"/", $oldTag, $oldHref);
-                            if($oldHref[1] && (strpos($oldHref[1], "?") !== false || strpos($oldHref[1], "#") !== false)) {
+                            if ($oldHref[1] && (strpos($oldHref[1], "?") !== false || strpos($oldHref[1], "#") !== false)) {
                                 $urlParts = parse_url($oldHref[1]);
-                                if(array_key_exists("query", $urlParts) && !empty($urlParts["query"])) {
+                                if (array_key_exists("query", $urlParts) && !empty($urlParts["query"])) {
                                     $path .= "?" . $urlParts["query"];
                                 }
-                                if(array_key_exists("fragment", $urlParts) && !empty($urlParts["fragment"])) {
+                                if (array_key_exists("fragment", $urlParts) && !empty($urlParts["fragment"])) {
                                     $path .= "#" . $urlParts["fragment"];
                                 }
                             }
                         }
-                    } else if ($matches[1][$i] == "img") {
+                    } elseif ($matches[1][$i] == "img") {
                         $linkAttr = "src";
 
                         // only for images
-                        if(!$element instanceof Asset\Image) {
+                        if (!$element instanceof Asset\Image) {
                             continue;
                         }
 
@@ -93,15 +92,14 @@ class Text
                         preg_match("/style=\"([^\"]+)*\"/", $oldTag, $styleAttr);
 
                         if ((isset($widthAttr[1]) && $widthAttr[1]) || (isset($heightAttr[1]) && $heightAttr[1])) {
-                            $config = array(
-                                "width" => intval($widthAttr[1]),
-                                "height" => intval($heightAttr[1])
-                            );
+                            $config = [
+                                "width" => intval((isset($widthAttr[1]) ? $widthAttr[1] : null)),
+                                "height" => intval((isset($heightAttr[1]) ? $heightAttr[1] : null))
+                            ];
                         }
 
-                        if (isset($styleAttr[1]) && $styleAttr[1] && preg_match("/(width|height)/",$styleAttr[1])) {
-
-                            $config = array(); // reset the config if it was set already before (attributes)
+                        if (isset($styleAttr[1]) && $styleAttr[1] && preg_match("/(width|height)/", $styleAttr[1])) {
+                            $config = []; // reset the config if it was set already before (attributes)
 
                             $cleanedStyle = preg_replace('#[ ]+#', '', $styleAttr[1]);
                             $styles = explode(";", $cleanedStyle);
@@ -110,8 +108,7 @@ class Text
                                     if (preg_match("/([0-9]+)(px)/i", $style, $match)) {
                                         $config["width"] = $match[1];
                                     }
-                                }
-                                else if (strpos(trim($style), "height") === 0) {
+                                } elseif (strpos(trim($style), "height") === 0) {
                                     if (preg_match("/([0-9]+)(px)/i", $style, $match)) {
                                         $config["height"] = $match[1];
                                     }
@@ -120,14 +117,14 @@ class Text
                         }
 
                         // only create a thumbnail if it is not disabled
-                        if(!preg_match("/pimcore_disable_thumbnail=\"([^\"]+)*\"/", $oldTag)) {
+                        if (!preg_match("/pimcore_disable_thumbnail=\"([^\"]+)*\"/", $oldTag)) {
                             if (!empty($config)) {
                                 $path = $element->getThumbnail($config);
-                            } else if($element->getWidth() > 2000 || $element->getHeight() > 2000) {
+                            } elseif ($element->getWidth() > 2000 || $element->getHeight() > 2000) {
                                 // if the image is too large, size it down to 2000px this is the max. for wysiwyg
-                                $path = $element->getThumbnail(array(
+                                $path = $element->getThumbnail([
                                     "width" => 2000,
-                                ));
+                                ]);
                             } else {
                                 // return the original
                                 $path = $element->getFullPath();
@@ -135,7 +132,7 @@ class Text
                         }
                     }
 
-                    $newTag = preg_replace("/".$linkAttr."=\"[^\"]*\"/",$linkAttr . '="' . $path . '"', $oldTag);
+                    $newTag = preg_replace("/".$linkAttr."=\"[^\"]*\"/", $linkAttr . '="' . $path . '"', $oldTag);
 
                     $text = str_replace($oldTag, $newTag, $text);
                 } else {
@@ -160,11 +157,10 @@ class Text
     public static function replaceWysiwygTextRelationIds($idMapping, $text)
     {
         if (!empty($text)) {
-
             include_once("simple_html_dom.php");
 
             $html = str_get_html($text);
-            if(!$html) {
+            if (!$html) {
                 return $text;
             }
 
@@ -180,9 +176,7 @@ class Text
                 if ($el->href) {
                     if ($el->pimcore_type == "asset") {
                         $type = "asset";
-
-                    }
-                    else if ($el->pimcore_type == "document") {
+                    } elseif ($el->pimcore_type == "document") {
                         $type = "document";
                     }
                 }
@@ -191,7 +185,7 @@ class Text
                 if ($newId) {
                     //update id
 
-                    if($type=="asset"){
+                    if ($type=="asset") {
                         $pimcoreElement = Asset::getById($newId);
                     } else {
                         $pimcoreElement = Document::getById($newId);
@@ -199,7 +193,6 @@ class Text
 
                     $el->pimcore_id = $newId;
                     $el->src = $pimcoreElement->getFullPath();
-
                 } else {
                     //remove relation, not found in mapping
                     $el->pimcore_id = null;
@@ -219,13 +212,17 @@ class Text
 
     /**
      * @static
-     * @param $text
+     * @param string $text
      * @return array
      */
-    public static function getElementsTagsInWysiwyg($text) {
+    public static function getElementsTagsInWysiwyg($text)
+    {
+        if (!is_string($text) || strlen($text) < 1) {
+            return [];
+        }
 
         $hash = "elements_raw_wysiwyg_text_" . md5($text);
-        if(\Zend_Registry::isRegistered($hash)) {
+        if (\Zend_Registry::isRegistered($hash)) {
             return \Zend_Registry::get($hash);
         }
 
@@ -242,32 +239,32 @@ class Text
      * @param $text
      * @return array
      */
-    public static function getElementsInWysiwyg ($text) {
-
+    public static function getElementsInWysiwyg($text)
+    {
         $hash = "elements_wysiwyg_text_" . md5($text);
-        if(\Zend_Registry::isRegistered($hash)) {
+        if (\Zend_Registry::isRegistered($hash)) {
             return \Zend_Registry::get($hash);
         }
 
-        $elements = array();
+        $elements = [];
         $matches = self::getElementsTagsInWysiwyg($text);
 
-        if(count($matches[2]) > 0) {
-            for($i=0; $i<count($matches[2]); $i++) {
-                preg_match("/[0-9]+/",$matches[2][$i], $idMatches);
-                preg_match("/asset|object|document/",$matches[3][$i], $typeMatches);
+        if (count($matches[2]) > 0) {
+            for ($i=0; $i<count($matches[2]); $i++) {
+                preg_match("/[0-9]+/", $matches[2][$i], $idMatches);
+                preg_match("/asset|object|document/", $matches[3][$i], $typeMatches);
 
                 $id = $idMatches[0];
                 $type = $typeMatches[0];
 
                 $element = Element\Service::getElementById($type, $id);
 
-                if($id && $type && $element instanceof Element\ElementInterface) {
-                    $elements[] = array(
+                if ($id && $type && $element instanceof Element\ElementInterface) {
+                    $elements[] = [
                         "id" => $id,
                         "type" => $type,
                         "element" => $element
-                    );
+                    ];
                 }
             }
         }
@@ -286,16 +283,16 @@ class Text
      */
     public static function getDependenciesOfWysiwygText($text)
     {
-        $dependencies = array();
+        $dependencies = [];
 
         if (!empty($text)) {
             $elements = self::getElementsInWysiwyg($text);
             foreach ($elements as $element) {
                 $key = $element["type"] . "_" . $element["id"];
-                $dependencies[$key] = array(
+                $dependencies[$key] = [
                     "id" => $element["id"],
                     "type" => $element["type"]
-                );
+                ];
             }
         }
 
@@ -307,9 +304,9 @@ class Text
      * @param array $tags
      * @return array
      */
-    public static function getCacheTagsOfWysiwygText($text, $tags = array())
+    public static function getCacheTagsOfWysiwygText($text, $tags = [])
     {
-        $tags = is_array($tags) ? $tags : array();
+        $tags = is_array($tags) ? $tags : [];
         
         if (!empty($text)) {
             $elements = self::getElementsInWysiwyg($text);
@@ -328,11 +325,13 @@ class Text
      * @param $text
      * @return string
      */
-    public static function convertToUTF8($text) {
+    public static function convertToUTF8($text)
+    {
         $encoding = self::detectEncoding($text);
         if ($encoding) {
             $text = iconv($encoding, "UTF-8", $text);
         }
+
         return $text;
     }
 
@@ -342,9 +341,8 @@ class Text
      */
     public static function detectEncoding($text)
     {
-
         if (function_exists("mb_detect_encoding")) {
-            $encoding = mb_detect_encoding($text, array(
+            $encoding = mb_detect_encoding($text, [
                 "UTF-32",
                 "UTF-32BE",
                 "UTF-32LE",
@@ -393,12 +391,13 @@ class Text
                 "JIS",
                 "ISO-2022-JP",
                 "ISO-2022-JP-MS"
-            ));
+            ]);
         }
 
         if (!$encoding) {
             $encoding = "UTF-8";
         }
+
         return $encoding;
     }
 }

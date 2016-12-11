@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -22,7 +21,7 @@ pimcore.settings.user.panel = Class.create(pimcore.settings.user.panels.abstract
             this.panel = new Ext.Panel({
                 id: "pimcore_users",
                 title: t("users"),
-                iconCls: "pimcore_icon_users",
+                iconCls: "pimcore_icon_user",
                 border: false,
                 layout: "border",
                 closable:true,
@@ -57,9 +56,8 @@ pimcore.settings.user.panel = Class.create(pimcore.settings.user.panels.abstract
                 id: "pimcore_panel_users_tree",
                 store: store,
                 region: "west",
-               // useArrows:true,
                 autoScroll:true,
-                animate:true,
+                animate:false,
                 containerScroll: true,
                 split:true,
                 width: 180,
@@ -76,6 +74,11 @@ pimcore.settings.user.panel = Class.create(pimcore.settings.user.panels.abstract
                         ptype: 'treeviewdragdrop',
                         appendOnly: true,
                         ddGroup: "users"
+                    },
+                    listeners: {
+                        drop: function(node, data, overModel) {
+                            this.update(data.records[0].id, {parentId: overModel.id})
+                        }.bind(this)
                     }
                 },
                 tbar: ["->", {
@@ -203,14 +206,14 @@ pimcore.settings.user.panel = Class.create(pimcore.settings.user.panels.abstract
         if (record.data.allowChildren) {
             menu.add(new Ext.menu.Item({
                 text: t('add_folder'),
-                iconCls: "pimcore_icon_folder_add",
+                iconCls: "pimcore_icon_folder pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "userfolder", null, record)
                 }
             }));
             menu.add(new Ext.menu.Item({
                 text: t('add_user'),
-                iconCls: "pimcore_icon_user_add",
+                iconCls: "pimcore_icon_user pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "user", null, record)
                 }
@@ -218,14 +221,14 @@ pimcore.settings.user.panel = Class.create(pimcore.settings.user.panels.abstract
         } else if (record.data.elementType == "user") {
             menu.add(new Ext.menu.Item({
                 text: t('clone_user'),
-                iconCls: "pimcore_icon_user_add",
+                iconCls: "pimcore_icon_user pimcore_icon_overlay_add",
                 listeners: {
                     "click": this.add.bind(this, "user", record, record)
                 }
             }));
         }
 
-        if (record.data.id != user.id && (record.data.type != "userfolder" || user.admin)) {
+        if (record.data.id > 0 && record.data.id != user.id && (record.data.type != "userfolder" || user.admin)) {
             menu.add(new Ext.menu.Item({
                 text: t('delete'),
                 iconCls: "pimcore_icon_delete",

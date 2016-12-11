@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Tool
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool\Targeting\Rule;
 
 use Pimcore\Model;
 
-class Actions {
+class Actions
+{
 
     /**
      * @var bool
@@ -93,6 +93,7 @@ class Actions {
     public function setProgrammaticallyEnabled($programmaticallyEnabled)
     {
         $this->programmaticallyEnabled = $programmaticallyEnabled;
+
         return $this;
     }
 
@@ -111,6 +112,7 @@ class Actions {
     public function setCodesnippetCode($codesnippetCode)
     {
         $this->codesnippetCode = $codesnippetCode;
+
         return $this;
     }
 
@@ -129,6 +131,7 @@ class Actions {
     public function setCodesnippetPosition($codesnippetPosition)
     {
         $this->codesnippetPosition = $codesnippetPosition;
+
         return $this;
     }
 
@@ -147,6 +150,7 @@ class Actions {
     public function setCodesnippetSelector($codesnippetSelector)
     {
         $this->codesnippetSelector = $codesnippetSelector;
+
         return $this;
     }
 
@@ -165,6 +169,7 @@ class Actions {
     public function setEventKey($eventKey)
     {
         $this->eventKey = $eventKey;
+
         return $this;
     }
 
@@ -183,6 +188,7 @@ class Actions {
     public function setEventValue($eventValue)
     {
         $this->eventValue = $eventValue;
+
         return $this;
     }
 
@@ -201,6 +207,7 @@ class Actions {
     public function setRedirectCode($redirectCode)
     {
         $this->redirectCode = $redirectCode;
+
         return $this;
     }
 
@@ -218,12 +225,13 @@ class Actions {
      */
     public function setRedirectUrl($redirectUrl)
     {
-        if(is_string($redirectUrl)) {
-            if($doc = Model\Document::getByPath($redirectUrl)) {
+        if (is_string($redirectUrl)) {
+            if ($doc = Model\Document::getByPath($redirectUrl)) {
                 $redirectUrl = $doc->getId();
             }
         }
         $this->redirectUrl = $redirectUrl;
+
         return $this;
     }
 
@@ -242,6 +250,7 @@ class Actions {
     public function setCodesnippetEnabled($codesnippetEnabled)
     {
         $this->codesnippetEnabled = $codesnippetEnabled;
+
         return $this;
     }
 
@@ -260,6 +269,7 @@ class Actions {
     public function setEventEnabled($eventEnabled)
     {
         $this->eventEnabled = $eventEnabled;
+
         return $this;
     }
 
@@ -278,6 +288,7 @@ class Actions {
     public function setRedirectEnabled($redirectEnabled)
     {
         $this->redirectEnabled = $redirectEnabled;
+
         return $this;
     }
 

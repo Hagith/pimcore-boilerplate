@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.href");
@@ -138,6 +137,10 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
         var i;
         var found;
 
+        var checkSubType = false;
+        var checkClass = false;
+        var type;
+
         //only is legacy
         if (this.options.only && !this.options.types) {
             this.options.types = [this.options.only];
@@ -147,8 +150,16 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
         if (this.options.types) {
             found = false;
             for (i = 0; i < this.options.types.length; i++) {
-                if (this.options.types[i] == data.data.elementType) {
+                type = this.options.types[i];
+                if (type == data.data.elementType) {
                     found = true;
+
+                    if(this.options.subtypes[type] && this.options.subtypes[type].length) {
+                        checkSubType = true;
+                    }
+                    if(data.data.elementType == "object" && this.options.classes) {
+                        checkClass = true;
+                    }
                     break;
                 }
             }
@@ -158,16 +169,16 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
         }
 
         //subtype check  (folder,page,snippet ... )
-        if (this.options.subtypes) {
+        if (checkSubType) {
+
             found = false;
-            var typeKeys = Object.keys(this.options.subtypes);
-            for (var st = 0; st < typeKeys.length; st++) {
-                for (i = 0; i < this.options.subtypes[typeKeys[st]].length; i++) {
-                    if (this.options.subtypes[typeKeys[st]][i] == data.data.type) {
-                        found = true;
-                        break;
-                    }
+            var subTypes = this.options.subtypes[type];
+            for (i = 0; i < subTypes.length; i++) {
+                if (subTypes[i] == data.data.type) {
+                    found = true;
+                    break;
                 }
+
             }
             if (!found) {
                 return false;
@@ -175,7 +186,7 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
         }
 
         //object class check
-        if (data.data.elementType == "object" && this.options.classes) {
+        if (checkClass) {
             found = false;
             for (i = 0; i < this.options.classes.length; i++) {
                 if (this.options.classes[i] == data.data.className) {
@@ -227,14 +238,16 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
                 }.bind(this)
             }));
 
-            menu.add(new Ext.menu.Item({
-                text: t('show_in_tree'),
-                iconCls: "pimcore_icon_fileexplorer",
-                handler: function (item) {
-                    item.parentMenu.destroy();
-                    pimcore.helpers.selectElementInTree(this.data.elementType, this.data.id);
-                }.bind(this)
-            }));
+            if (pimcore.elementservice.showLocateInTreeButton("document")) {
+                menu.add(new Ext.menu.Item({
+                    text: t('show_in_tree'),
+                    iconCls: "pimcore_icon_show_in_tree",
+                    handler: function (item) {
+                        item.parentMenu.destroy();
+                        pimcore.treenodelocator.showInTree(this.data.id, "document");
+                    }.bind(this)
+                }));
+            }
         }
 
         menu.add(new Ext.menu.Item({
@@ -251,7 +264,7 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
             menu.add(new Ext.menu.Item({
                 text: t('upload'),
                 cls: "pimcore_inline_upload",
-                iconCls: "pimcore_icon_upload_single",
+                iconCls: "pimcore_icon_upload",
                 handler: function (item) {
                     item.parentMenu.destroy();
                     this.uploadDialog();
@@ -288,6 +301,9 @@ pimcore.document.tags.href = Class.create(pimcore.document.tag, {
             this.data.path = item.fullpath;
 
             this.element.setValue(this.data.path);
+            if (this.options.reload) {
+                this.reloadDocument();
+            }
         }
     },
 

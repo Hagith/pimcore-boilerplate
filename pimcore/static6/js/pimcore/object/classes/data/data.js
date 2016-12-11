@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.data");
@@ -31,7 +30,8 @@ pimcore.object.classes.data.data = Class.create({
         object: false,
         objectbrick: false,
         fieldcollection: false,
-        localizedfield: false
+        localizedfield: false,
+        classificationstore : false
     },
 
 
@@ -57,7 +57,7 @@ pimcore.object.classes.data.data = Class.create({
     },
 
     getGroup: function () {
-        return "other";   
+        return "other";
     },
 
     getType: function () {
@@ -72,7 +72,10 @@ pimcore.object.classes.data.data = Class.create({
             title: t("specific_settings") + " (" + niceName + ")",
             bodyStyle: "padding: 10px;",
             style: "margin: 10px 0 10px 0",
-            items: []
+            items: [],
+            defaults: {
+                labelWidth: 140
+            }
         });
 
 
@@ -131,6 +134,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "checkbox",
                 fieldLabel: t("mandatoryfield"),
                 name: "mandatory",
+                itemId: "mandatory",
                 checked: this.datax.mandatory,
                 disabled: !in_array("mandatory",this.availableSettingsFields) || this.isInCustomLayoutEditor()
             },
@@ -146,6 +150,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "checkbox",
                 fieldLabel: t("invisible"),
                 name: "invisible",
+                itemId: "invisible",
                 checked: this.datax.invisible,
                 disabled: !in_array("invisible",this.availableSettingsFields)
             }
@@ -156,6 +161,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "checkbox",
                 fieldLabel: t("visible_in_gridview"),
                 name: "visibleGridView",
+                itemId: "visibleGridView",
                 checked: this.datax.visibleGridView,
                 disabled: !in_array("visibleGridView",this.availableSettingsFields)
             });
@@ -164,6 +170,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "checkbox",
                 fieldLabel: t("visible_in_searchresult"),
                 name: "visibleSearch",
+                itemId: "visibleSearch",
                 checked: this.datax.visibleSearch,
                 disabled: !in_array("visibleSearch",this.availableSettingsFields)
             });
@@ -172,6 +179,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "checkbox",
                 fieldLabel: t("index"),
                 name: "index",
+                itemId: "index",
                 checked: this.datax.index,
                 disabled: !in_array("index",this.availableSettingsFields)
             });
@@ -182,6 +190,7 @@ pimcore.object.classes.data.data = Class.create({
                 xtype: "textfield",
                 fieldLabel: t("css_style") + " (float: left; margin:10px; ...)",
                 name: "style",
+                itemId: "style",
                 value: this.datax.style,
                 width: 740,
                 disabled: !in_array("style",this.availableSettingsFields)
@@ -308,10 +317,16 @@ pimcore.object.classes.data.data = Class.create({
         return this.inCustomLayoutEditor;
     },
 
+    setInClassificationStoreEditor: function(inClassificationStoreEditor) {
+        this.inClassificationStoreEditor = inClassificationStoreEditor;
+    },
+
+    isInClassificationStoreEditor: function() {
+        return this.inClassificationStoreEditor;
+    },
+
     applySpecialData: function(source) {
 
     }
-
-
 
 });

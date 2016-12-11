@@ -1,19 +1,26 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 @import '/pimcore/static6/js/lib/ext/classic/theme-triton/resources/theme-triton-all.css';
 @import 'ext-modifications.css';
+@import 'icons.css';
+
+.cke * {
+    box-sizing: content-box !important;
+    -moz-box-sizing: content-box !important;
+    -ms-box-sizing: content-box !important;
+    -webkit-box-sizing: content-box !important;
+}
 
 .cke-code-editor textarea {
     font-family: "courier new", courier !important;
@@ -21,11 +28,11 @@
 
 /* pimcore editables */
 
-.pimcore_tag_image .x-panel-body {
-    overflow: hidden;
+.pimcore_tag_image {
+    position: relative;
 }
 
-.pimcore_tag_image .x-panel-body img {
+.pimcore_tag_image img {
     max-width: 100%;
     max-height: 100%;
 }
@@ -104,27 +111,6 @@
     cursor: move !important;
 }
 
-.pimcore_icon_plus {
-	background: url(/pimcore/static6/img/icon/add.png) !important;
-}
-
-.pimcore_icon_minus {
-	background: url(/pimcore/static6/img/icon/delete.png) !important;
-}
-
-.pimcore_icon_up {
-	background: url(/pimcore/static6/img/icon/arrow_up.png) !important;
-}
-
-.pimcore_icon_down {
-	background: url(/pimcore/static6/img/icon/arrow_down.png) !important;
-}
-
-.pimcore_icon_edit {
-	background: url(/pimcore/static6/img/icon/pencil_go.png) !important;
-}
-
-
 
 .pimcore_area_dropzone {
     height: 20px;
@@ -175,29 +161,39 @@
 
 .pimcore_tag_snippet_empty {
 	border: 1px solid #d0d0d0 !important;
-	background:url(/pimcore/static6/img/icon/drop-40.png) center center no-repeat #f9fbfb !important;
+	background:url(/pimcore/static6/img/flat-color-icons/target.svg) center center/45px no-repeat #f9fbfb !important;
 }
 
 .pimcore_tag_image_empty {
 	border: 1px solid #d0d0d0 !important;
-	background:url(/pimcore/static6/img/icon/drop-40.png) center center no-repeat #f9fbfb !important;
-    height: 100px;
+	background:url(/pimcore/static6/img/flat-color-icons/target.svg) center center/45px no-repeat #f9fbfb !important;
+    min-height: 50px;
 }
 
 .pimcore_tag_video_empty {
 	border: 1px solid #d0d0d0 !important;
-	/*background:url(/pimcore/static6/img/icon/drop-40.png) center center no-repeat #f9fbfb !important;*/
-    background:url(/pimcore/static6/img/icon/video-icon-big.png) center center no-repeat #f9fbfb !important;
+    background:url(/pimcore/static6/img/flat-color-icons/film_reel.svg) center center/50px no-repeat #f9fbfb !important;
     cursor: pointer;
 }
 
+.pimcore_tag_embed {
+    position: relative;
+}
+
+.pimcore_tag_embed_empty {
+    border: 1px solid #d0d0d0 !important;
+    background:url(/pimcore/static6/img/flat-color-icons/bricks.svg) center center/50px no-repeat #f9fbfb !important;
+    cursor: pointer;
+    min-height:100px;
+}
+
 .pimcore_tag_href input{
-	background: url(/pimcore/static6/img/icon/drop-16.png) right center no-repeat #fff;
+	background: url(/pimcore/static6/img/flat-color-icons/target.svg) right center/20px no-repeat #fff;
 	cursor: default;
 }
 
 .pimcore_tag_droptarget {
-    background: url(/pimcore/static6/img/icon/drop-16.png) center center no-repeat;
+    background: url(/pimcore/static6/img/flat-color-icons/target.svg) center center/20px no-repeat;
     position:absolute;
     width:20px;
     height:20px;
@@ -237,7 +233,7 @@
 }
 
 .pimcore_droptarget_input  {
-	background: url(/pimcore/static6/img/icon/drop-16.png) right 2px no-repeat #fff !important;
+	background: url(/pimcore/static6/img/flat-color-icons/target.svg) right 2px/20px no-repeat #fff !important;
 	cursor: default;
 }
 
@@ -338,6 +334,20 @@
 
 .pimcore_tag_select, .pimcore_tag_checkbox {
     display: inline-block;
+}
+
+/* support for placeholders */
+.pimcore_tag_input[contenteditable=true][data-placeholder]:empty:before,
+.pimcore_tag_textarea[contenteditable=true][data-placeholder]:empty:before,
+.pimcore_wysiwyg.empty[contenteditable=true][data-placeholder]:before {
+    cursor: text; /* For chrome */
+    content: attr(data-placeholder);
+    display: block; /* For firefox */
+    color:#BABABA;
+}
+
+.pimcore_wysiwyg.empty[contenteditable=true]:before {
+    height: 0; /* For firefox and Edge */
 }
 
 /* text fields: hover, focus, ... states */

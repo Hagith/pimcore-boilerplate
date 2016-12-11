@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.video");
@@ -23,11 +22,18 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
 
         pimcore.plugin.broker.fireEvent("preOpenAsset", this, "video");
 
+        var user = pimcore.globalmanager.get("user");
+
         this.properties = new pimcore.element.properties(this, "asset");
         this.versions = new pimcore.asset.versions(this);
         this.scheduler = new pimcore.element.scheduler(this, "asset");
         this.dependencies = new pimcore.element.dependencies(this, "asset");
-        this.notes = new pimcore.element.notes(this, "asset");
+
+        if (user.isAllowed("notes_events")) {
+            this.notes = new pimcore.element.notes(this, "asset");
+        }
+
+        this.tagAssignment = new pimcore.element.tag.assignment(this, "asset");
         this.metadata = new pimcore.asset.metadata(this);
 
         this.getData();
@@ -35,6 +41,7 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
 
     getTabPanel: function () {
         var items = [];
+        var user = pimcore.globalmanager.get("user");
 
         items.push(this.getEditPanel());
 
@@ -53,8 +60,12 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
 
         items.push(this.dependencies.getLayout());
 
-        if (this.isAllowed("settings")) {
+        if (user.isAllowed("notes_events")) {
             items.push(this.notes.getLayout());
+        }
+
+        if (user.isAllowed("tags_assignment")) {
+            items.push(this.tagAssignment.getLayout());
         }
 
         this.tabbar = new Ext.TabPanel({
@@ -75,15 +86,14 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
         if (!this.editPanel) {
             this.previewPanel = new Ext.Panel({
                 region: "center",
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
+                bodyCls: "pimcore_overflow_scrolling",
                 html: '<iframe src="/admin/asset/get-preview-video/id/'
                                             + this.id + '/" frameborder="0" id="asset_video_edit_'
-                                            + this.id + '" name="asset_video_edit_' + this.id + '"></iframe>'
+                                            + this.id + '" name="asset_video_edit_' + this.id + '" style="width:100%;"></iframe>'
             });
             this.previewPanel.on("resize", function (el, width, height, rWidth, rHeight) {
                 Ext.get("asset_video_edit_" + this.id).setStyle({
-                    width: width + "px",
-                    height: (height) + "px"
+                    height: (height-7) + "px"
                 });
             }.bind(this));
 
@@ -113,7 +123,7 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
                     },{
                         xtype: "button",
                         text: t("use_current_player_position_as_preview"),
-                        iconCls: "pimcore_icon_videoedit",
+                        iconCls: "pimcore_icon_video pimcore_icon_overlay_edit",
                         width: 265,
                         handler: function () {
                             try {
@@ -202,7 +212,7 @@ pimcore.asset.video = Class.create(pimcore.asset.asset, {
                 layout: "border",
                 items: [this.previewPanel, this.previewImagePanel],
                 title: t("preview"),
-                iconCls: "pimcore_icon_tab_edit"
+                iconCls: "pimcore_icon_edit"
             });
         }
 

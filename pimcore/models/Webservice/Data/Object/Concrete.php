@@ -2,25 +2,26 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Webservice
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Webservice\Data\Object;
 
 use Pimcore\Model;
 use Pimcore\Model\Webservice;
+use Pimcore\Logger;
 
-class Concrete extends Model\Webservice\Data\Object {
+class Concrete extends Model\Webservice\Data\Object
+{
 
     /**
      * @var Webservice\Data\Object\Element[]
@@ -37,7 +38,8 @@ class Concrete extends Model\Webservice\Data\Object {
      * @param $object
      * @param null $options
      */
-    public function map($object, $options = null) {
+    public function map($object, $options = null)
+    {
         parent::map($object);
 
         $this->className = $object->getClassName();
@@ -45,11 +47,10 @@ class Concrete extends Model\Webservice\Data\Object {
         $fd = $object->getClass()->getFieldDefinitions();
 
         foreach ($fd as $field) {
-
             $getter = "get".ucfirst($field->getName());
 
-            //only expose fields which have a get method 
-            if(method_exists($object,$getter)){
+            //only expose fields which have a get method
+            if (method_exists($object, $getter)) {
                 $el = new Webservice\Data\Object\Element();
                 $el->name = $field->getName();
                 $el->type = $field->getFieldType();
@@ -61,7 +62,6 @@ class Concrete extends Model\Webservice\Data\Object {
 
                 $this->elements[] = $el;
             }
-
         }
     }
 
@@ -71,8 +71,8 @@ class Concrete extends Model\Webservice\Data\Object {
      * @param null $idMapper
      * @throws \Exception
      */
-    public function reverseMap($object, $disableMappingExceptions = false, $idMapper = null) {
-
+    public function reverseMap($object, $disableMappingExceptions = false, $idMapper = null)
+    {
         $keys = get_object_vars($this);
         foreach ($keys as $key => $value) {
             $method = "set" . $key;
@@ -90,21 +90,22 @@ class Concrete extends Model\Webservice\Data\Object {
 
                 $setter = "set" . ucfirst($element->name);
                 if (method_exists($object, $setter)) {
-                    $tag = $object->getClass()->getFieldDefinition($element->name);
-                    if($class instanceof Model\Object\ClassDefinition\Data\Fieldcollections){
-                        $object->$setter($tag->getFromWebserviceImport($element->fieldcollection, $object,
-                                                                                    $idMapper));
+                    $tag = $class->getFieldDefinition($element->name);
+                    if ($tag) {
+                        if ($class instanceof Model\Object\ClassDefinition\Data\Fieldcollections) {
+                            $object->$setter($tag->getFromWebserviceImport($element->fieldcollection, $object, [],
+                                $idMapper));
+                        } else {
+                            $object->$setter($tag->getFromWebserviceImport($element->value, $object, [], $idMapper));
+                        }
                     } else {
-                        $object->$setter($tag->getFromWebserviceImport($element->value, $object, $idMapper));
+                        Logger::error("tag for field " . $element->name . " not found");
                     }
-
-
                 } else {
-                    if(!$disableMappingExceptions) {
-                        throw new \Exception("No element [ " . $element->name . " ] of type [ " . $element->type . " ] found in class definition " . $class);
+                    if (!$disableMappingExceptions) {
+                        throw new \Exception("No element [ " . $element->name . " ] of type [ " . $element->type . " ] found in class definition [" . $class->getId() . "] | " . $class->getName());
                     }
                 }
-
             }
         }
     }

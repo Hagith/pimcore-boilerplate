@@ -2,26 +2,31 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model;
 
-class WebsiteSetting extends AbstractModel {
+use Pimcore\Logger;
+
+/**
+ * @method \Pimcore\Model\WebsiteSetting\Dao getDao()
+ */
+class WebsiteSetting extends AbstractModel
+{
 
     /**
      * @var integer
      */
     public $id;
-    
+
     /**
      * @var string
      */
@@ -58,63 +63,74 @@ class WebsiteSetting extends AbstractModel {
      * @param integer $id
      * @return WebsiteSetting
      */
-    public static function getById($id) {
+    public static function getById($id)
+    {
         $setting = new self();
 
         $setting->setId(intval($id));
-        $setting->getResource()->getById();
+        $setting->getDao()->getById();
+
         return $setting;
     }
-    
+
     /**
      * @param string $name
      * @return WebsiteSetting
      */
-    public static function getByName($name, $siteId = null) {
+    public static function getByName($name, $siteId = null)
+    {
 
         // create a tmp object to obtain the id
         $setting = new self();
 
         try {
-            $setting->getResource()->getByName($name, $siteId);
+            $setting->getDao()->getByName($name, $siteId);
         } catch (\Exception $e) {
-            \Logger::error($e);
+            Logger::error($e);
+
             return null;
         }
+
         return $setting;
     }
 
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
 
     /**
      * @param integer $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
 
     /**
      * @param string $name
-     * @return void
+     * @return $this
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
@@ -125,6 +141,7 @@ class WebsiteSetting extends AbstractModel {
     public function setCreationDate($creationDate)
     {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -143,6 +160,7 @@ class WebsiteSetting extends AbstractModel {
     public function setData($data)
     {
         $this->data = $data;
+
         return $this;
     }
 
@@ -161,6 +179,7 @@ class WebsiteSetting extends AbstractModel {
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -179,6 +198,7 @@ class WebsiteSetting extends AbstractModel {
     public function setSiteId($siteId)
     {
         $this->siteId = (int) $siteId;
+
         return $this;
     }
 
@@ -197,6 +217,7 @@ class WebsiteSetting extends AbstractModel {
     public function setType($type)
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -211,7 +232,8 @@ class WebsiteSetting extends AbstractModel {
     /**
      * @return void
      */
-    public function clearDependentCache() {
-        Cache::clearTag("website_config");
+    public function clearDependentCache()
+    {
+        \Pimcore\Cache::clearTag("website_config");
     }
 }

@@ -2,22 +2,22 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Data;
 
-class Geopoint {
+class Geopoint
+{
 
     /**
      * @var double
@@ -33,7 +33,8 @@ class Geopoint {
      * @param null $longitude
      * @param null $latitude
      */
-    public function __construct($longitude = null, $latitude = null) {
+    public function __construct($longitude = null, $latitude = null)
+    {
         if ($longitude !== null) {
             $this->setLongitude($longitude);
         }
@@ -45,7 +46,8 @@ class Geopoint {
     /**
      * @return float
      */
-    public function getLongitude() {
+    public function getLongitude()
+    {
         return $this->longitude;
     }
 
@@ -53,15 +55,18 @@ class Geopoint {
      * @param $longitude
      * @return $this
      */
-    public function setLongitude($longitude) {
+    public function setLongitude($longitude)
+    {
         $this->longitude = (double) $longitude;
+
         return $this;
     }
 
     /**
      * @return float
      */
-    public function getLatitude() {
+    public function getLatitude()
+    {
         return $this->latitude;
     }
 
@@ -69,15 +74,18 @@ class Geopoint {
      * @param $latitude
      * @return $this
      */
-    public function setLatitude($latitude) {
+    public function setLatitude($latitude)
+    {
         $this->latitude = (double) $latitude;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function __toString() {
+    public function __toString()
+    {
         return $this->longitude . "; " . $this->latitude;
     }
 }

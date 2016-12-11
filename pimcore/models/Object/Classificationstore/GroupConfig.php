@@ -2,29 +2,39 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Classificationstore;
 
 use Pimcore\Model;
 
-class GroupConfig extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Object\Classificationstore\GroupConfig\Dao getDao()
+ */
+class GroupConfig extends Model\AbstractModel
+{
+    use Model\Element\ChildsCompatibilityTrait;
 
     /** Group id.
      * @var integer
      */
     public $id;
+
+    /**
+     * Store ID
+     * @var integer
+     */
+    public $storeId = 1;
 
     /** Parent id
      * @var int
@@ -51,23 +61,20 @@ class GroupConfig extends Model\AbstractModel {
      */
     public $modificationDate;
 
-    /** @var  int */
-    public $sorter;
 
     /**
      * @param integer $id
      * @return Model\Object\Classificationstore\GroupConfig
      */
-    public static function getById($id) {
+    public static function getById($id)
+    {
         try {
-
             $config = new self();
             $config->setId(intval($id));
-            $config->getResource()->getById();
+            $config->getDao()->getById();
 
             return $config;
         } catch (\Exception $e) {
-
         }
     }
 
@@ -75,26 +82,29 @@ class GroupConfig extends Model\AbstractModel {
      * @param $name
      * @return GroupConfig
      */
-    public static function getByName ($name) {
+    public static function getByName($name, $storeId = 1)
+    {
         try {
             $config = new self();
             $config->setName($name);
-            $config->getResource()->getByName();
+            $config->setStoreId($storeId ? $storeId : 1);
+            $config->getDao()->getByName();
 
             return $config;
         } catch (\Exception $e) {
-
         }
     }
 
-    public function hasChilds() {
-        return $this->getResource()->hasChilds();
+    public function hasChildren()
+    {
+        return $this->getDao()->hasChilds();
     }
 
     /**
      * @return Model\Object\Classificationstore\GroupConfig
      */
-    public static function create() {
+    public static function create()
+    {
         $config = new self();
         $config->save();
 
@@ -103,17 +113,20 @@ class GroupConfig extends Model\AbstractModel {
 
     /**
      * @param integer $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
@@ -138,22 +151,26 @@ class GroupConfig extends Model\AbstractModel {
      * @param string name
      * @return void
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
     /** Returns the description.
      * @return mixed
      */
-    public function getDescription() {
+    public function getDescription()
+    {
         return $this->description;
     }
 
@@ -161,15 +178,18 @@ class GroupConfig extends Model\AbstractModel {
      * @param $description
      * @return Model\Object\Classificationstore\GroupConfig
      */
-    public function setDescription($description) {
+    public function setDescription($description)
+    {
         $this->description = $description;
+
         return $this;
     }
 
     /**
      * Deletes the key value group configuration
      */
-    public function delete() {
+    public function delete()
+    {
         \Pimcore::getEventManager()->trigger("object.Classificationstore.groupConfig.preDelete", $this);
         parent::delete();
         \Pimcore::getEventManager()->trigger("object.Classificationstore.groupConfig.postDelete", $this);
@@ -178,7 +198,8 @@ class GroupConfig extends Model\AbstractModel {
     /**
      * Saves the group config
      */
-    public function save() {
+    public function save()
+    {
         $isUpdate = false;
 
         if ($this->getId()) {
@@ -195,6 +216,7 @@ class GroupConfig extends Model\AbstractModel {
         } else {
             \Pimcore::getEventManager()->trigger("object.Classificationstore.groupConfig.postAdd", $this);
         }
+
         return $model;
     }
 
@@ -205,6 +227,7 @@ class GroupConfig extends Model\AbstractModel {
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -223,6 +246,7 @@ class GroupConfig extends Model\AbstractModel {
     public function setCreationDate($creationDate)
     {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -234,21 +258,31 @@ class GroupConfig extends Model\AbstractModel {
         return $this->creationDate;
     }
 
+    /** Returns all keys belonging to this group
+     * @return KeyGroupRelation
+     */
+    public function getRelations()
+    {
+        $list = new KeyGroupRelation\Listing();
+        $list->setCondition("groupId = " . $this->id);
+        $list = $list->load();
+
+        return $list;
+    }
+
     /**
      * @return int
      */
-    public function getSorter()
+    public function getStoreId()
     {
-        return $this->sorter;
+        return $this->storeId;
     }
 
     /**
-     * @param int $sorter
+     * @param int $storeId
      */
-    public function setSorter($sorter)
+    public function setStoreId($storeId)
     {
-        $this->sorter = $sorter;
+        $this->storeId = $storeId;
     }
-
-
 }

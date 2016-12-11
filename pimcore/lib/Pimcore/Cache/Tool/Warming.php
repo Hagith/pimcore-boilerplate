@@ -1,28 +1,29 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Cache\Tool;
 
-use Pimcore\Model\Cache;
+use Pimcore\Cache;
 use Pimcore\Model\Listing\AbstractListing;
 use Pimcore\Model\Document;
 use Pimcore\Model\Element;
 use Pimcore\Model\Object;
 use Pimcore\Model\Asset;
+use Pimcore\Logger;
 
-class Warming {
+class Warming
+{
 
 
     /**
@@ -40,10 +41,10 @@ class Warming {
      * @param array $types
      * @return void
      */
-    public static function documents ($types = null) {
-
-        if(empty($types)) {
-            $types = array("page", "snippet", "folder", "link");
+    public static function documents($types = null)
+    {
+        if (empty($types)) {
+            $types = ["page", "snippet", "folder", "link"];
         }
 
         $list = new Document\Listing();
@@ -57,14 +58,14 @@ class Warming {
      * @param array $types
      * @return void
      */
-    public static function objects ($types = null, $classes = null) {
-
-        if(empty($types)) {
-            $types = array("object", "folder", "variant");
+    public static function objects($types = null, $classes = null)
+    {
+        if (empty($types)) {
+            $types = ["object", "folder", "variant"];
         }
 
         $classesCondition = "";
-        if(!empty($classes)) {
+        if (!empty($classes)) {
             $classesCondition .= " AND o_className IN ('" . implode("','", $classes) . "')";
         }
 
@@ -79,10 +80,10 @@ class Warming {
      * @param array $types
      * @return void
      */
-    public static function assets ($types = null) {
-
-        if(empty($types)) {
-            $types = array("folder", "image", "text", "audio", "video", "document", "archive", "unknown");
+    public static function assets($types = null)
+    {
+        if (empty($types)) {
+            $types = ["folder", "image", "text", "audio", "video", "document", "archive", "unknown"];
         }
 
         $list = new Asset\Listing();
@@ -91,28 +92,36 @@ class Warming {
         self::loadToCache($list);
     }
 
+    /**
+     * Adds a Pimcore Object/Asset/Document to the cache
+     *
+     * @param $element
+     */
+    public static function loadElementToCache($element)
+    {
+        $cacheKey = Element\Service::getElementType($element) . "_" . $element->getId();
+        Cache::storeToCache($element, $cacheKey, [], null, null, true);
+    }
 
     /**
      * @param AbstractListing $list
      */
-    protected static function loadToCache (AbstractListing $list) {
-        
+    protected static function loadToCache(AbstractListing $list)
+    {
         $totalCount = $list->getTotalCount();
         $iterations = ceil($totalCount / self::getPerIteration());
 
-        \Logger::info("New list of elements queued for storing into the cache with " . $iterations . " iterations and " . $totalCount . " total items");
+        Logger::info("New list of elements queued for storing into the cache with " . $iterations . " iterations and " . $totalCount . " total items");
 
         for ($i=0; $i<$iterations; $i++) {
-
-            \Logger::info("Starting iteration " . $i . " with offset: " . (self::getPerIteration() * $i));
+            Logger::info("Starting iteration " . $i . " with offset: " . (self::getPerIteration() * $i));
 
             $list->setLimit(self::getPerIteration());
             $list->setOffset(self::getPerIteration() * $i);
             $elements = $list->load();
 
             foreach ($elements as $element) {
-                $cacheKey = Element\Service::getElementType($element) . "_" . $element->getId();
-                Cache::storeToCache($element, $cacheKey);
+                self::loadElementToCache($element);
             }
 
             \Pimcore::collectGarbage();

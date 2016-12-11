@@ -2,13 +2,14 @@
 <html>
 <head>
 
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
     <meta name="robots" content="noindex, nofollow" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
 
-    <link rel="icon" type="image/png" href="/pimcore/static/img/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" href="/pimcore/static6/img/favicon/favicon-32x32.png" />
+    <meta name="google" value="notranslate">
 
     <style type="text/css">
         body {
@@ -24,64 +25,102 @@
             text-align: center;
         }
 
-        #pimcore_loading .spinner {
-            width: 40px;
-            height: 40px;
-            background-color: #222222;
-
-            margin: 100px auto;
-            -webkit-animation: sk-rotateplane 1.2s infinite ease-in-out;
-            animation: sk-rotateplane 1.2s infinite ease-in-out;
+        .spinner {
+            margin: 100px auto 0;
+            width: 70px;
+            text-align: center;
         }
 
-        @-webkit-keyframes sk-rotateplane {
-            0% { -webkit-transform: perspective(120px) }
-            50% { -webkit-transform: perspective(120px) rotateY(180deg) }
-            100% { -webkit-transform: perspective(120px) rotateY(180deg)  rotateX(180deg) }
+        .spinner > div {
+            width: 18px;
+            height: 18px;
+            background-color: #3d3d3d;
+
+            border-radius: 100%;
+            display: inline-block;
+            -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+            animation: sk-bouncedelay 1.4s infinite ease-in-out both;
         }
 
-        @keyframes sk-rotateplane {
-            0% {
-                transform: perspective(120px) rotateX(0deg) rotateY(0deg);
-                -webkit-transform: perspective(120px) rotateX(0deg) rotateY(0deg)
-            } 50% {
-                  transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg);
-                  -webkit-transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg)
-              } 100% {
-                    transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
-                    -webkit-transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
-                }
+        .spinner .bounce1 {
+            -webkit-animation-delay: -0.32s;
+            animation-delay: -0.32s;
+        }
+
+        .spinner .bounce2 {
+            -webkit-animation-delay: -0.16s;
+            animation-delay: -0.16s;
+        }
+
+        @-webkit-keyframes sk-bouncedelay {
+            0%, 80%, 100% { -webkit-transform: scale(0) }
+            40% { -webkit-transform: scale(1.0) }
+        }
+
+        @keyframes sk-bouncedelay {
+            0%, 80%, 100% {
+                -webkit-transform: scale(0);
+                transform: scale(0);
+            } 40% {
+                  -webkit-transform: scale(1.0);
+                  transform: scale(1.0);
+              }
         }
     </style>
 
-    <title><?= htmlentities($this->getRequest()->getHttpHost(), ENT_QUOTES, 'UTF-8') ?> :: pimcore</title>
+    <title><?= htmlentities(\Pimcore\Tool::getHostname(), ENT_QUOTES, 'UTF-8') ?> :: Pimcore</title>
 </head>
 
 <body>
 
-<div id="pimcore_logo" style="display: none;">
-    <img src="/pimcore/static6/img/logo.png"/>
+<div id="pimcore_loading">
+    <div class="spinner">
+        <div class="bounce1"></div>
+        <div class="bounce2"></div>
+        <div class="bounce3"></div>
+    </div>
 </div>
 
-<div id="pimcore_loading">
-    <div class="spinner"></div>
+<div id="pimcore_avatar" style="display:none;">
+    <img src="/admin/user/get-image" data-menu-tooltip="<?= \Pimcore\Tool\Admin::getCurrentUser()->getName() ?>" />
 </div>
+
+<a id="pimcore_logout" href="/admin/login/logout/" style="display: none"></a>
+
+<?php
+$runtimePerspective = \Pimcore\Config::getRuntimePerspective();
+?>
 
 <div id="pimcore_navigation" style="display:none;">
     <ul>
-        <li id="pimcore_menu_avatar" class="pimcore_menu_avatar">
-            <img src="/admin/user/get-image" />
-        </li>
-        <li id="pimcore_menu_file" class="pimcore_menu_item icon-th-large"><?= $this->translate("file"); ?></li>
-        <li id="pimcore_menu_extras" class="pimcore_menu_item icon-rocket pimcore_menu_needs_children"><?= $this->translate("extras"); ?></li>
-        <li id="pimcore_menu_marketing" class="pimcore_menu_item icon-chart-bar pimcore_menu_needs_children"><?= $this->translate("marketing"); ?></li>
-        <li id="pimcore_menu_settings" class="pimcore_menu_item icon-cog-alt pimcore_menu_needs_children"><?= $this->translate("settings"); ?></li>
-        <li id="pimcore_menu_maintenance" class="pimcore_menu_item icon-hammer" style="display:none;"><?= $this->translate("deactivate_maintenance"); ?></li>
-        <li id="pimcore_menu_search" class="pimcore_menu_item icon-search pimcore_menu_needs_children"><?= $this->translate("search"); ?></li>
-        <li id="pimcore_menu_logout" class="pimcore_menu_item icon-logout"><?= $this->translate("logout"); ?></li>
+        <?php if (\Pimcore\Config::inPerspective($runtimePerspective, "file")) { ?>
+            <li id="pimcore_menu_file" data-menu-tooltip="<?= $this->translate("file") ?>" class="pimcore_menu_item"></li>
+        <?php } ?>
+        <?php if (\Pimcore\Config::inPerspective($runtimePerspective, "extras")) { ?>
+            <li id="pimcore_menu_extras" data-menu-tooltip="<?= $this->translate("tools") ?>" class="pimcore_menu_item pimcore_menu_needs_children"></li>
+        <?php } ?>
+        <?php if (\Pimcore\Config::inPerspective($runtimePerspective, "marketing")) { ?>
+            <li id="pimcore_menu_marketing" data-menu-tooltip="<?= $this->translate("marketing") ?>" class="pimcore_menu_item pimcore_menu_needs_children"></li>
+        <?php } ?>
+        <?php if (\Pimcore\Config::inPerspective($runtimePerspective, "settings")) { ?>
+            <li id="pimcore_menu_settings" data-menu-tooltip="<?= $this->translate("settings") ?>" class="pimcore_menu_item pimcore_menu_needs_children"></li>
+        <?php } ?>
+        <li id="pimcore_menu_maintenance" data-menu-tooltip="<?= $this->translate("deactivate_maintenance") ?>" class="pimcore_menu_item " style="display:none;"></li>
+        <?php if (\Pimcore\Config::inPerspective($runtimePerspective, "search")) { ?>
+            <li id="pimcore_menu_search" data-menu-tooltip="<?= $this->translate("search") ?>" class="pimcore_menu_item pimcore_menu_needs_children"></li>
+        <?php } ?>
     </ul>
 </div>
 
+<div id="pimcore_status">
+    <div id="pimcore_status_dev" data-menu-tooltip="DEV MODE" style="display: none;"></div>
+    <div id="pimcore_status_debug" data-menu-tooltip="<?= $this->translate("debug_mode_on") ?>" style="display: none;"></div>
+    <div id="pimcore_status_email" data-menu-tooltip="<?= $this->translate("mail_settings_incomplete") ?>" style="display: none;"></div>
+    <a id="pimcore_status_maintenance" data-menu-tooltip="<?= $this->translate("maintenance_not_active") ?>" style="display: none;" href="https://www.pimcore.org/wiki/pages/viewpage.action?pageId=16854184#Installation(Apache)-SetuptheMaintenance-Script"></a>
+    <div id="pimcore_status_update" data-menu-tooltip="<?= $this->translate("update_available") ?>" style="display: none;"></div>
+</div>
+
+<div id="pimcore_menu_tooltip" style="display: none;"></div>
 
 <script type="text/javascript">
     var pimcore = {}; // namespace
@@ -90,12 +129,20 @@
 
 <?php // define stylesheets ?>
 <?php
+
+$extjsDev = isset( $runtimePerspective["extjsDev"]) ? $runtimePerspective["extjsDev"] : FALSE;
+
+// SCRIPT LIBRARIES
+$debugSuffix = "";
+if (PIMCORE_DEVMODE || $extjsDev) {
+    $debugSuffix = "-debug";
+}
+
 $styles = array(
-    "/admin/misc/admin-css?extjs6=1",
+    "/admin/misc/admin-css?extjs6=true",
     "/pimcore/static6/css/icons.css",
     "/pimcore/static6/js/lib/ext/classic/theme-triton/resources/theme-triton-all.css",
     "/pimcore/static6/js/lib/ext/classic/theme-triton/resources/charts-all" . $debugSuffix . ".css",
-    "/pimcore/static6/css/fontello.css",
     "/pimcore/static6/css/admin.css"
 );
 ?>
@@ -107,7 +154,7 @@ $styles = array(
     // see also: http://blogs.telerik.com/blogs/posts/10-05-03/internet-explorer-css-limits.aspx
     // @import bypasses this problem in an elegant way
     foreach ($styles as $style) { ?>
-        @import url(<?= $style ?>?_dc=<?= \Pimcore\Version::$revision ?>);
+    @import url(<?= $style ?>?_dc=<?= \Pimcore\Version::$revision ?>);
     <?php } ?>
 </style>
 
@@ -118,11 +165,6 @@ $styles = array(
 <?php // define scripts ?>
 <?php
 
-// SCRIPT LIBRARIES
-$debugSuffix = "";
-if (PIMCORE_DEVMODE) {
-    $debugSuffix = "-debug";
-}
 
 $scriptLibs = array(
 
@@ -152,20 +194,21 @@ $scripts = array(
     "pimcore/browserfixes.js",
 
     // fixes for libraries
-//    "pimcore/libfixes.js",
-
-    // small libs
-    "lib/array_merge.js",
-    "lib/array_merge_recursive.js",
+    //    "pimcore/libfixes.js",
 
     // runtime
     "pimcore/namespace.js",
     "pimcore/functions.js",
     "pimcore/globalmanager.js",
+    "pimcore/elementservice.js",
     "pimcore/helpers.js",
-    "pimcore/helpers/generic-grid.js",
-    "pimcore/experimental.js",
 
+    "pimcore/treenodelocator.js",
+    "pimcore/helpers/generic-grid.js",
+    "pimcore/helpers/quantityValue.js",
+    "pimcore/overrides.js",
+
+    "pimcore/perspective.js",
     "pimcore/user.js",
 
     // tools
@@ -175,7 +218,9 @@ $scripts = array(
     // settings
     "pimcore/settings/user/panels/abstract.js",
     "pimcore/settings/user/panel.js",
+
     "pimcore/settings/user/usertab.js",
+    "pimcore/settings/user/editorSettings.js",
     "pimcore/settings/user/role/panel.js",
     "pimcore/settings/user/role/tab.js",
     "pimcore/settings/user/user/objectrelations.js",
@@ -203,6 +248,7 @@ $scripts = array(
     "pimcore/settings/properties/predefined.js",
     "pimcore/settings/docTypes.js",
     "pimcore/settings/system.js",
+    "pimcore/settings/web2print.js",
     "pimcore/settings/website.js",
     "pimcore/settings/staticroutes.js",
     "pimcore/settings/update.js",
@@ -247,6 +293,9 @@ $scripts = array(
     "pimcore/object/helpers/customLayoutEditor.js",
     "pimcore/object/helpers/optionEditor.js",
     "pimcore/element/selector/object.js",
+    "pimcore/element/tag/configuration.js",
+    "pimcore/element/tag/assignment.js",
+    "pimcore/element/tag/tree.js",
 
     // documents
     "pimcore/document/properties.js",
@@ -254,18 +303,30 @@ $scripts = array(
     "pimcore/document/page_snippet.js",
     "pimcore/document/edit.js",
     "pimcore/document/versions.js",
+    "pimcore/document/settings_abstract.js",
     "pimcore/document/pages/settings.js",
     "pimcore/document/pages/preview.js",
     "pimcore/document/snippets/settings.js",
     "pimcore/document/emails/settings.js",
+    "pimcore/document/newsletters/settings.js",
+    "pimcore/document/newsletters/sendingPanel.js",
+    "pimcore/document/newsletters/addressSourceAdapters/default.js",
+    "pimcore/document/newsletters/addressSourceAdapters/csvList.js",
+    "pimcore/document/newsletters/addressSourceAdapters/report.js",
     "pimcore/document/link.js",
     "pimcore/document/hardlink.js",
     "pimcore/document/folder.js",
     "pimcore/document/tree.js",
     "pimcore/document/snippet.js",
     "pimcore/document/email.js",
+    "pimcore/document/newsletter.js",
     "pimcore/document/page.js",
+    "pimcore/document/printpages/pdf_preview.js",
+    "pimcore/document/printabstract.js",
+    "pimcore/document/printpage.js",
+    "pimcore/document/printcontainer.js",
     "pimcore/document/seopanel.js",
+    "pimcore/document/customviews/tree.js",
 
     // assets
     "pimcore/asset/asset.js",
@@ -273,12 +334,14 @@ $scripts = array(
     "pimcore/asset/image.js",
     "pimcore/asset/document.js",
     "pimcore/asset/video.js",
+    "pimcore/asset/audio.js",
     "pimcore/asset/text.js",
     "pimcore/asset/folder.js",
     "pimcore/asset/listfolder.js",
     "pimcore/asset/versions.js",
     "pimcore/asset/metadata.js",
     "pimcore/asset/tree.js",
+    "pimcore/asset/customviews/tree.js",
 
     // object
     "pimcore/object/helpers/edit.js",
@@ -287,17 +350,20 @@ $scripts = array(
     "pimcore/object/bulk-export.js",
     "pimcore/object/bulk-import.js",
     "pimcore/object/classes/data/data.js",          // THIS MUST BE THE FIRST FILE, DO NOT MOVE THIS DOWN !!!
+    "pimcore/object/classes/data/block.js",
     "pimcore/object/classes/data/classificationstore.js",
     "pimcore/object/classes/data/date.js",
     "pimcore/object/classes/data/datetime.js",
     "pimcore/object/classes/data/time.js",
     "pimcore/object/classes/data/href.js",
     "pimcore/object/classes/data/image.js",
+    "pimcore/object/classes/data/externalImage.js",
     "pimcore/object/classes/data/hotspotimage.js",
     "pimcore/object/classes/data/video.js",
     "pimcore/object/classes/data/input.js",
     "pimcore/object/classes/data/numeric.js",
     "pimcore/object/classes/data/objects.js",
+    "pimcore/object/classes/data/multihrefMetadata.js",
     "pimcore/object/classes/data/objectsMetadata.js",
     "pimcore/object/classes/data/nonownerobjects.js",
     "pimcore/object/classes/data/select.js",
@@ -332,9 +398,12 @@ $scripts = array(
     "pimcore/object/classes/data/newsletterConfirmed.js",
     "pimcore/object/classes/data/persona.js",
     "pimcore/object/classes/data/personamultiselect.js",
+    "pimcore/object/classes/data/quantityValue.js",
+    "pimcore/object/classes/data/calculatedValue.js",
     "pimcore/object/classes/layout/layout.js",
     "pimcore/object/classes/layout/accordion.js",
     "pimcore/object/classes/layout/fieldset.js",
+    "pimcore/object/classes/layout/fieldcontainer.js",
     "pimcore/object/classes/layout/panel.js",
     "pimcore/object/classes/layout/region.js",
     "pimcore/object/classes/layout/tabpanel.js",
@@ -345,17 +414,20 @@ $scripts = array(
     "pimcore/object/objectbrick.js",
     "pimcore/object/objectbricks/field.js",
     "pimcore/object/tags/abstract.js",
+    "pimcore/object/tags/block.js",
     "pimcore/object/tags/date.js",
     "pimcore/object/tags/datetime.js",
     "pimcore/object/tags/time.js",
     "pimcore/object/tags/href.js",
     "pimcore/object/tags/image.js",
+    "pimcore/object/tags/externalImage.js",
     "pimcore/object/tags/hotspotimage.js",
     "pimcore/object/tags/video.js",
     "pimcore/object/tags/input.js",
     "pimcore/object/tags/classificationstore.js",
     "pimcore/object/tags/numeric.js",
     "pimcore/object/tags/objects.js",
+    "pimcore/object/tags/multihrefMetadata.js",
     "pimcore/object/tags/objectsMetadata.js",
     "pimcore/object/tags/nonownerobjects.js",
     "pimcore/object/tags/select.js",
@@ -390,6 +462,8 @@ $scripts = array(
     "pimcore/object/tags/newsletterConfirmed.js",
     "pimcore/object/tags/persona.js",
     "pimcore/object/tags/personamultiselect.js",
+    "pimcore/object/tags/quantityValue.js",
+    "pimcore/object/tags/calculatedValue.js",
     "pimcore/object/preview.js",
     "pimcore/object/versions.js",
     "pimcore/object/variantsTab.js",
@@ -401,8 +475,8 @@ $scripts = array(
     "pimcore/object/folder.js",
     "pimcore/object/variant.js",
     "pimcore/object/tree.js",
-    "pimcore/object/customviews/settings.js",
     "pimcore/object/customviews/tree.js",
+    "pimcore/object/quantityvalue/unitsettings.js",
 
     //plugins
     "pimcore/plugin/broker.js",
@@ -416,8 +490,8 @@ $scripts = array(
     "pimcore/report/analytics/settings.js",
     "pimcore/report/analytics/elementoverview.js",
     "pimcore/report/analytics/elementexplorer.js",
-    "pimcore/report/analytics/elementnavigation.js",
     "pimcore/report/webmastertools/settings.js",
+    "pimcore/report/tagmanager/settings.js",
     "pimcore/report/custom/item.js",
     "pimcore/report/custom/panel.js",
     "pimcore/report/custom/settings.js",
@@ -431,11 +505,7 @@ $scripts = array(
     "pimcore/report/qrcode/panel.js",
     "pimcore/report/qrcode/item.js",
 
-    "pimcore/report/newsletter/panel.js",
-    "pimcore/report/newsletter/item.js",
-
     // extension manager
-    "pimcore/extensionmanager/settings.js",
     "pimcore/extensionmanager/xmlEditor.js",
     "pimcore/extensionmanager/admin.js",
 
@@ -468,12 +538,18 @@ $scripts = array(
     "pimcore/object/keyvalue/translatorConfigWindow.js",
 
     // classification store
-    "pimcore/object/classificationstore/configPanel.js",
     "pimcore/object/classificationstore/groupsPanel.js",
     "pimcore/object/classificationstore/propertiesPanel.js",
     "pimcore/object/classificationstore/collectionsPanel.js",
     "pimcore/object/classificationstore/keyDefinitionWindow.js",
-    "pimcore/object/classificationstore/keySelectionWindow.js"
+    "pimcore/object/classificationstore/keySelectionWindow.js",
+    "pimcore/object/classificationstore/relationSelectionWindow.js",
+    "pimcore/object/classificationstore/storeConfiguration.js",
+    "pimcore/object/classificationstore/storeTree.js",
+    "pimcore/object/classificationstore/columnConfigDialog.js",
+
+    //workflow
+    "pimcore/workflowmanagement/actionPanel.js",
 
 );
 
@@ -487,6 +563,7 @@ $googleMapsApiKey = $this->config->services->google->browserapikey;
 <script type="text/javascript">
     pimcore.settings = {
         upload_max_filesize: <?= $this->upload_max_filesize; ?>,
+        session_gc_maxlifetime: <?= $this->session_gc_maxlifetime ?>,
         sessionId: "<?= htmlentities($_COOKIE["pimcore_admin_sid"], ENT_QUOTES, 'UTF-8') ?>",
         csrfToken: "<?= $this->csrfToken ?>",
         version: "<?= \Pimcore\Version::getVersion() ?>",
@@ -495,33 +572,38 @@ $googleMapsApiKey = $this->config->services->google->browserapikey;
         maintenance_mode: <?= \Pimcore\Tool\Admin::isInMaintenanceMode() ? "true" : "false"; ?>,
         mail: <?= $this->mail_settings_complete ?>,
         debug: <?= \Pimcore::inDebugMode() ? "true" : "false"; ?>,
-        devmode: <?= PIMCORE_DEVMODE ? "true" : "false"; ?>,
+        devmode: <?= PIMCORE_DEVMODE || $extjsDev ? "true" : "false"; ?>,
         google_analytics_enabled: <?= \Zend_Json::encode((bool) \Pimcore\Google\Analytics::isConfigured()) ?>,
         google_webmastertools_enabled: <?= \Zend_Json::encode((bool) \Pimcore\Google\Webmastertools::isConfigured()) ?>,
-        customviews: <?= \Zend_Json::encode($this->customview_config) ?>,
         language: '<?= $this->language; ?>',
-        websiteLanguages: <?= \Zend_Json::encode(explode(",",$this->config->general->validLanguages)); ?>,
-        google_translate_api_key: "<?= $this->config->services->translate->apikey; ?>",
+        websiteLanguages: <?= \Zend_Json::encode(explode(",", \Pimcore\Tool\Admin::reorderWebsiteLanguages(\Pimcore\Tool\Admin::getCurrentUser(), $this->config->general->validLanguages))); ?>,
         google_maps_api_key: "<?= $googleMapsApiKey ?>",
         showCloseConfirmation: true,
         debug_admin_translations: <?= \Zend_Json::encode((bool) $this->config->general->debug_admin_translations) ?>,
         document_generatepreviews: <?= \Zend_Json::encode((bool) $this->config->documents->generatepreview) ?>,
+        asset_disable_tree_preview: <?= \Zend_Json::encode((bool) $this->config->assets->disable_tree_preview) ?>,
         htmltoimage: <?= \Zend_Json::encode(\Pimcore\Image\HtmlToImage::isSupported()) ?>,
         videoconverter: <?= \Zend_Json::encode(\Pimcore\Video::isAvailable()) ?>,
-        asset_hide_edit: <?= $this->config->assets->hide_edit_image ? "true" : "false" ?>
+        asset_hide_edit: <?= $this->config->assets->hide_edit_image ? "true" : "false" ?>,
+        perspective: <?= \Zend_Json::encode($runtimePerspective) ?>,
+        availablePerspectives: <?= \Zend_Json::encode(\Pimcore\Config::getAvailablePerspectives(\Pimcore\Tool\Admin::getCurrentUser())) ?>,
+        customviews: <?= \Zend_Json::encode($this->customview_config) ?>,
+        disabledPortlets: <?= \Zend_Json::encode((new \Pimcore\Helper\Dashboard(\Pimcore\Tool\Admin::getCurrentUser()))->getDisabledPortlets()) ?>
     };
 </script>
 
 
 <?php // 3rd party libraries ?>
 <script type="text/javascript">
-    var gmapInitialize = function () {}; // dummy callback
-    (function() {
-        var script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = 'https://maps.googleapis.com/maps/api/js?sensor=false&libraries=drawing&callback=gmapInitialize&key=<?= $googleMapsApiKey ?>';
-        document.body.appendChild(script);
-    })();
+    <?php if(isset($googleMapsApiKey) && strlen($googleMapsApiKey) > 0){ ?>
+        var gmapInitialize = function () {}; // dummy callback
+        (function() {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = 'https://maps.googleapis.com/maps/api/js?libraries=drawing&callback=gmapInitialize&key=<?= $googleMapsApiKey ?>';
+            document.body.appendChild(script);
+        })();
+    <?php } ?>
 </script>
 
 <script type="text/javascript" src="/admin/misc/json-translations-system/language/<?= $this->language ?>/?_dc=<?= \Pimcore\Version::$revision ?>"></script>
@@ -538,7 +620,7 @@ $googleMapsApiKey = $this->config->services->google->browserapikey;
 
 
 <!-- internal scripts -->
-<?php if (PIMCORE_DEVMODE) { ?>
+<?php if (PIMCORE_DEVMODE || $extjsDev) { ?>
     <?php foreach ($scripts as $scriptUrl) { ?>
     <script type="text/javascript" src="/pimcore/static6/js/<?= $scriptUrl ?>?_dc=<?= \Pimcore\Version::$revision ?>"></script>
 <?php } ?>
@@ -551,7 +633,7 @@ foreach ($scripts as $scriptUrl) {
     }
 }
 ?>
-    <script type="text/javascript" src="<?= \Pimcore\Tool\Admin::getMinimizedScriptPath($scriptContents) ?>?_dc=<?= \Pimcore\Version::$revision ?>"></script>
+    <script type="text/javascript" src="<?= \Pimcore\Tool\Admin::getMinimizedScriptPath($scriptContents) ?>"></script>
 <?php } ?>
 
 
@@ -561,7 +643,7 @@ foreach ($scripts as $scriptUrl) {
 // only add the timestamp if the devmode is not activated, otherwise it is very hard to develop and debug plugins,
 // because the filename changes on every reload and therefore breakpoints, ... are resetted on every reload
 $pluginDcValue = time();
-if(PIMCORE_DEVMODE) {
+if(PIMCORE_DEVMODE || $extjsDev) {
     $pluginDcValue = 1;
 }
 
@@ -589,7 +671,7 @@ try {
             if (!empty($cssPath)) {
             ?>
             <link rel="stylesheet" type="text/css" href="<?= $cssPath ?>?_dc=<?= $pluginDcValue; ?>"/>
-                <?php
+            <?php
 
             }
             }

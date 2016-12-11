@@ -2,20 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
 
-class Serialize {
+class Serialize
+{
 
 
     /**
@@ -23,7 +23,8 @@ class Serialize {
      * @param mixed $data
      * @return string
      */
-    public static function serialize ($data) {
+    public static function serialize($data)
+    {
         return serialize($data);
     }
 
@@ -32,10 +33,12 @@ class Serialize {
      * @param $data
      * @return mixed
      */
-    public static function unserialize ($data) {
-        if(!empty($data) && is_string($data)) {
-            $data = @unserialize($data);
+    public static function unserialize($data)
+    {
+        if (!empty($data) && is_string($data)) {
+            $data = unserialize($data);
         }
+
         return $data;
     }
 
@@ -51,7 +54,8 @@ class Serialize {
      * @param $data
      * @return string
      */
-    public static function removeReferenceLoops($data) {
+    public static function removeReferenceLoops($data)
+    {
         self::$loopFilterProcessedObjects = []; // reset
         return self::loopFilterCycles($data);
     }
@@ -60,16 +64,16 @@ class Serialize {
      * @param $element
      * @return mixed
      */
-    protected static function loopFilterCycles ($element) {
-        if(is_array($element)) {
+    protected static function loopFilterCycles($element)
+    {
+        if (is_array($element)) {
             foreach ($element as &$value) {
                 $value = self::loopFilterCycles($value);
             }
-        } else if (is_object($element)) {
-
+        } elseif (is_object($element)) {
             $clone = clone $element; // do not modify the original object
 
-            if(in_array($element, self::$loopFilterProcessedObjects, true)) {
+            if (in_array($element, self::$loopFilterProcessedObjects, true)) {
                 return '"* RECURSION (' . get_class($element) . ') *"';
             }
 

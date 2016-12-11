@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.objectbricks.field");
@@ -33,7 +32,6 @@ pimcore.object.objectbricks.field = Class.create(pimcore.object.classes.klass, {
         this.rootPanel = new Ext.form.FormPanel({
             title: t("basic_configuration"),
             bodyStyle: "padding: 10px;",
-            id: "pimcore_objectbrick_editor_panel_" + this.getId(),
             items: [{
                 xtype: "textfield",
                 width: 400,
@@ -95,7 +93,7 @@ pimcore.object.objectbricks.field = Class.create(pimcore.object.classes.klass, {
             classMenu.push({
                 text: ts(rec.data.translatedText),
                 handler: this.addClassDefinition.bind(this, null, rec.data.id),
-                iconCls: "pimcore_icon_objectbricks"
+                iconCls: "pimcore_icon_class"
             });
         }
 
@@ -185,6 +183,7 @@ pimcore.object.objectbricks.field = Class.create(pimcore.object.classes.klass, {
             name: 'fieldname',
             disableKeyFilter: "true",
             valueNotFoundText: "",
+            editable: false,
             listeners: {
                 focus: function(){
                     fieldComboStore.load();
@@ -266,7 +265,7 @@ pimcore.object.objectbricks.field = Class.create(pimcore.object.classes.klass, {
 
         this.baseStore[classDefinitionData.classname] = this.availableClasses[classDefinitionData.classname];
 
-        this.classDefinitionsItems.remove(this.classDefinitionsItems.get(0));
+        this.classDefinitionsItems.remove(this.classDefinitionsItems.items.get(0));
         this.classDefinitionsItems.insert(0, this.getAddControl());
         this.classDefinitionsItems.updateLayout();
 

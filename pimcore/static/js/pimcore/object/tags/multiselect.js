@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.multiselect");
@@ -82,7 +81,21 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
             editable: false,
             fieldLabel: this.fieldConfig.title,
             store: store,
-            itemCls: "object_field"
+            itemCls: "object_field",
+            listeners: {
+                change : function  ( multiselect , newValue , oldValue , eOpts ) {
+                    if (this.fieldConfig.maxItems && multiselect.getValue().length > this.fieldConfig.maxItems) {
+                        // we need to set a timeout so setValue is applied when change event is totally finished
+                        // without this, multiselect wont be updated visually with oldValue (but internal value will be oldValue)
+                        setTimeout(function(multiselect, oldValue){
+                            multiselect.setValue(oldValue);
+                        }, 100, multiselect, oldValue);
+
+                        Ext.Msg.alert(t("error"),t("limit_reached"));
+                    }
+                    return true;
+                }.bind(this)
+            }
         };
 
         if (this.fieldConfig.width) {
@@ -91,7 +104,7 @@ pimcore.object.tags.multiselect = Class.create(pimcore.object.tags.abstract, {
         if (this.fieldConfig.height) {
             options.height = this.fieldConfig.height;
         }
-
+        
         if (typeof this.data == "string" || typeof this.data == "number") {
             options.value = this.data;
         }

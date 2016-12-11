@@ -2,22 +2,23 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
 
 use Pimcore\File;
+use Pimcore\Tool\Text\Csv;
 
-class Admin {
+class Admin
+{
 
     /**
      * Finds the translation file for a given language
@@ -26,15 +27,16 @@ class Admin {
      * @param  string $language
      * @return string
      */
-    public static function getLanguageFile($language){
+    public static function getLanguageFile($language)
+    {
 
         //first try website languages dir, as fallback the core dir
         $languageFile = PIMCORE_CONFIGURATION_DIRECTORY . "/texts/" . $language . ".json";
-        if(!is_file($languageFile)){
+        if (!is_file($languageFile)) {
             $languageFile =  PIMCORE_PATH . "/config/texts/" . $language . ".json";
         }
-        return $languageFile;
 
+        return $languageFile;
     }
 
     /**
@@ -43,12 +45,12 @@ class Admin {
      * @static
      * @return array
      */
-    public static function getLanguages () {
-
-        $languages = array();
-        $languageDirs = array(PIMCORE_PATH . "/config/texts/",PIMCORE_CONFIGURATION_DIRECTORY . "/texts/");
-        foreach($languageDirs as $filesDir){
-            if(is_dir($filesDir)){
+    public static function getLanguages()
+    {
+        $languages = [];
+        $languageDirs = [PIMCORE_PATH . "/config/texts/", PIMCORE_CONFIGURATION_DIRECTORY . "/texts/"];
+        foreach ($languageDirs as $filesDir) {
+            if (is_dir($filesDir)) {
                 $files = scandir($filesDir);
                 foreach ($files as $file) {
                     if (is_file($filesDir . $file)) {
@@ -62,6 +64,7 @@ class Admin {
                 }
             }
         }
+
         return $languages;
     }
 
@@ -70,41 +73,30 @@ class Admin {
      * @param  $scriptContent
      * @return mixed
      */
-    public static function getMinimizedScriptPath ($scriptContent) {
+    public static function getMinimizedScriptPath($scriptContent)
+    {
+        $scriptPath = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/minified_javascript_core_".md5($scriptContent).".js";
 
-        $scriptPath = PIMCORE_TEMPORARY_DIRECTORY."/minified_javascript_core_".md5($scriptContent).".js";
-
-        if(!is_file($scriptPath)) {
-            //$scriptContent = JSMin::minify($scriptContent); // temp. disabled until we have a better library - just combine for now
+        if (!is_file($scriptPath)) {
             File::put($scriptPath, $scriptContent);
         }
 
-        return preg_replace("@^" . preg_quote(PIMCORE_DOCUMENT_ROOT, "@") . "@", "", $scriptPath);
-    }
+        $params = [
+            "scriptPath" => "/website/var/system/",
+            "scripts" =>  basename($scriptPath),
+            "_dc" => \Pimcore\Version::getRevision()
+        ];
 
-    /**
-     * @param $stylesheetContent
-     * @return mixed
-     */
-    public static function getMinimizedStylesheetPath ($stylesheetContent) {
-        $stylesheetPath = PIMCORE_TEMPORARY_DIRECTORY."/minified_css_core_".md5($stylesheetContent).".css";
-
-        if(!is_file($stylesheetPath)) {
-            //$stylesheetContent = Minify_CSS::minify($stylesheetContent); // temp. disabled until we have a better library - just combine for now
-
-            // put minified contents into one single file
-            File::put($stylesheetPath, $stylesheetContent);
-        }
-
-        return preg_replace("@^" . preg_quote(PIMCORE_DOCUMENT_ROOT, "@") . "@", "", $stylesheetPath);
+        return "/admin/misc/script-proxy?" . array_toquerystring($params);
     }
 
 
     /**
      * @param $file
-     * @return \Csv_Dialect
+     * @return \stdClass
      */
-    public static function determineCsvDialect ($file) {
+    public static function determineCsvDialect($file)
+    {
 
         // minimum 10 lines, to be sure take more
         $sample = "";
@@ -113,15 +105,15 @@ class Admin {
         }
 
         try {
-            $sniffer = new \Csv_AutoDetect();
+            $sniffer = new Csv();
             $dialect = $sniffer->detect($sample);
         } catch (\Exception $e) {
             // use default settings
-            $dialect = new \Csv_Dialect();
+            $dialect = new \stdClass();
         }
 
         // validity check
-        if(!in_array($dialect->delimiter, array(";",",","\t","|",":"))) {
+        if (!in_array($dialect->delimiter, [";", ",", "\t", "|", ":"])) {
             $dialect->delimiter = ";";
         }
 
@@ -133,8 +125,9 @@ class Admin {
      * @static
      * @return string
      */
-    public static function getMaintenanceModeFile () {
-        return PIMCORE_CONFIGURATION_DIRECTORY . "/maintenance.xml";
+    public static function getMaintenanceModeFile()
+    {
+        return PIMCORE_CONFIGURATION_DIRECTORY . "/maintenance.php";
     }
 
     /**
@@ -142,46 +135,47 @@ class Admin {
      * @throws \Exception
      * @throws \Zend_Config_Exception
      */
-    public static function activateMaintenanceMode ($sessionId = null) {
-
-        if(empty($sessionId)) {
+    public static function activateMaintenanceMode($sessionId = null)
+    {
+        if (empty($sessionId)) {
             $sessionId = session_id();
         }
 
-        if(empty($sessionId)) {
+        if (empty($sessionId)) {
             throw new \Exception("It's not possible to activate the maintenance mode without a session-id");
         }
 
-        $config = new \Zend_Config(array(
+        File::putPhpFile(self::getMaintenanceModeFile(), to_php_data_file_format([
             "sessionId" => $sessionId
-        ), true);
+        ]));
 
-        $writer = new \Zend_Config_Writer_Xml(array(
-            "config" => $config,
-            "filename" => self::getMaintenanceModeFile()
-        ));
-        $writer->write();
         @chmod(self::getMaintenanceModeFile(), 0777); // so it can be removed also via FTP, ...
+
+        \Pimcore::getEventManager()->trigger("system.maintenance.activate");
     }
 
     /**
      * @static
      * @return void
      */
-    public static function deactivateMaintenanceMode () {
-        unlink(self::getMaintenanceModeFile());
+    public static function deactivateMaintenanceMode()
+    {
+        @unlink(self::getMaintenanceModeFile());
+
+        \Pimcore::getEventManager()->trigger("system.maintenance.deactivate");
     }
 
     /**
      * @static
      * @return bool
      */
-    public static function isInMaintenanceMode() {
+    public static function isInMaintenanceMode()
+    {
         $file = self::getMaintenanceModeFile();
 
-        if(is_file($file)) {
-            $conf = new \Zend_Config_Xml($file);
-            if($conf->sessionId) {
+        if (is_file($file)) {
+            $conf = include($file);
+            if (isset($conf["sessionId"])) {
                 return true;
             } else {
                 @unlink($file);
@@ -195,10 +189,11 @@ class Admin {
      * @static
      * @return \Pimcore\Model\User
      */
-    public static function getCurrentUser () {
-
-        if(\Zend_Registry::isRegistered("pimcore_admin_user")) {
+    public static function getCurrentUser()
+    {
+        if (\Zend_Registry::isRegistered("pimcore_admin_user")) {
             $user = \Zend_Registry::get("pimcore_admin_user");
+
             return $user;
         }
 
@@ -209,13 +204,22 @@ class Admin {
     /**
      * @return true if in EXT JS5 mode
      */
-    public static function isExtJS6() {
+    public static function isExtJS6()
+    {
         if (isset($_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"]) && $_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"] == 6) {
             return true;
         }
 
-        if(isset($_REQUEST["extjs6"])) {
-            return (bool) $_REQUEST["extjs6"];
+        if (isset($_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"]) && $_SERVER["HTTP_X_PIMCORE_EXTJS_VERSION_MAJOR"] < 6) {
+            return false;
+        }
+
+        if (isset($_REQUEST["extjs3"])) {
+            return false;
+        }
+
+        if (isset($_REQUEST["extjs6"])) {
+            return true;
         }
 
         $config = \Pimcore\Config::getSystemConfig();
@@ -225,5 +229,24 @@ class Admin {
         }
 
         return false;
+    }
+
+    public static function reorderWebsiteLanguages($user, $languages, $returnLanguageArray = false)
+    {
+        if (!is_array($languages)) {
+            $languages = explode(",", $languages);
+        }
+
+        $contentLanguages = $user->getContentLanguages();
+        if ($contentLanguages) {
+            $contentLanguages = array_intersect($contentLanguages, $languages);
+            $newLanguages = array_diff($languages, $contentLanguages);
+            $languages = array_merge($contentLanguages, $newLanguages);
+        }
+        if ($returnLanguageArray) {
+            return $languages;
+        }
+
+        return implode(",", $languages);
     }
 }

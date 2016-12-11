@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.hotspotimage");
@@ -88,12 +87,12 @@ pimcore.object.tags.hotspotimage = Class.create(pimcore.object.tags.image, {
                 },{
                     xtype: "button",
                     tooltip: t("add_marker_or_hotspots"),
-                    iconCls: "pimcore_icon_image_add_hotspot",
+                    iconCls: "pimcore_icon_marker pimcore_icon_overlay_edit",
                     handler: this.openHotspotWindow.bind(this)
                 },{
                     xtype: "button",
                     tooltip: t("clear_marker_or_hotspots"),
-                    iconCls: "pimcore_icon_clear_marker",
+                    iconCls: "pimcore_icon_marker pimcore_icon_overlay_delete",
                     handler: this.clearData.bind(this)
                 },{
                     xtype: "button",
@@ -109,7 +108,7 @@ pimcore.object.tags.hotspotimage = Class.create(pimcore.object.tags.image, {
                     handler: this.openSearchEditor.bind(this)
                 },{
                     xtype: "button",
-                    iconCls: "pimcore_icon_upload_single",
+                    iconCls: "pimcore_icon_upload",
                     cls: "pimcore_inline_upload",
                     handler: this.uploadDialog.bind(this)
                 }]
@@ -129,11 +128,8 @@ pimcore.object.tags.hotspotimage = Class.create(pimcore.object.tags.image, {
             bodyCls: "pimcore_droptarget_image pimcore_image_container",
             bodyStyle: "text-align: center; "
         });
-        this.component.add(this.panel);
-
 
         this.panel.on("afterrender", function (el) {
-
             // add drop zone
             new Ext.dd.DropZone(el.getEl(), {
                 reference: this,
@@ -165,6 +161,8 @@ pimcore.object.tags.hotspotimage = Class.create(pimcore.object.tags.image, {
             }
 
         }.bind(this));
+
+        this.component.add(this.panel);
 
         this.component.updateLayout();
 
@@ -198,6 +196,7 @@ pimcore.object.tags.hotspotimage = Class.create(pimcore.object.tags.image, {
             backgroundRepeat: "no-repeat"
         });
 
+        body.removeCls("pimcore_droptarget_image");
         body.repaint();
 
         this.getFileInfo(path);

@@ -2,27 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 use Pimcore\Model\Tool\Targeting;
 use Pimcore\Model\Document;
 
-class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
-
-    public function init() {
+class Reports_TargetingController extends \Pimcore\Controller\Action\Admin
+{
+    public function init()
+    {
         parent::init();
 
         // check permissions
-        $notRestrictedActions = array("persona-list");
+        $notRestrictedActions = ["persona-list"];
         if (!in_array($this->getParam("action"), $notRestrictedActions)) {
             $this->checkPermission("targeting");
         }
@@ -30,51 +30,51 @@ class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
 
     /* RULES */
 
-    public function ruleListAction() {
-
-        $targets = array();
+    public function ruleListAction()
+    {
+        $targets = [];
         $list = new Targeting\Rule\Listing();
 
-        foreach($list->load() as $target) {
-            $targets[] = array(
+        foreach ($list->load() as $target) {
+            $targets[] = [
                 "id" => $target->getId(),
                 "text" => $target->getName(),
                 "qtip" => $target->getId()
-            );
+            ];
         }
 
         $this->_helper->json($targets);
     }
 
-    public function ruleAddAction() {
-
+    public function ruleAddAction()
+    {
         $target = new Targeting\Rule();
         $target->setName($this->getParam("name"));
         $target->save();
 
-        $this->_helper->json(array("success" => true, "id" => $target->getId()));
+        $this->_helper->json(["success" => true, "id" => $target->getId()]);
     }
 
-    public function ruleDeleteAction() {
-
+    public function ruleDeleteAction()
+    {
         $success = false;
 
         $target = Targeting\Rule::getById($this->getParam("id"));
-        if($target) {
+        if ($target) {
             $target->delete();
             $success = true;
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
-    public function ruleGetAction() {
-
+    public function ruleGetAction()
+    {
         $target = Targeting\Rule::getById($this->getParam("id"));
         $redirectUrl = $target->getActions()->getRedirectUrl();
-        if(is_numeric($redirectUrl)) {
+        if (is_numeric($redirectUrl)) {
             $doc = Document::getById($redirectUrl);
-            if($doc instanceof Document) {
+            if ($doc instanceof Document) {
                 $target->getActions()->redirectUrl = $doc->getFullPath();
             }
         }
@@ -82,8 +82,8 @@ class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
         $this->_helper->json($target);
     }
 
-    public function ruleSaveAction() {
-
+    public function ruleSaveAction()
+    {
         $data = \Zend_Json::decode($this->getParam("data"));
 
         $target = Targeting\Rule::getById($this->getParam("id"));
@@ -109,7 +109,7 @@ class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
 
         $target->save();
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
 
@@ -118,52 +118,52 @@ class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
 
     /* PERSONAS */
 
-    public function personaListAction() {
-
-        $personas = array();
+    public function personaListAction()
+    {
+        $personas = [];
         $list = new Targeting\Persona\Listing();
 
-        foreach($list->load() as $persona) {
-            $personas[] = array(
+        foreach ($list->load() as $persona) {
+            $personas[] = [
                 "id" => $persona->getId(),
                 "text" => $persona->getName(),
                 "qtip" => $persona->getId()
-            );
+            ];
         }
 
         $this->_helper->json($personas);
     }
 
-    public function personaAddAction() {
-
+    public function personaAddAction()
+    {
         $persona = new Targeting\Persona();
         $persona->setName($this->getParam("name"));
         $persona->save();
 
-        $this->_helper->json(array("success" => true, "id" => $persona->getId()));
+        $this->_helper->json(["success" => true, "id" => $persona->getId()]);
     }
 
-    public function personaDeleteAction() {
-
+    public function personaDeleteAction()
+    {
         $success = false;
 
         $persona = Targeting\Persona::getById($this->getParam("id"));
-        if($persona) {
+        if ($persona) {
             $persona->delete();
             $success = true;
         }
 
-        $this->_helper->json(array("success" => $success));
+        $this->_helper->json(["success" => $success]);
     }
 
-    public function personaGetAction() {
-
+    public function personaGetAction()
+    {
         $persona = Targeting\Persona::getById($this->getParam("id"));
         $this->_helper->json($persona);
     }
 
-    public function personaSaveAction() {
-
+    public function personaSaveAction()
+    {
         $data = \Zend_Json::decode($this->getParam("data"));
 
         $persona = Targeting\Persona::getById($this->getParam("id"));
@@ -172,6 +172,6 @@ class Reports_TargetingController extends \Pimcore\Controller\Action\Admin {
         $persona->setConditions($data["conditions"]);
         $persona->save();
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 }

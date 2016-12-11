@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.staticroutes");
@@ -55,8 +54,6 @@ pimcore.settings.staticroutes = Class.create({
 
     getRowEditor:function () {
 
-        var itemsPerPage = 20;
-
         var url = '/admin/settings/staticroutes?';
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -75,13 +72,12 @@ pimcore.settings.staticroutes = Class.create({
                 {name:'priority', type:'int'},
                 {name: 'creationDate'},
                 {name: 'modificationDate'}
-            ],
-            itemsPerPage
+            ], null, {
+                remoteSort: false,
+                remoteFilter: false
+            }
         );
         this.store.setAutoSync(true);
-
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
-
 
         this.filterField = new Ext.form.TextField({
             width:200,
@@ -140,19 +136,22 @@ pimcore.settings.staticroutes = Class.create({
                         },
                         fields:["name"]
                     }),
+                    queryMode: 'local',
                     triggerAction:"all",
                     displayField:'name',
                     valueField:'name',
                     listeners:{
-                        "focus":function (field, x1, x2, x3, x4, x5) {
+                        "focus":function (el) {
                             var currentRecord = this.grid.getSelection();
-                            console.log(currentRecord[0]);
-                            field.getStore().reload({
+                            el.getStore().reload({
                                 params:{
                                     controllerName:currentRecord[0].data.controller
+                                },
+                                callback: function() {
+                                    el.expand();
                                 }
                             });
-                        }.bind(this)
+                        }.bind(this),
                     }
                 })},
             {header:t("variables"), flex:50, sortable:false, dataIndex:'variables',
@@ -205,7 +204,7 @@ pimcore.settings.staticroutes = Class.create({
                 items:[
                     {
                         tooltip:t('delete'),
-                        icon:"/pimcore/static6/img/icon/cross.png",
+                        icon:"/pimcore/static6/img/flat-color-icons/delete.svg",
                         handler:function (grid, rowIndex) {
                             grid.getStore().removeAt(rowIndex);
                         }.bind(this)
@@ -224,6 +223,7 @@ pimcore.settings.staticroutes = Class.create({
             autoScroll:true,
             store:this.store,
             columnLines:true,
+            bodyCls: "pimcore_editable_grid",
             trackMouseOver:true,
             stripeRows:true,
             columns:typesColumns,
@@ -231,7 +231,6 @@ pimcore.settings.staticroutes = Class.create({
             plugins: [
                 this.cellEditing
             ],
-            bbar:this.pagingtoolbar,
             tbar:[
                 {
                     text:t('add'),
@@ -257,7 +256,7 @@ pimcore.settings.staticroutes = Class.create({
 
     onAdd:function (btn, ev) {
         var u = {
-            name: "gaga"
+            name: ""
         };
 
         this.grid.store.add(u);

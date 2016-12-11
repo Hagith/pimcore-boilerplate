@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Element
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Element;
 
 use Pimcore\Model;
 
-abstract class AbstractElement extends Model\AbstractModel implements ElementInterface {
+/**
+ * @method \Pimcore\Model\Element\Dao getDao()
+ */
+abstract class AbstractElement extends Model\AbstractModel implements ElementInterface
+{
 
 
     /**
@@ -29,15 +32,17 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      * @param bool $asContainer
      * @return mixed
      */
-    public function getProperty($name, $asContainer = false) {
+    public function getProperty($name, $asContainer = false)
+    {
         $properties = $this->getProperties();
         if ($this->hasProperty($name)) {
-            if($asContainer) {
+            if ($asContainer) {
                 return $properties[$name];
             } else {
                 return $properties[$name]->getData();
             }
         }
+
         return null;
     }
 
@@ -45,15 +50,18 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      * @param  $name
      * @return bool
      */
-    public function hasProperty ($name) {
+    public function hasProperty($name)
+    {
         $properties = $this->getProperties();
+
         return array_key_exists($name, $properties);
     }
 
     /**
      * @param  $name
      */
-    public function removeProperty ($name) {
+    public function removeProperty($name)
+    {
         $properties = $this->getProperties();
         unset($properties[$name]);
         $this->setProperties($properties);
@@ -62,10 +70,12 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
     /**
      * get the cache tag for the element
      *
-     * @return Dependency
+     * @return string
      */
-    public function getCacheTag() {
+    public function getCacheTag()
+    {
         $elementType = Service::getElementType($this);
+
         return $elementType . "_" . $this->getId();
     }
 
@@ -76,11 +86,12 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      * @param array $tags
      * @return array
      */
-    public function getCacheTags($tags = array()) {
-
-        $tags = is_array($tags) ? $tags : array();
+    public function getCacheTags($tags = [])
+    {
+        $tags = is_array($tags) ? $tags : [];
 
         $tags[$this->getCacheTag()] = $this->getCacheTag();
+
         return $tags;
     }
 
@@ -89,9 +100,9 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      *
      * @return array
      */
-    public function resolveDependencies() {
-
-        $dependencies = array();
+    public function resolveDependencies()
+    {
+        $dependencies = [];
 
         // check for properties
         if (method_exists($this, "getProperties")) {
@@ -108,27 +119,28 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      * Returns true if the element is locked
      * @return bool
      */
-    public function isLocked(){
-        if($this->getLocked()) {
+    public function isLocked()
+    {
+        if ($this->getLocked()) {
             return true;
         }
 
         // check for inherited
-        return $this->getResource()->isLocked();
+        return $this->getDao()->isLocked();
     }
 
     /**
      * @return array
      */
-    public function getUserPermissions () {
-
+    public function getUserPermissions()
+    {
         $elementType = Service::getElementType($this);
         $vars = get_class_vars("\\Pimcore\\Model\\User\\Workspace\\" . ucfirst($elementType));
-        $ignored = array("userId","cid","cpath","resource");
-        $permissions = array();
+        $ignored = ["userId", "cid", "cpath", "dao"];
+        $permissions = [];
 
         foreach ($vars as $name => $defaultValue) {
-            if(!in_array($name, $ignored)) {
+            if (!in_array($name, $ignored)) {
                 $permissions[$name] = $this->isAllowed($name);
             }
         }
@@ -142,28 +154,29 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      * @param string $type
      * @return boolean
      */
-    public function isAllowed($type) {
-
+    public function isAllowed($type)
+    {
         $currentUser = \Pimcore\Tool\Admin::getCurrentUser();
         //everything is allowed for admin
         if ($currentUser->isAdmin()) {
             return true;
         }
 
-        return $this->getResource()->isAllowed($type, $currentUser);
+        return $this->getDao()->isAllowed($type, $currentUser);
     }
 
     /**
      *
      */
-    public function unlockPropagate() {
+    public function unlockPropagate()
+    {
         $type = Service::getType($this);
-        $ids = $this->getResource()->unlockPropagate();
+        $ids = $this->getDao()->unlockPropagate();
 
         // invalidate cache items
         foreach ($ids as $id) {
             $element = Service::getElementById($type, $id);
-            if($element) {
+            if ($element) {
                 $element->clearDependentCache();
             }
         }
@@ -174,14 +187,16 @@ abstract class AbstractElement extends Model\AbstractModel implements ElementInt
      *
      * @return boolean
      */
-    public function hasNoChilds() {
+    public function hasNoChilds()
+    {
         return !$this->hasChilds();
     }
 
     /**
      * @return string
      */
-    public function __toString() {
+    public function __toString()
+    {
         return $this->getFullPath();
     }
 }

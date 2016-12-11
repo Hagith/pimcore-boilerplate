@@ -2,39 +2,38 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Asset
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Asset\Video\Thumbnail;
 
-use Pimcore\File; 
+use Pimcore\File;
 use Pimcore\Tool\Console;
 use Pimcore\Model;
 use Pimcore\Model\Tool\TmpStore;
+use Pimcore\Logger;
 
-class Processor {
-
-
-    protected static $argumentMapping = array(
-        "resize" => array("width","height"),
-        "scaleByWidth" => array("width"),
-        "scaleByHeight" => array("height")
-    );
+class Processor
+{
+    protected static $argumentMapping = [
+        "resize" => ["width", "height"],
+        "scaleByWidth" => ["width"],
+        "scaleByHeight" => ["height"]
+    ];
 
     /**
      * @var array
      */
-    public $queue = array();
+    public $queue = [];
 
     /**
      * @var string
@@ -63,58 +62,59 @@ class Processor {
      * @return Processor
      * @throws \Exception
      */
-    public static function process (Model\Asset\Video $asset, $config, $onlyFormats = array()) {
-
-        if(!\Pimcore\Video::isAvailable()) {
+    public static function process(Model\Asset\Video $asset, $config, $onlyFormats = [])
+    {
+        if (!\Pimcore\Video::isAvailable()) {
             throw new \Exception("No ffmpeg executable found, please configure the correct path in the system settings");
         }
 
         $instance = new self();
-        $formats = empty($onlyFormats) ? array("mp4","webm") : $onlyFormats;
+        $formats = empty($onlyFormats) ? ["mp4"] : $onlyFormats;
         $instance->setProcessId(uniqid());
         $instance->setAssetId($asset->getId());
         $instance->setConfig($config);
 
         // check for running or already created thumbnails
         $customSetting = $asset->getCustomSetting("thumbnails");
-        $existingFormats = array();
-        if(is_array($customSetting) && array_key_exists($config->getName(), $customSetting)) {
+        $existingFormats = [];
+        if (is_array($customSetting) && array_key_exists($config->getName(), $customSetting)) {
             if ($customSetting[$config->getName()]["status"] == "inprogress") {
-                if(TmpStore::get($instance->getJobStoreId($customSetting[$config->getName()]["processId"]))) {
+                if (TmpStore::get($instance->getJobStoreId($customSetting[$config->getName()]["processId"]))) {
                     return;
                 }
-            } else if($customSetting[$config->getName()]["status"] == "finished") {
+            } elseif ($customSetting[$config->getName()]["status"] == "finished") {
                 // check if the files are there
-                $formatsToConvert = array();
-                foreach($formats as $f) {
-                    if(!is_file(PIMCORE_DOCUMENT_ROOT . $customSetting[$config->getName()]["formats"][$f])) {
+                $formatsToConvert = [];
+                foreach ($formats as $f) {
+                    if (!is_file($asset->getVideoThumbnailSavePath() . $customSetting[$config->getName()]["formats"][$f])) {
                         $formatsToConvert[] = $f;
                     } else {
+                        $existingFormats[$f] = $customSetting[$config->getName()]["formats"][$f];
                         $existingFormats[$f] = $customSetting[$config->getName()]["formats"][$f];
                     }
                 }
 
-                if(!empty($formatsToConvert)) {
+                if (!empty($formatsToConvert)) {
                     $formats = $formatsToConvert;
                 } else {
                     return;
                 }
-            } else if($customSetting[$config->getName()]["status"] == "error") {
+            } elseif ($customSetting[$config->getName()]["status"] == "error") {
                 throw new \Exception("Unable to convert video, see logs for details.");
             }
         }
 
         foreach ($formats as $format) {
-
             $thumbDir = $asset->getVideoThumbnailSavePath() . "/thumb__" . $config->getName();
             $filename = preg_replace("/\." . preg_quote(File::getFileExtension($asset->getFilename())) . "/", "", $asset->getFilename()) . "." . $format;
             $fsPath = $thumbDir . "/" . $filename;
+            $tmpPath = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/" . $filename;
 
-            if(!is_dir(dirname($fsPath))) {
+            if (!is_dir(dirname($fsPath))) {
                 File::mkdir(dirname($fsPath));
             }
 
-            if(is_file($fsPath)) {
+            if (is_file($fsPath)) {
                 @unlink($fsPath);
             }
 
@@ -123,30 +123,31 @@ class Processor {
             $converter->setAudioBitrate($config->getAudioBitrate());
             $converter->setVideoBitrate($config->getVideoBitrate());
             $converter->setFormat($format);
-            $converter->setDestinationFile($fsPath);
+            $converter->setDestinationFile($tmpPath);
+            $converter->setStorageFile($fsPath);
 
             $transformations = $config->getItems();
-            if(is_array($transformations) && count($transformations) > 0) {
+            if (is_array($transformations) && count($transformations) > 0) {
                 foreach ($transformations as $transformation) {
-                    if(!empty($transformation)) {
-                        $arguments = array();
+                    if (!empty($transformation)) {
+                        $arguments = [];
                         $mapping = self::$argumentMapping[$transformation["method"]];
 
-                        if(is_array($transformation["arguments"])) {
+                        if (is_array($transformation["arguments"])) {
                             foreach ($transformation["arguments"] as $key => $value) {
                                 $position = array_search($key, $mapping);
-                                if($position !== false) {
+                                if ($position !== false) {
                                     $arguments[$position] = $value;
                                 }
                             }
                         }
 
                         ksort($arguments);
-                        if(count($mapping) == count($arguments)) {
-                            call_user_func_array(array($converter,$transformation["method"]),$arguments);
+                        if (count($mapping) == count($arguments)) {
+                            call_user_func_array([$converter, $transformation["method"]], $arguments);
                         } else {
-                            $message = "Video Transform failed: cannot call method `" . $transformation["method"] . "´ with arguments `" . implode(",",$arguments) . "´ because there are too few arguments";
-                            \Logger::error($message);
+                            $message = "Video Transform failed: cannot call method `" . $transformation["method"] . "´ with arguments `" . implode(",", $arguments) . "´ because there are too few arguments";
+                            Logger::error($message);
                         }
                     }
                 }
@@ -156,12 +157,12 @@ class Processor {
         }
 
         $customSetting = $asset->getCustomSetting("thumbnails");
-        $customSetting = is_array($customSetting) ? $customSetting : array();
-        $customSetting[$config->getName()] = array(
+        $customSetting = is_array($customSetting) ? $customSetting : [];
+        $customSetting[$config->getName()] = [
             "status" => "inprogress",
             "formats" => $existingFormats,
             "processId" => $instance->getProcessId()
-        );
+        ];
         $asset->setCustomSetting("thumbnails", $customSetting);
         $asset->save();
 
@@ -173,78 +174,62 @@ class Processor {
     /**
      * @param $processId
      */
-    public static function execute ($processId) {
+    public static function execute($processId)
+    {
         $instance = new self();
         $instance->setProcessId($processId);
 
         $instanceItem = TmpStore::get($instance->getJobStoreId($processId));
         $instance = $instanceItem->getData();
 
-        $formats = array();
-        $overallStatus = array();
+        $formats = [];
         $conversionStatus = "finished";
-
-        // set overall status for all formats to 0
-        foreach ($instance->queue as $converter) {
-            $overallStatus[$converter->getFormat()] = 0;
-        }
 
         // check if there is already a transcoding process running, wait if so ...
         Model\Tool\Lock::acquire("video-transcoding", 7200, 10); // expires after 2 hrs, refreshes every 10 secs
 
+        $asset = Model\Asset::getById($instance->getAssetId());
+
         // start converting
         foreach ($instance->queue as $converter) {
             try {
-                \Logger::info("start video " . $converter->getFormat() . " to " . $converter->getDestinationFile());
-                $converter->save();
-                while (!$converter->isFinished()) {
-                    sleep(5);
-                    $overallStatus[$converter->getFormat()] = $converter->getConversionStatus();
+                Logger::info("start video " . $converter->getFormat() . " to " . $converter->getDestinationFile());
+                $success = $converter->save();
+                Logger::info("finished video " . $converter->getFormat() . " to " . $converter->getDestinationFile());
 
-                    $a = 0;
-                    foreach ($overallStatus as $f => $s) {
-                        $a += $s;
-                    }
-                    $a = $a / count($overallStatus);
-
-                    $instance->setStatus($a);
-                    $instance->save();
-                }
-                \Logger::info("finished video " . $converter->getFormat() . " to " . $converter->getDestinationFile());
+                File::rename($converter->getDestinationFile(), $converter->getStorageFile());
 
                 // set proper permissions
-                @chmod($converter->getDestinationFile(), File::getDefaultMode());
+                @chmod($converter->getStorageFile(), File::getDefaultMode());
 
-                if($converter->getConversionStatus() !== "error") {
-                    $formats[$converter->getFormat()] = str_replace(PIMCORE_DOCUMENT_ROOT, "", $converter->getDestinationFile());
+                if ($success) {
+                    $formats[$converter->getFormat()] = str_replace($asset->getVideoThumbnailSavePath(), "", $converter->getStorageFile());
                 } else {
                     $conversionStatus = "error";
                 }
 
                 $converter->destroy();
             } catch (\Exception $e) {
-                \Logger::error($e);
+                Logger::error($e);
             }
         }
 
         Model\Tool\Lock::release("video-transcoding");
 
-        $asset = Model\Asset::getById($instance->getAssetId());
-        if($asset) {
+        if ($asset) {
             $customSetting = $asset->getCustomSetting("thumbnails");
-            $customSetting = is_array($customSetting) ? $customSetting : array();
+            $customSetting = is_array($customSetting) ? $customSetting : [];
 
-            if(array_key_exists($instance->getConfig()->getName(), $customSetting)
+            if (array_key_exists($instance->getConfig()->getName(), $customSetting)
                 && array_key_exists("formats", $customSetting[$instance->getConfig()->getName()])
-                && is_array($customSetting[$instance->getConfig()->getName()]["formats"]) ) {
-
+                && is_array($customSetting[$instance->getConfig()->getName()]["formats"])) {
                 $formats = array_merge($customSetting[$instance->getConfig()->getName()]["formats"], $formats);
             }
 
-            $customSetting[$instance->getConfig()->getName()] = array(
+            $customSetting[$instance->getConfig()->getName()] = [
                 "status" => $conversionStatus,
                 "formats" => $formats
-            );
+            ];
             $asset->setCustomSetting("thumbnails", $customSetting);
             $asset->save();
         }
@@ -253,40 +238,21 @@ class Processor {
     }
 
     /**
-     * @static
-     * @param $processId
-     * @return int
-     */
-    public static function getProgress($processId) {
-        $instance = new self();
-        $instance->setProcessId($processId);
-
-        $instanceItem = TmpStore::get($instance->getJobStoreId());
-
-        if($instanceItem) {
-            $i = $instanceItem->getData();
-            if($i instanceof Processor) {
-                $instance = $i;
-            }
-        }
-
-        return $instance->getStatus();
-    }
-
-    /**
      *
      */
-    public function convert() {
+    public function convert()
+    {
         $this->save();
-        $cmd = Console::getPhpCli() . " " . realpath(PIMCORE_PATH . DIRECTORY_SEPARATOR . "cli" . DIRECTORY_SEPARATOR . "video-converter.php"). " " . $this->getProcessId();
-        Console::execInBackground($cmd);
+        Console::runPhpScriptInBackground(realpath(PIMCORE_PATH . DIRECTORY_SEPARATOR . "cli" . DIRECTORY_SEPARATOR . "console.php"), "internal:video-converter " . $this->getProcessId());
     }
 
     /**
      * @return bool
      */
-    public function save() {
+    public function save()
+    {
         TmpStore::add($this->getJobStoreId(), $this, "video-job");
+
         return true;
     }
 
@@ -294,10 +260,12 @@ class Processor {
      * @param $processId
      * @return string
      */
-    protected function getJobStoreId($processId = null) {
-        if(!$processId) {
+    protected function getJobStoreId($processId = null)
+    {
+        if (!$processId) {
             $processId = $this->getProcessId();
         }
+
         return "video-job-" . $processId;
     }
 
@@ -308,6 +276,7 @@ class Processor {
     public function setProcessId($processId)
     {
         $this->processId = $processId;
+
         return $this;
     }
 
@@ -326,6 +295,7 @@ class Processor {
     public function setAssetId($assetId)
     {
         $this->assetId = $assetId;
+
         return $this;
     }
 
@@ -344,6 +314,7 @@ class Processor {
     public function setConfig($config)
     {
         $this->config = $config;
+
         return $this;
     }
 
@@ -362,6 +333,7 @@ class Processor {
     public function setQueue($queue)
     {
         $this->queue = $queue;
+
         return $this;
     }
 
@@ -371,23 +343,5 @@ class Processor {
     public function getQueue()
     {
         return $this->queue;
-    }
-
-    /**
-     * @param $status
-     * @return $this
-     */
-    public function setStatus($status)
-    {
-        $this->status = $status;
-        return $this;
-    }
-
-    /**
-     * @return int
-     */
-    public function getStatus()
-    {
-        return $this->status;
     }
 }

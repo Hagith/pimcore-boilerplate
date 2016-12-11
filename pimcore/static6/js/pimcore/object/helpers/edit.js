@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -21,9 +20,10 @@
 pimcore.registerNS("pimcore.object.helpers.edit");
 pimcore.object.helpers.edit = {
 
-    getRecursiveLayout: function (l, noteditable) {
-
-        var panelListenerConfig = {};
+    getRecursiveLayout: function (l, noteditable, context) {
+        if (typeof context === "undefined") {
+            context = {};
+        }
 
         var tabpanelCorrection = function (panel) {
             window.setTimeout(function () {
@@ -51,15 +51,19 @@ pimcore.object.helpers.edit = {
                 forceLayout: true,
                 hideMode: "offsets",
                 padding: 0,
-                bodyStyle: "padding: 0",
-                listeners: panelListenerConfig
+                bodyStyle: "padding: 0"
             },
             fieldset: {
                 xtype: "fieldset",
                 autoScroll: true,
                 forceLayout: true,
-                hideMode: "offsets",
-                listeners: panelListenerConfig
+                hideMode: "offsets"
+            },
+            fieldcontainer: {
+                xtype: "fieldcontainer",
+                autoScroll: true,
+                forceLayout: true,
+                hideMode: "offsets"
             },
             panel: {
                 xtype: "panel",
@@ -67,25 +71,26 @@ pimcore.object.helpers.edit = {
                 forceLayout: true,
                 monitorResize: true,
                 bodyStyle: "padding: 10px",
-                border: false,
+                border: true,
                 defaults: {
                     width: "auto"
                 },
-                hideMode: "offsets",
-                listeners: panelListenerConfig
+                hideMode: "offsets"
             },
             region: {
                 xtype: "panel",
                 layout: "border",
                 forceLayout: true,
                 padding: 0,
-                hideMode: "offsets",
-                listeners: panelListenerConfig
+                hideMode: "offsets"
             },
             tabpanel: {
                 xtype: "tabpanel",
                 activeTab: 0,
+                monitorResize: true,
                 deferredRender: true,
+                border: true,
+                bodyStyle: "padding: 10px",
                 forceLayout: true,
                 hideMode: "offsets",
                 enableTabScroll: true,
@@ -103,13 +108,12 @@ pimcore.object.helpers.edit = {
                 style: "margin-bottom: 10px;",
                 autoScroll: true,
                 forceLayout: true,
-                monitorResize: true,
-                listeners: panelListenerConfig
+                monitorResize: true
             }
         };
 
-        var validKeys = ["xtype","title","layout","items","region","width","height","name","text","html","handler",
-            "labelWidth","collapsible","collapsed","bodyStyle"];
+        var validKeys = ["xtype","title","layout","icon","items","region","width","height","name","text","html","handler",
+            "labelWidth", "fieldLabel", "collapsible","collapsed","bodyStyle"];
 
         var tmpItems;
 
@@ -129,7 +133,11 @@ pimcore.object.helpers.edit = {
                             childConfig.labelWidth = l.labelWidth;
                         }
 
-                        tmpItems = this.getRecursiveLayout(childConfig, noteditable);
+                        if (typeof childConfig.fieldLabel == "undefined" && l.fieldLabel != "undefined") {
+                            childConfig.fieldLabel = l.fieldLabel;
+                        }
+
+                        tmpItems = this.getRecursiveLayout(childConfig, noteditable, context);
 
                         if (tmpItems) {
                             l.items.push(tmpItems);
@@ -229,6 +237,7 @@ pimcore.object.helpers.edit = {
                 var field = new pimcore.object.tags[l.fieldtype](data, l);
 
                 field.setObject(this.object);
+                field.updateContext(context);
                 field.setName(l.name);
                 field.setTitle(l.titleOriginal);
                 field.setInitialData(data);
@@ -252,7 +261,7 @@ pimcore.object.helpers.edit = {
 
 
                 try {
-                    dLayout.on("render", function (metaData) {
+                    dLayout.on("afterrender", function (metaData) {
                         if(metaData && metaData.inherited) {
                             this.markInherited(metaData);
                         }

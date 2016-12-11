@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Translation
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Translation;
@@ -20,27 +19,31 @@ namespace Pimcore\Model\Translation;
 use Pimcore\Model;
 use Pimcore\Tool;
 
-class Admin extends AbstractTranslation {
+/**
+ * @method \Pimcore\Model\Translation\Admin\Dao getDao()
+ */
+class Admin extends AbstractTranslation
+{
 
     /**
      * @param $id
      * @param bool $create
      * @param bool $returnIdIfEmpty
      * @param null $language
-     * @return array
+     * @return string
      * @throws \Exception
-     * @throws \Zend_Exception
      */
-    public static function getByKeyLocalized($id, $create = false, $returnIdIfEmpty = false, $language = null) {
-        if($user = Tool\Admin::getCurrentUser()) {
+    public static function getByKeyLocalized($id, $create = false, $returnIdIfEmpty = false, $language = null)
+    {
+        if ($user = Tool\Admin::getCurrentUser()) {
             $language = $user->getLanguage();
-        } else if ($user = Tool\Authentication::authenticateSession()) {
+        } elseif ($user = Tool\Authentication::authenticateSession()) {
             $language = $user->getLanguage();
-        } else if(\Zend_Registry::isRegistered("Zend_Locale")) {
+        } elseif (\Zend_Registry::isRegistered("Zend_Locale")) {
             $language = (string) \Zend_Registry::get("Zend_Locale");
         }
 
-        if(!in_array($language,Tool\Admin::getLanguages())){
+        if (!in_array($language, Tool\Admin::getLanguages())) {
             $config = \Pimcore\Config::getSystemConfig();
             $language = $config->general->language;
         }

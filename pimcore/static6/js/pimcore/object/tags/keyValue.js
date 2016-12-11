@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.keyValue");
@@ -319,13 +318,13 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
                         getClass: function (v, meta, rec) {
                             var klass = "pimcore_action_column";
                             if (!rec.data.inherited) {
-                                klass +=  " pimcore_icon_cross";
+                                klass +=  " pimcore_icon_cancel";
                             }
                             return klass;
 
                         },
                         tooltip: t('remove'),
-                        // icon: "/pimcore/static6/img/icon/cross.png",
+                        // icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                         handler: function (grid, rowIndex) {
                             var store = grid.getStore();
                             var record = store.getAt(rowIndex);
@@ -438,7 +437,7 @@ pimcore.object.tags.keyValue = Class.create(pimcore.object.tags.abstract, {
 
             },
             autoHeight: autoHeight,
-            bodyCls: "pimcore_object_tag_objects"
+            bodyCls: "pimcore_object_tag_objects pimcore_editable_grid"
         });
 
         this.component.on("afteredit", function() {

@@ -1,37 +1,38 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore;
 
-class Version {
+class Version
+{
 
     /**
      * @var string
      */
-    public static $version = "3.1.1";
+    public static $version = "4.4.1";
 
     /**
      * @var int
      */
-    public static $revision = 3543;
+    public static $revision = 4008;
 
 
     /**
      * @return string
      */
-    public static function getVersion() {
+    public static function getVersion()
+    {
         return self::$version;
     }
 

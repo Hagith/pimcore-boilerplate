@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Google;
@@ -18,21 +17,24 @@ namespace Pimcore\Google;
 use Pimcore\Config;
 use Pimcore\Model\Site;
 
-class Webmastertools {
+class Webmastertools
+{
 
     /**
      * @var array
      */
-    public static $stack = array();
+    public static $stack = [];
 
     /**
      * @param Site $site
      * @return bool
      */
-    public static function isConfigured (Site $site = null) {
-        if(self::getSiteConfig($site)) {
+    public static function isConfigured(Site $site = null)
+    {
+        if (self::getSiteConfig($site)) {
             return true;
         }
+
         return false;
     }
 
@@ -40,13 +42,18 @@ class Webmastertools {
      * @param null $site
      * @return bool
      */
-    public static function getSiteConfig ($site = null) {
-        
+    public static function getSiteConfig($site = null)
+    {
         $siteKey = \Pimcore\Tool\Frontend::getSiteKey($site);
-        
-        if(Config::getReportConfig()->webmastertools->sites->$siteKey->verification) {
+
+        if (is_null(Config::getReportConfig()->webmastertools)) {
+            return false;
+        }
+
+        if (Config::getReportConfig()->webmastertools->sites->$siteKey->verification) {
             return Config::getReportConfig()->webmastertools->sites->$siteKey;
         }
+
         return false;
     }
 }

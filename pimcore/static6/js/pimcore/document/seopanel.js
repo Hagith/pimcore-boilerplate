@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.seopanel");
@@ -31,7 +30,7 @@ pimcore.document.seopanel = Class.create({
             this.panel = new Ext.Panel({
                 id: "pimcore_document_seopanel",
                 title: t("seo_document_editor"),
-                iconCls: "pimcore_icon_seo_document",
+                iconCls: "pimcore_icon_seo",
                 border: false,
                 layout: "fit",
                 closable:true,
@@ -132,9 +131,8 @@ pimcore.document.seopanel = Class.create({
         var tree = Ext.create('Ext.tree.Panel', {
                 store: store,
                 columns: columns,
-                useArrows: true,
                 enableSort: false,
-                animate: true,
+                animate: false,
                 rootVisible: true,
                 root: rootNodeConfig,
                 border: false,
@@ -170,7 +168,7 @@ pimcore.document.seopanel = Class.create({
             }.bind(this, tree)
         },{
             text: t('open_in_new_window'),
-            iconCls: "pimcore_icon_open_in_new_window",
+            iconCls: "pimcore_icon_open",
             handler: function (record) {
                 window.open(record.data.path);
             }.bind(this, record)
@@ -204,7 +202,7 @@ pimcore.document.seopanel = Class.create({
                 enableKeyEvents: true,
                 listeners: {
                     "keyup": function (el) {
-                        el.label.update(t("title") + " (" + el.getValue().length + "):");
+                        el.setFieldLabel(t("title") + " (" + el.getValue().length + "):");
                     }
                 }
             }, {
@@ -216,7 +214,7 @@ pimcore.document.seopanel = Class.create({
                 enableKeyEvents: true,
                 listeners: {
                     "keyup": function (el) {
-                        el.label.update(t("description") + " (" + el.getValue().length + "):");
+                        el.setFieldLabel(t("description") + " (" + el.getValue().length + "):");
                     }
                 }
             },{
@@ -252,8 +250,27 @@ pimcore.document.seopanel = Class.create({
             method: "post",
             params: values,
             success: function (node) {
-
-                tree.getStore().load();
+                if (values.id == 1) {
+                    Ext.Ajax.request({
+                        url: "/admin/document/seopanel-tree-root",
+                        success: function (response) {
+                            var cfg = Ext.decode(response.responseText);
+                            if(cfg.id) { // We are the root node
+                                var rootNode = tree.getStore().getRootNode();
+                                rootNode.set(cfg); // set the changes as set for the document
+                                rootNode.set({ // reset root node stuff
+                                    text: "home",
+                                    iconCls:  "pimcore_icon_home",
+                                    expanded: true
+                                });
+                                rootNode.commit(true); // Tell the model that everything's ok without telling the store
+                                tree.refresh(); // refresh the tree t
+                            }
+                        }.bind(tree)
+                    });
+                } else {
+                    tree.getStore().load();
+                }
             }.bind(this, tree, record)
         });
     }

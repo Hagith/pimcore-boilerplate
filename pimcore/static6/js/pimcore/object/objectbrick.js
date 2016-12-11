@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.objectbrick");
@@ -67,9 +66,8 @@ pimcore.object.objectbrick = Class.create(pimcore.object.fieldcollection, {
                 id: "pimcore_panel_objectbricks_tree",
                 store: this.store,
                 region: "west",
-                useArrows:true,
                 autoScroll:true,
-                animate:true,
+                animate:false,
                 containerScroll: true,
                 width: 200,
                 split: true,
@@ -82,7 +80,7 @@ pimcore.object.objectbrick = Class.create(pimcore.object.fieldcollection, {
                     items: [
                         {
                             text: t("add_objectbrick"),
-                            iconCls: "pimcore_icon_objectbrick_add",
+                            iconCls: "pimcore_icon_objectbricks pimcore_icon_overlay_add",
                             handler: this.addField.bind(this)
                         }
                     ]
@@ -116,7 +114,7 @@ pimcore.object.objectbrick = Class.create(pimcore.object.fieldcollection, {
 
     openBrick: function (id) {
         if(Ext.getCmp("pimcore_objectbrick_editor_panel_" + id)) {
-            this.getEditPanel().setActiveTab(Ext.getCmp("pimcore_class_editor_panel_" + id));
+            this.getEditPanel().setActiveTab(Ext.getCmp("pimcore_objectbrick_editor_panel_" + id));
             return;
         }
 
@@ -132,7 +130,7 @@ pimcore.object.objectbrick = Class.create(pimcore.object.fieldcollection, {
     addFieldPanel: function (response) {
 
         var data = Ext.decode(response.responseText);
-        var fieldPanel = new pimcore.object.objectbricks.field(data, this, this.openBrick.bind(this, data.key));
+        var fieldPanel = new pimcore.object.objectbricks.field(data, this, this.openBrick.bind(this, data.key), "pimcore_objectbrick_editor_panel_");
         pimcore.layout.refresh();
         
     },

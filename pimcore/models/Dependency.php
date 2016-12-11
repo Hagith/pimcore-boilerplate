@@ -2,22 +2,25 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Dependency
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model;
 
-class Dependency extends AbstractModel {
+/**
+ * @method \Pimcore\Model\Dependency\Dao getDao()
+ */
+class Dependency extends AbstractModel
+{
 
     /**
      * The ID of the object to get dependencies for
@@ -38,14 +41,14 @@ class Dependency extends AbstractModel {
      *
      * @var integer
      */
-    public $requires = array();
+    public $requires = [];
 
     /**
      * Contains the ID/type of objects that need the given source object (sourceId/sourceType)
      *
      * @var integer
      */
-    public $requiredBy = array();
+    public $requiredBy = [];
 
 
     /**
@@ -55,12 +58,13 @@ class Dependency extends AbstractModel {
      * @param string $type
      * @return Dependency
      */
-    public static function getBySourceId($id, $type) {
-
+    public static function getBySourceId($id, $type)
+    {
         $d = new self();
         $d->setSourceId($id);
         $d->setSourceType($type);
-        $d->getResource()->getBySourceId();
+        $d->getDao()->getBySourceId();
+
         return $d;
     }
 
@@ -71,19 +75,21 @@ class Dependency extends AbstractModel {
      * @param string $type
      * @return void
      */
-    public function addRequirement($id, $type) {
-        $this->requires[] = array(
+    public function addRequirement($id, $type)
+    {
+        $this->requires[] = [
             "type" => $type,
             "id" => $id
-        );
+        ];
     }
 
     /**
      * @param  Element\ELementInterface $element
      * @return void
      */
-    public function cleanAllForElement($element){
-        $this->getResource()->cleanAllForElement($element);
+    public function cleanAllForElement($element)
+    {
+        $this->getDao()->cleanAllForElement($element);
     }
 
     /**
@@ -91,47 +97,55 @@ class Dependency extends AbstractModel {
      *
      * @return void
      */
-    public function clean() {
-        $this->requires = array();
-        $this->getResource()->clear();
+    public function clean()
+    {
+        $this->requires = [];
+        $this->getDao()->clear();
     }
 
     /**
      * @return integer
      */
-    public function getSourceId() {
+    public function getSourceId()
+    {
         return $this->sourceId;
     }
 
     /**
      * @return array
      */
-    public function getRequires() {
+    public function getRequires()
+    {
         return $this->requires;
     }
 
     /**
      * @return array
      */
-    public function getRequiredBy() {
+    public function getRequiredBy()
+    {
         return $this->requiredBy;
     }
 
     /**
      * @param integer $sourceId
-     * @return void
+     * @return $this
      */
-    public function setSourceId($sourceId) {
+    public function setSourceId($sourceId)
+    {
         $this->sourceId = (int) $sourceId;
+
         return $this;
     }
 
     /**
      * @param array $requires
-     * @return void
+     * @return $this
      */
-    public function setRequires($requires) {
+    public function setRequires($requires)
+    {
         $this->requires = $requires;
+
         return $this;
     }
 
@@ -139,15 +153,18 @@ class Dependency extends AbstractModel {
      * @param array $requiredBy
      * @return void
      */
-    public function setRequiredBy($requiredBy) {
+    public function setRequiredBy($requiredBy)
+    {
         $this->requiredBy = $requiredBy;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getSourceType() {
+    public function getSourceType()
+    {
         return $this->sourceType;
     }
 
@@ -155,8 +172,10 @@ class Dependency extends AbstractModel {
      * @param string $sourceType
      * @return void
      */
-    public function setSourceType($sourceType) {
+    public function setSourceType($sourceType)
+    {
         $this->sourceType = $sourceType;
+
         return $this;
     }
 
@@ -165,12 +184,12 @@ class Dependency extends AbstractModel {
      *
      * @return void
      */
-    public function isRequired() {
+    public function isRequired()
+    {
         if (is_array($this->getRequiredBy()) && count($this->getRequiredBy()) > 0) {
             return true;
         }
+
         return false;
     }
-
-
 }

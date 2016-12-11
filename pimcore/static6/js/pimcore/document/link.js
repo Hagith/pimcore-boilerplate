@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.link");
@@ -26,15 +25,19 @@ pimcore.document.link = Class.create(pimcore.document.document, {
     },
 
     init: function () {
+
+        var user = pimcore.globalmanager.get("user");
+
         if (this.isAllowed("properties")) {
             this.properties = new pimcore.document.properties(this, "document");
         }
 
-        if (this.isAllowed("settings")) {
+        if (user.isAllowed("notes_events")) {
             this.notes = new pimcore.element.notes(this, "document");
         }
 
         this.dependencies = new pimcore.element.dependencies(this, "document");
+        this.tagAssignment = new pimcore.element.tag.assignment(this, "document");
     },
 
     getSaveData : function () {
@@ -118,26 +121,40 @@ pimcore.document.link = Class.create(pimcore.document.document, {
 
             this.toolbarButtons.publish = new Ext.Button({
                 text: t('save_and_publish'),
-                iconCls: "pimcore_icon_publish_medium",
-                scale: "small",
+                iconCls: "pimcore_icon_publish",
+                scale: "medium",
                 handler: this.publish.bind(this)
             });
 
 
             this.toolbarButtons.unpublish = new Ext.Button({
                 text: t('unpublish'),
-                iconCls: "pimcore_icon_unpublish_medium",
-                scale: "small",
+                iconCls: "pimcore_icon_unpublish",
+                scale: "medium",
                 handler: this.unpublish.bind(this)
             });
 
             this.toolbarButtons.remove = new Ext.Button({
-                text: t('delete'),
-                iconCls: "pimcore_icon_delete_medium",
-                scale: "small",
+                tooltip: t('delete'),
+                iconCls: "pimcore_icon_delete",
+                scale: "medium",
                 handler: this.remove.bind(this)
             });
 
+            this.toolbarButtons.rename = new Ext.Button({
+                tooltip: t('rename'),
+                iconCls: "pimcore_icon_key pimcore_icon_overlay_go",
+                scale: "medium",
+                handler: function () {
+                    var options = {
+                        elementType: "document",
+                        elementSubType: this.getType(),
+                        id: this.id,
+                        default: this.data.key
+                    }
+                    pimcore.elementservice.editElementKey(options);
+                }.bind(this)
+            });
 
             var buttons = [];
 
@@ -148,32 +165,38 @@ pimcore.document.link = Class.create(pimcore.document.document, {
                 buttons.push(this.toolbarButtons.unpublish);
             }
 
+            buttons.push("-");
+
             if(this.isAllowed("delete") && !this.data.locked) {
                 buttons.push(this.toolbarButtons.remove);
             }
-
-            buttons.push("-");
-
-            this.toolbarButtons.reload = new Ext.Button({
-                text: t('reload'),
-                iconCls: "pimcore_icon_reload_medium",
-                scale: "small",
-                handler: this.reload.bind(this)
-            });
-            buttons.push(this.toolbarButtons.reload);
+            if(this.isAllowed("rename") && !this.data.locked) {
+                buttons.push(this.toolbarButtons.rename);
+            }
 
             buttons.push({
-                text: t('show_in_tree'),
-                iconCls: "pimcore_icon_download_showintree",
-                scale: "small",
-                handler: this.selectInTree.bind(this)
+                tooltip: t('reload'),
+                iconCls: "pimcore_icon_reload",
+                scale: "medium",
+                handler: this.reload.bind(this)
             });
+
+            if (pimcore.elementservice.showLocateInTreeButton("document")) {
+                buttons.push({
+                    tooltip: t('show_in_tree'),
+                    iconCls: "pimcore_icon_show_in_tree",
+                    scale: "medium",
+                    handler: this.selectInTree.bind(this)
+                });
+            }
+
+            buttons.push(this.getTranslationButtons());
 
             buttons.push("-");
             buttons.push({
                 xtype: 'tbtext',
                 text: this.data.id,
-                scale: "small"
+                scale: "medium"
             });
 
             this.toolbar = new Ext.Toolbar({
@@ -181,7 +204,8 @@ pimcore.document.link = Class.create(pimcore.document.document, {
                 region: "north",
                 border: false,
                 cls: "main-toolbar",
-                items: buttons
+                items: buttons,
+                overflowHandler: 'scroller'
             });
 
             this.toolbar.on("afterrender", function () {
@@ -204,6 +228,7 @@ pimcore.document.link = Class.create(pimcore.document.document, {
     getTabPanel: function () {
 
         var items = [];
+        var user = pimcore.globalmanager.get("user");
 
         items.push(this.getLayoutForm());
 
@@ -213,8 +238,12 @@ pimcore.document.link = Class.create(pimcore.document.document, {
 
         items.push(this.dependencies.getLayout());
 
-        if (this.isAllowed("settings")) {
+        if (user.isAllowed("notes_events")) {
             items.push(this.notes.getLayout());
+        }
+
+        if (user.isAllowed("tags_assignment")) {
+            items.push(this.tagAssignment.getLayout());
         }
 
         this.tabbar = new Ext.TabPanel({

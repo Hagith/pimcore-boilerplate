@@ -2,38 +2,43 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Staticroute
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model;
 
-class Staticroute extends AbstractModel {
+use Pimcore\Logger;
+
+/**
+ * @method \Pimcore\Model\Staticroute\Dao getDao()
+ */
+class Staticroute extends AbstractModel
+{
 
     /**
      * @var integer
      */
     public $id;
-    
+
     /**
      * @var string
      */
     public $name;
-    
+
     /**
      * @var string
      */
     public $pattern;
-    
+
     /**
      * @var string
      */
@@ -96,7 +101,7 @@ class Staticroute extends AbstractModel {
      *
      * @var array
      */
-    protected static $nameIdMappingCache = array();
+    protected static $nameIdMappingCache = [];
 
     /**
      * contains the static route which the current request matches (it he does), this is used in the view to get the current route
@@ -110,7 +115,8 @@ class Staticroute extends AbstractModel {
      * @param $route
      * @return void
      */
-    public static function setCurrentRoute($route) {
+    public static function setCurrentRoute($route)
+    {
         self::$_currentRoute = $route;
     }
 
@@ -118,7 +124,8 @@ class Staticroute extends AbstractModel {
      * @static
      * @return Staticroute
      */
-    public static function getCurrentRoute() {
+    public static function getCurrentRoute()
+    {
         return self::$_currentRoute;
     }
 
@@ -126,43 +133,41 @@ class Staticroute extends AbstractModel {
      * @param integer $id
      * @return Staticroute
      */
-    public static function getById($id) {
-        
+    public static function getById($id)
+    {
         $cacheKey = "staticroute_" . $id;
 
         try {
             $route = \Zend_Registry::get($cacheKey);
-            if(!$route){
+            if (!$route) {
                 throw new \Exception("Route in registry is null");
             }
-        }
-        catch (\Exception $e) {
-
+        } catch (\Exception $e) {
             try {
                 $route = new self();
                 \Zend_Registry::set($cacheKey, $route);
                 $route->setId(intval($id));
-                $route->getResource()->getById();
-
+                $route->getDao()->getById();
             } catch (\Exception $e) {
-                \Logger::error($e);
+                Logger::error($e);
+
                 return null;
             }
         }
 
         return $route;
     }
-    
+
     /**
      * @param string $name
      * @return Staticroute
      */
-    public static function getByName($name, $siteId = null) {
-
+    public static function getByName($name, $siteId = null)
+    {
         $cacheKey = $name . "~~~" . $siteId;
 
         // check if pimcore already knows the id for this $name, if yes just return it
-        if(array_key_exists($cacheKey, self::$nameIdMappingCache)) {
+        if (array_key_exists($cacheKey, self::$nameIdMappingCache)) {
             return self::getById(self::$nameIdMappingCache[$cacheKey]);
         }
 
@@ -170,16 +175,18 @@ class Staticroute extends AbstractModel {
         $route = new self();
 
         try {
-            $route->getResource()->getByName($name, $siteId);
+            $route->getDao()->getByName($name, $siteId);
         } catch (\Exception $e) {
-            \Logger::warn($e);
+            Logger::warn($e);
+
             return null;
         }
 
         // to have a singleton in a way. like all instances of Element\ElementInterface do also, like Object\AbstractObject
-        if($route->getId() > 0) {
+        if ($route->getId() > 0) {
             // add it to the mini-per request cache
             self::$nameIdMappingCache[$cacheKey] = $route->getId();
+
             return self::getById($route->getId());
         }
     }
@@ -187,7 +194,8 @@ class Staticroute extends AbstractModel {
     /**
      * @return Staticroute
      */
-    public static function create() {
+    public static function create()
+    {
         $route = new self();
         $route->save();
 
@@ -199,8 +207,9 @@ class Staticroute extends AbstractModel {
      *
      * @return array
      */
-    public function getDefaultsArray() {
-        $defaults = array();
+    public function getDefaultsArray()
+    {
+        $defaults = [];
 
         $t = explode("|", $this->getDefaults());
         foreach ($t as $v) {
@@ -216,14 +225,16 @@ class Staticroute extends AbstractModel {
     /**
      * @return integer
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
     /**
      * @return string
      */
-    public function getPattern() {
+    public function getPattern()
+    {
         return $this->pattern;
     }
 
@@ -231,62 +242,73 @@ class Staticroute extends AbstractModel {
     /**
      * @return string
      */
-    public function getModule() {
+    public function getModule()
+    {
         return $this->module;
     }
 
     /**
      * @return string
      */
-    public function getController() {
+    public function getController()
+    {
         return $this->controller;
     }
 
     /**
      * @return string
      */
-    public function getAction() {
+    public function getAction()
+    {
         return $this->action;
     }
 
     /**
      * @return string
      */
-    public function getVariables() {
+    public function getVariables()
+    {
         return $this->variables;
     }
 
     /**
      * @return string
      */
-    public function getDefaults() {
+    public function getDefaults()
+    {
         return $this->defaults;
     }
 
     /**
      * @param integer $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
     /**
      * @param string $pattern
-     * @return void
+     * @return $this
      */
-    public function setPattern($pattern) {
+    public function setPattern($pattern)
+    {
         $this->pattern = $pattern;
+
         return $this;
     }
 
     /**
      * @param string $module
-     * @return void
+     * @return $this
      */
-    public function setModule($module) {
+    public function setModule($module)
+    {
         $this->module = $module;
+
         return $this;
     }
 
@@ -295,8 +317,10 @@ class Staticroute extends AbstractModel {
      * @param string $controller
      * @return void
      */
-    public function setController($controller) {
+    public function setController($controller)
+    {
         $this->controller = $controller;
+
         return $this;
     }
 
@@ -304,8 +328,10 @@ class Staticroute extends AbstractModel {
      * @param string $action
      * @return void
      */
-    public function setAction($action) {
+    public function setAction($action)
+    {
         $this->action = $action;
+
         return $this;
     }
 
@@ -313,8 +339,10 @@ class Staticroute extends AbstractModel {
      * @param string $variables
      * @return void
      */
-    public function setVariables($variables) {
+    public function setVariables($variables)
+    {
         $this->variables = $variables;
+
         return $this;
     }
 
@@ -322,8 +350,10 @@ class Staticroute extends AbstractModel {
      * @param string $defaults
      * @return void
      */
-    public function setDefaults($defaults) {
+    public function setDefaults($defaults)
+    {
         $this->defaults = $defaults;
+
         return $this;
     }
 
@@ -331,47 +361,56 @@ class Staticroute extends AbstractModel {
      * @param integer $priority
      * @return void
      */
-    public function setPriority($priority) {
+    public function setPriority($priority)
+    {
         $this->priority = (int) $priority;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getPriority() {
+    public function getPriority()
+    {
         return $this->priority;
     }
-    
+
     /**
      * @param string $name
      * @return void
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
-    
+
     /**
      * @param string $reverse
      * @return void
      */
-    public function setReverse($reverse) {
+    public function setReverse($reverse)
+    {
         $this->reverse = $reverse;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getReverse() {
+    public function getReverse()
+    {
         return $this->reverse;
     }
 
@@ -381,6 +420,7 @@ class Staticroute extends AbstractModel {
     public function setSiteId($siteId)
     {
         $this->siteId = $siteId ? (int) $siteId : null;
+
         return $this;
     }
 
@@ -398,19 +438,31 @@ class Staticroute extends AbstractModel {
      * @param bool $encode
      * @return mixed|string
      */
-    public function assemble (array $urlOptions = array(), $reset=false, $encode=true) {
+    public function assemble(array $urlOptions = [], $reset=false, $encode=true)
+    {
 
         // get request parameters
-        $blockedRequestParams = array("controller","action","module","document");
+        $blockedRequestParams = ["controller", "action", "module", "document"];
         $front = \Zend_Controller_Front::getInstance();
 
-        if($reset) {
-            $requestParameters = array();
+
+        // allow blocked params if we use it as variables
+        $variables = explode(",", $this->getVariables());
+        foreach ($variables as $name) {
+            $pos = array_search($name, $blockedRequestParams);
+            if ($pos !== false) {
+                unset($blockedRequestParams[$pos]);
+            }
+        }
+
+
+        if ($reset) {
+            $requestParameters = [];
         } else {
             $requestParameters = $front->getRequest()->getParams();
             // remove blocked parameters from request
             foreach ($blockedRequestParams as $key) {
-                if(array_key_exists($key, $requestParameters)) {
+                if (array_key_exists($key, $requestParameters)) {
                     unset($requestParameters[$key]);
                 }
             }
@@ -419,31 +471,39 @@ class Staticroute extends AbstractModel {
         $defaultValues = $this->getDefaultsArray();
 
         // apply values (controller,action,module, ... ) from previous match if applicable (only when )
-        if($reset) {
-            if( self::$_currentRoute && (self::$_currentRoute->getName() == $this->getName()) ) {
-                $defaultValues = array_merge( $defaultValues, self::$_currentRoute->_values );
+        if ($reset) {
+            if (self::$_currentRoute && (self::$_currentRoute->getName() == $this->getName())) {
+                $defaultValues = array_merge($defaultValues, self::$_currentRoute->_values);
             }
         }
 
         // merge with defaults
-        $urlParams = array_merge($requestParameters, $defaultValues, $urlOptions );
+        $urlParams = array_merge($defaultValues, $requestParameters, $urlOptions);
 
-        $parametersInReversePattern = array();
-        $parametersGet = array();
-        $parametersNotNamed = array();
+        $parametersInReversePattern = [];
+        $parametersGet = [];
         $url = $this->getReverse();
-        $forbiddenCharacters = array("#",":","?");
+        $forbiddenCharacters = ["#", ":", "?"];
 
         // check for named variables
+        uksort($urlParams, function ($a, $b) {
+            // order by key length, longer key have priority
+            // (%abcd prior %ab, so that %ab doesn't replace %ab in [%ab]cd)
+            return strlen($b) - strlen($a);
+        });
+
+        $tmpReversePattern = $this->getReverse();
         foreach ($urlParams as $key => $param) {
-            if(strpos($this->getReverse(), "%" . $key) !== false) {
+            if (strpos($tmpReversePattern, "%" . $key) !== false) {
                 $parametersInReversePattern[$key] = $param;
-            } else if (is_numeric($key)) {
-                $parametersNotNamed[$key] = $param;
+
+                // we need to replace the found variable to that it cannot match again a placeholder
+                // eg. %abcd prior %ab if %abcd matches already %ab shouldn't match again on the same placeholder
+                $tmpReversePattern = str_replace("%" . $key, "---", $tmpReversePattern);
             } else {
                 // only append the get parameters if there are defined in $urlOptions
                 // or if they are defined in $_GET an $reset is false
-                if(array_key_exists($key,$urlOptions) || (!$reset && array_key_exists($key, $_GET))) {
+                if (array_key_exists($key, $urlOptions) || (!$reset && array_key_exists($key, $_GET))) {
                     $parametersGet[$key] = $param;
                 }
             }
@@ -452,38 +512,31 @@ class Staticroute extends AbstractModel {
         $urlEncodeEscapeCharacters = "~|urlen" . md5(microtime()) . "code|~";
 
         // replace named variables
+        uksort($parametersInReversePattern, function ($a, $b) {
+            // order by key length, longer key have priority
+            // (%abcd prior %ab, so that %ab doesn't replace %ab in [%ab]cd)
+            return strlen($b) - strlen($a);
+        });
+
         foreach ($parametersInReversePattern as $key => $value) {
             $value = str_replace($forbiddenCharacters, "", $value);
-            if(strlen($value) > 0) {
-                $url = str_replace(
-                    "%" . $key,
-                    str_replace("%", $urlEncodeEscapeCharacters, ($encode) ? urlencode_ignore_slash($value) : $value),
-                    $url
-                );
+            if (strlen($value) > 0) {
+                if ($encode) {
+                    $value = urlencode_ignore_slash($value);
+                }
+                $value = str_replace("%", $urlEncodeEscapeCharacters, $value);
+                $url = str_replace("%" . $key, $value, $url);
             }
         }
 
 
-        // not named parameters
-        $o = array();
-        foreach ($parametersNotNamed as $option) {
-            $option = str_replace($forbiddenCharacters, "", $option);
-            $o[] = str_replace("%", $urlEncodeEscapeCharacters, ($encode) ? urlencode_ignore_slash($option) : $option);
-        }
-
         // remove optional parts
-        $url = preg_replace("/\{([^\}]+)?%[^\}]+\}/","",$url);
-        $url = str_replace(array("{","}"),"",$url);
-
-        $url = @vsprintf($url,$o);
-        if(empty($url)) {
-            $url = "ERROR_IN_YOUR_URL_CONFIGURATION:~ONE_PARAMETER_IS_MISSING_TO_GENERATE_THE_URL";
-            return $url;
-        }
+        $url = preg_replace("/\{([^\}]+)?%[^\}]+\}/", "", $url);
+        $url = str_replace(["{", "}"], "", $url);
 
         // optional get parameters
-        if(!empty($parametersGet)) {
-            if($encode) {
+        if (!empty($parametersGet)) {
+            if ($encode) {
                 $getParams = array_urlencode($parametersGet);
             } else {
                 $getParams = array_toquerystring($parametersGet);
@@ -492,25 +545,35 @@ class Staticroute extends AbstractModel {
         }
 
         // convert tmp urlencode escape char back to real escape char
-        $url = str_replace($urlEncodeEscapeCharacters, "%",$url);
+        $url = str_replace($urlEncodeEscapeCharacters, "%", $url);
 
-        
+
+        $results = \Pimcore::getEventManager()->trigger("frontend.path.staticroute", $this, [
+            "frontendPath" => $url,
+            "params" => $urlParams,
+            "reset" => $reset,
+            "encode" => $encode
+        ]);
+        if ($results->count()) {
+            $url = $results->last();
+        }
+
         return $url;
     }
 
     /**
-     * @param $path
+     * @param string $path
      * @param array $params
-     * @return array
+     * @return array|bool
      * @throws \Exception
      */
-    public function match($path, $params = array()) {
-
+    public function match($path, $params = [])
+    {
         if (@preg_match($this->getPattern(), $path)) {
 
             // check for site
-            if($this->getSiteId()) {
-                if(!Site::isSiteRequest() || $this->getSiteId() != Site::getCurrentSite()->getId()) {
+            if ($this->getSiteId()) {
+                if (!Site::isSiteRequest() || $this->getSiteId() != Site::getCurrentSite()->getId()) {
                     return false;
                 }
             }
@@ -527,9 +590,9 @@ class Staticroute extends AbstractModel {
 
             if (is_array($matches) && count($matches) > 1) {
                 foreach ($matches as $index => $match) {
-                    if ($variables[$index - 1]) {
+                    if (isset($variables[$index - 1]) && $variables[$index - 1]) {
                         $paramValue = urldecode($match[0]);
-                        if(!empty($paramValue) || !array_key_exists($variables[$index - 1], $params)) {
+                        if (!empty($paramValue) || !array_key_exists($variables[$index - 1], $params)) {
                             $params[$variables[$index - 1]] = $paramValue;
                         }
                     }
@@ -542,14 +605,21 @@ class Staticroute extends AbstractModel {
 
             // check for dynamic controller / action / module
             $dynamicRouteReplace = function ($item, $params) {
-                if(strpos($item, "%") !== false) {
+                if (strpos($item, "%") !== false) {
+                    uksort($params, function ($a, $b) {
+                        // order by key length, longer key have priority
+                        // (%abcd prior %ab, so that %ab doesn't replace %ab in [%ab]cd)
+                        return strlen($b) - strlen($a);
+                    });
+
                     foreach ($params as $key => $value) {
                         $dynKey = "%" . $key;
-                        if(strpos($item, $dynKey) !== false) {
+                        if (strpos($item, $dynKey) !== false) {
                             return str_replace($dynKey, $value, $item);
                         }
                     }
                 }
+
                 return $item;
             };
 
@@ -559,7 +629,7 @@ class Staticroute extends AbstractModel {
 
             $params["controller"] = $controller;
             $params["action"] = $action;
-            if(!empty($module)){
+            if (!empty($module)) {
                 $params["module"] = $module;
             }
             // remember for reverse assemble
@@ -567,21 +637,8 @@ class Staticroute extends AbstractModel {
 
             return $params;
         }
-    }
-    
-    
-    /**
-     * @return void
-     */
-    public function clearDependentCache() {
-        
-        // this is mostly called in Staticroute\Resource not here
-        try {
-            \Pimcore\Model\Cache::clearTag("staticroute");
-        }
-        catch (\Exception $e) {
-            \Logger::crit($e);
-        }
+
+        return [];
     }
 
     /**
@@ -591,6 +648,7 @@ class Staticroute extends AbstractModel {
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -609,6 +667,7 @@ class Staticroute extends AbstractModel {
     public function setCreationDate($creationDate)
     {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -619,6 +678,4 @@ class Staticroute extends AbstractModel {
     {
         return $this->creationDate;
     }
-
-
 }

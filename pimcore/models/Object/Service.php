@@ -2,26 +2,30 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object;
 
+use Pimcore\Logger;
 use Pimcore\Model;
 use Pimcore\Model\Element;
 use Pimcore\Tool\Admin as AdminTool;
 
-class Service extends Model\Element\Service {
+/**
+ * @method \Pimcore\Model\Element\Dao getDao()
+ */
+class Service extends Model\Element\Service
+{
 
     /**
      * @var array
@@ -34,9 +38,17 @@ class Service extends Model\Element\Service {
     protected $_user;
 
     /**
+     * System fields used by filter conditions
+     *
+     * @var array
+     */
+    protected static $systemFields = ["o_path", "o_key", "o_id", "o_published", "o_creationDate", "o_modificationDate", "o_fullpath"];
+
+    /**
      * @param  Model\User $user
      */
-    public function __construct($user = null) {
+    public function __construct($user = null)
+    {
         $this->_user = $user;
     }
 
@@ -47,18 +59,19 @@ class Service extends Model\Element\Service {
      * @param  integer $userId
      * @return Concrete[]
      */
-    public static function getObjectsReferencingUser($userId) {
-        $userObjects = array();
+    public static function getObjectsReferencingUser($userId)
+    {
+        $userObjects = [];
         $classesList = new ClassDefinition\Listing();
         $classesList->setOrderKey("name");
         $classesList->setOrder("asc");
         $classes = $classesList->load();
 
-        $classesToCheck = array();
+        $classesToCheck = [];
         if (is_array($classes)) {
             foreach ($classes as $class) {
                 $fieldDefinitions = $class->getFieldDefinitions();
-                $dataKeys = array();
+                $dataKeys = [];
                 if (is_array($fieldDefinitions)) {
                     foreach ($fieldDefinitions as $tag) {
                         if ($tag instanceof ClassDefinition\Data\User) {
@@ -75,7 +88,7 @@ class Service extends Model\Element\Service {
         foreach ($classesToCheck as $classname => $fields) {
             $listName = "\\Pimcore\\Model\\Object\\" . ucfirst($classname) . "\\Listing";
             $list = new $listName();
-            $conditionParts = array();
+            $conditionParts = [];
             foreach ($fields as $field) {
                 $conditionParts[] = $field . "='" . $userId . "'";
             }
@@ -83,6 +96,7 @@ class Service extends Model\Element\Service {
             $objects = $list->load();
             $userObjects = array_merge($userObjects, $objects);
         }
+
         return $userObjects;
     }
 
@@ -91,11 +105,12 @@ class Service extends Model\Element\Service {
      * @param $source
      * @return mixed
      */
-    public function copyRecursive($target, $source) {
+    public function copyRecursive($target, $source)
+    {
 
         // avoid recursion
         if (!$this->_copyRecursiveIds) {
-            $this->_copyRecursiveIds = array();
+            $this->_copyRecursiveIds = [];
         }
         if (in_array($source->getId(), $this->_copyRecursiveIds)) {
             return;
@@ -112,7 +127,7 @@ class Service extends Model\Element\Service {
         $new->setParentId($target->getId());
         $new->setUserOwner($this->_user->getId());
         $new->setUserModification($this->_user->getId());
-        $new->setResource(null);
+        $new->setDao(null);
         $new->setLocked(false);
         $new->setCreationDate(time());
         $new->save();
@@ -126,6 +141,11 @@ class Service extends Model\Element\Service {
 
         $this->updateChilds($target, $new);
 
+        // triggers actions after the complete document cloning
+        \Pimcore::getEventManager()->trigger('object.postCopy', $new, [
+            'base_element' => $source // the element used to make a copy
+        ]);
+
         return $new;
     }
 
@@ -135,7 +155,8 @@ class Service extends Model\Element\Service {
      * @param  AbstractObject $source
      * @return AbstractObject copied object
      */
-    public function copyAsChild($target, $source) {
+    public function copyAsChild($target, $source)
+    {
 
         //load properties
         $source->getProperties();
@@ -151,12 +172,17 @@ class Service extends Model\Element\Service {
         $new->setParentId($target->getId());
         $new->setUserOwner($this->_user->getId());
         $new->setUserModification($this->_user->getId());
-        $new->setResource(null);
+        $new->setDao(null);
         $new->setLocked(false);
         $new->setCreationDate(time());
         $new->save();
 
         $this->updateChilds($target, $new);
+
+        // triggers actions after the complete object cloning
+        \Pimcore::getEventManager()->trigger('object.postCopy', $new, [
+            'base_element' => $source // the element used to make a copy
+        ]);
 
         return $new;
     }
@@ -167,7 +193,8 @@ class Service extends Model\Element\Service {
      * @return AbstractObject
      * @throws \Exception
      */
-    public function copyContents($target, $source) {
+    public function copyContents($target, $source)
+    {
 
         // check if the type is the same
         if (get_class($source) != get_class($target)) {
@@ -180,7 +207,7 @@ class Service extends Model\Element\Service {
         $new = clone $source;
         $new->setChilds($target->getChilds());
         $new->setId($target->getId());
-        $new->setPath($target->getPath());
+        $new->setPath($target->getRealPath());
         $new->setKey($target->getKey());
         $new->setParentId($target->getParentId());
         $new->setScheduledTasks($source->getScheduledTasks());
@@ -190,23 +217,24 @@ class Service extends Model\Element\Service {
         $new->save();
 
         $target = AbstractObject::getById($new->getId());
+
         return $target;
     }
 
 
-    /**
+    /** Language only user for classification store !!!
      * @param  AbstractObject $object
      * @return array
      */
-    public static function gridObjectData($object, $fields = null) {
-
+    public static function gridObjectData($object, $fields = null, $requestedLanguage = null)
+    {
         $localizedPermissionsResolved = false;
         $data = Element\Service::gridElementData($object);
 
         if ($object instanceof Concrete) {
             $data["classname"] = $object->getClassName();
             $data["idPath"] = Element\Service::getIdPath($object);
-            $data['inheritedFields'] = array();
+            $data['inheritedFields'] = [];
 
             $user = AdminTool::getCurrentUser();
 
@@ -216,10 +244,10 @@ class Service extends Model\Element\Service {
 //                $fieldPermissions = self::getFieldPermissions($object, $permissionSet);
 //            }
 
-            if(empty($fields)) {
+            if (empty($fields)) {
                 $fields = array_keys($object->getclass()->getFieldDefinitions());
             }
-            foreach($fields as $key) {
+            foreach ($fields as $key) {
                 $brickType = null;
                 $brickGetter = null;
                 $dataKey = $key;
@@ -229,12 +257,34 @@ class Service extends Model\Element\Service {
 
                 if (substr($key, 0, 1) == "~") {
                     $type = $keyParts[1];
-                    if ($type == "keyvalue") {
+                    if ($type == "classificationstore") {
+                        $field = $keyParts[2];
+                        $groupKeyId = explode("-", $keyParts[3]);
+
+                        $groupId = $groupKeyId[0];
+                        $keyid = $groupKeyId[1];
+                        $getter = "get" . ucfirst($field);
+                        if (method_exists($object, $getter)) {
+                            /** @var  $classificationStoreData Classificationstore */
+                            $classificationStoreData = $object->$getter();
+                            $fielddata = $classificationStoreData->getLocalizedKeyValue($groupId, $keyid, $requestedLanguage, true, true);
+
+                            $keyConfig = Model\Object\Classificationstore\KeyConfig::getById($keyid);
+                            $type = $keyConfig->getType();
+                            $definition = json_decode($keyConfig->getDefinition());
+                            $definition = \Pimcore\Model\Object\Classificationstore\Service::getFieldDefinitionFromJson($definition, $type);
+
+                            if (method_exists($definition, "getDataForGrid")) {
+                                $fielddata = $definition->getDataForGrid($fielddata, $object);
+                            }
+                            $data[$key] = $fielddata;
+                        }
+                    } elseif ($type == "keyvalue") {
                         $field = $keyParts[2];
                         $keyid = $keyParts[3];
 
                         $getter = "get" . ucfirst($field);
-                        if(method_exists($object,$getter)) {
+                        if (method_exists($object, $getter)) {
                             $keyValuePairs = $object->$getter();
                             if ($keyValuePairs) {
                                 // get with inheritance
@@ -242,23 +292,21 @@ class Service extends Model\Element\Service {
 
                                 foreach ($props as $pair) {
                                     if ($pair["key"] == $keyid) {
-
                                         if (isset($pair["translated"])) {
                                             if (isset($data['#kv-tr'][$dataKey])) {
                                                 if (!is_array($data['#kv-tr'][$dataKey])) {
-                                                    $arr = array($data['#kv-tr'][$dataKey]);
+                                                    $arr = [$data['#kv-tr'][$dataKey]];
                                                     $data['#kv-tr'][$dataKey] = $arr;
                                                 }
                                                 $data['#kv-tr'][$dataKey][] = $pair["translated"];
-                                            }
-                                            else {
+                                            } else {
                                                 $data['#kv-tr'][$dataKey] = $pair["translated"];
                                             }
                                         }
 
                                         if (isset($data[$dataKey])) {
                                             if (!is_array($data[$dataKey])) {
-                                                $arr = array($data[$dataKey]);
+                                                $arr = [$data[$dataKey]];
                                                 $data[$dataKey] = $arr;
                                             }
                                             $data[$dataKey][] = $pair["value"];
@@ -267,18 +315,14 @@ class Service extends Model\Element\Service {
                                         }
 
                                         if ($pair["inherited"]) {
-                                            $data['inheritedFields'][$dataKey] = array("inherited" => $pair["inherited"], "objectid" => $pair["source"]);
+                                            $data['inheritedFields'][$dataKey] = ["inherited" => $pair["inherited"], "objectid" => $pair["source"]];
                                         }
-
-
-//                                   break;
                                     }
                                 }
                             }
                         }
-
                     }
-                } else if(count($keyParts) > 1) {
+                } elseif (count($keyParts) > 1) {
                     // brick
                     $brickType = $keyParts[0];
                     $brickKey = $keyParts[1];
@@ -288,21 +332,21 @@ class Service extends Model\Element\Service {
                     $def = $brickClass->getFieldDefinition($brickKey);
                 }
 
-                if(!empty($key)) {
+                if (!empty($key)) {
 
                     // some of the not editable field require a special response
 
                     $getter = "get".ucfirst($key);
                     $brickGetter = null;
-                    if(!empty($brickKey)) {
+                    if (!empty($brickKey)) {
                         $brickGetter = "get".ucfirst($brickKey);
                     }
 
                     $needLocalizedPermissions = false;
 
                     // if the definition is not set try to get the definition from localized fields
-                    if(!$def) {
-                        if($locFields = $object->getClass()->getFieldDefinition("localizedfields")) {
+                    if (!$def) {
+                        if ($locFields = $object->getClass()->getFieldDefinition("localizedfields")) {
                             $def = $locFields->getFieldDefinition($key);
                             if ($def) {
                                 $needLocalizedPermissions = true;
@@ -311,22 +355,21 @@ class Service extends Model\Element\Service {
                     }
 
                     //relation type fields with remote owner do not have a getter
-                    if(method_exists($object,$getter)) {
+                    if (method_exists($object, $getter)) {
 
                         //system columns must not be inherited
-                        if(in_array($key, Concrete::$systemColumnNames)) {
+                        if (in_array($key, Concrete::$systemColumnNames)) {
                             $data[$dataKey] = $object->$getter();
                         } else {
-
                             $valueObject = self::getValueForObject($object, $key, $brickType, $brickKey, $def);
-                            $data['inheritedFields'][$dataKey] = array("inherited" => $valueObject->objectid != $object->getId(), "objectid" => $valueObject->objectid);
+                            $data['inheritedFields'][$dataKey] = ["inherited" => $valueObject->objectid != $object->getId(), "objectid" => $valueObject->objectid];
 
-                            if(method_exists($def, "getDataForGrid")) {
+                            if (method_exists($def, "getDataForGrid")) {
                                 $tempData = $def->getDataForGrid($valueObject->value, $object);
 
-                                if($def instanceof ClassDefinition\Data\Localizedfields) {
+                                if ($def instanceof ClassDefinition\Data\Localizedfields) {
                                     $needLocalizedPermissions = true;
-                                    foreach($tempData as $tempKey => $tempValue) {
+                                    foreach ($tempData as $tempKey => $tempValue) {
                                         $data[$tempKey] = $tempValue;
                                     }
                                 } else {
@@ -343,7 +386,7 @@ class Service extends Model\Element\Service {
                             /** @var  $locale \Zend_Locale */
                             $locale = (string) \Zend_Registry::get("Zend_Locale");
 
-                            $permissionTypes = array("View", "Edit");
+                            $permissionTypes = ["View", "Edit"];
                             foreach ($permissionTypes as $permissionType) {
                                 //TODO, this needs refactoring! Ideally, call it only once!
                                 $languagesAllowed = self::getLanguagePermissions($object, $user, "l" . $permissionType);
@@ -362,9 +405,9 @@ class Service extends Model\Element\Service {
                         }
                     }
                 }
-
             }
         }
+
         return $data;
     }
 
@@ -374,7 +417,8 @@ class Service extends Model\Element\Service {
      * @param $type
      * @return array|null
      */
-    public static function getLanguagePermissions($object, $user, $type) {
+    public static function getLanguagePermissions($object, $user, $type)
+    {
         $languageAllowed = null;
 
         $permission = $object->getPermissions($type, $user);
@@ -387,10 +431,10 @@ class Service extends Model\Element\Service {
             if ($permission) {
                 $permission = explode(",", $permission);
                 if (is_null($languageAllowed)) {
-                    $languageAllowed = array();
+                    $languageAllowed = [];
                 }
 
-                foreach($permission as $language) {
+                foreach ($permission as $language) {
                     $languageAllowed[$language] = 1;
                 }
             }
@@ -404,7 +448,8 @@ class Service extends Model\Element\Service {
      * @param $permissionSet
      * @return array|null
      */
-    public static function getLayoutPermissions($classId, $permissionSet) {
+    public static function getLayoutPermissions($classId, $permissionSet)
+    {
         $layoutPermissions = null;
 
 
@@ -416,10 +461,10 @@ class Service extends Model\Element\Service {
             if ($permission) {
                 $permission = explode(",", $permission);
                 if (is_null($layoutPermissions)) {
-                    $layoutPermissions = array();
+                    $layoutPermissions = [];
                 }
 
-                foreach($permission as $p) {
+                foreach ($permission as $p) {
                     $setting = explode("_", $p);
                     $c = $setting[0];
 
@@ -427,7 +472,7 @@ class Service extends Model\Element\Service {
                         $l = $setting[1];
 
                         if (is_null($layoutPermissions)) {
-                            $layoutPermissions = array();
+                            $layoutPermissions = [];
                         }
                         $layoutPermissions[$l] = $l;
                     }
@@ -443,15 +488,17 @@ class Service extends Model\Element\Service {
      * @param $bricktype
      * @return int|null|string
      */
-    public static function getFieldForBrickType(ClassDefinition $class, $bricktype) {
+    public static function getFieldForBrickType(ClassDefinition $class, $bricktype)
+    {
         $fieldDefinitions = $class->getFieldDefinitions();
-        foreach($fieldDefinitions as $key => $fd) {
-            if($fd instanceof ClassDefinition\Data\Objectbricks) {
-                if(in_array($bricktype, $fd->getAllowedTypes())) {
+        foreach ($fieldDefinitions as $key => $fd) {
+            if ($fd instanceof ClassDefinition\Data\Objectbricks) {
+                if (in_array($bricktype, $fd->getAllowedTypes())) {
                     return $key;
                 }
             }
         }
+
         return null;
     }
 
@@ -461,30 +508,31 @@ class Service extends Model\Element\Service {
      * @static
      * @return \stdclass, value and objectid where the value comes from
      */
-    private static function getValueForObject($object, $key, $brickType = null, $brickKey = null, $fieldDefinition = null) {
+    private static function getValueForObject($object, $key, $brickType = null, $brickKey = null, $fieldDefinition = null)
+    {
         $getter = "get".ucfirst($key);
         $value = $object->$getter();
-        if(!empty($value) && !empty($brickType)) {
+        if (!empty($value) && !empty($brickType)) {
             $getBrickType = "get" . ucfirst($brickType);
             $value = $value->$getBrickType();
-            if(!empty($value) && !empty($brickKey)) {
+            if (!empty($value) && !empty($brickKey)) {
                 $brickGetter = "get".ucfirst($brickKey);
                 $value = $value->$brickGetter();
             }
         }
 
-        if(!$fieldDefinition) {
+        if (!$fieldDefinition) {
             $fieldDefinition = $object->getClass()->getFieldDefinition($key);
         }
 
-        if(!empty($brickType) && !empty($brickKey)) {
+        if (!empty($brickType) && !empty($brickKey)) {
             $brickClass = Objectbrick\Definition::getByKey($brickType);
             $fieldDefinition = $brickClass->getFieldDefinition($brickKey);
         }
 
-        if($fieldDefinition->isEmpty($value)) {
+        if ($fieldDefinition->isEmpty($value)) {
             $parent = self::hasInheritableParentObject($object);
-            if(!empty($parent)) {
+            if (!empty($parent)) {
                 return self::getValueForObject($parent, $key, $brickType, $brickKey, $fieldDefinition);
             }
         }
@@ -492,28 +540,21 @@ class Service extends Model\Element\Service {
         $result = new \stdClass();
         $result->value = $value;
         $result->objectid = $object->getId();
+
         return $result;
     }
 
     /**
      * @param Concrete $object
-     * @return AbstractObject
+     * @return AbstractObject|null
      */
-    public static function hasInheritableParentObject(Concrete $object) {
-        if($object->getClass()->getAllowInherit()) {
-            if ($object->getParent() instanceof AbstractObject) {
-                $parent = $object->getParent();
-                while($parent && $parent->getType() == "folder") {
-                    $parent = $parent->getParent();
-                }
-
-                if ($parent && ($parent->getType() == "object" || $parent->getType() == "variant")) {
-                    if ($parent->getClassId() == $object->getClassId()) {
-                        return $parent;
-                    }
-                }
-            }
+    public static function hasInheritableParentObject(Concrete $object)
+    {
+        if ($object->getClass()->getAllowInherit()) {
+            return $object->getNextParentForInheritance();
         }
+
+        return null;
     }
 
     /**
@@ -523,8 +564,8 @@ class Service extends Model\Element\Service {
      * @param  Concrete $object
      * @return void
      */
-    public static function loadAllObjectFields($object) {
-
+    public static function loadAllObjectFields($object)
+    {
         $object->getProperties();
 
         if ($object instanceof Concrete) {
@@ -539,24 +580,117 @@ class Service extends Model\Element\Service {
         }
     }
 
+
     /**
      *
      * @param string $filterJson
      * @param ClassDefinition $class
      * @return string
      */
-    public static function getFilterCondition($filterJson, $class) {
-
-        $systemFields = array("o_path", "o_key", "o_id", "o_published","o_creationDate","o_modificationDate", "o_fullpath");
+    public static function getFeatureFilters($filterJson, $class)
+    {
+        $joins = [];
+        $conditions = [];
 
         // create filter condition
-        $conditionPartsFilters = array();
+        $conditionPartsFilters = [];
 
         if ($filterJson) {
-            $db = \Pimcore\Resource::get();
+            $db = \Pimcore\Db::get();
             $filters = \Zend_Json::decode($filterJson);
             foreach ($filters as $filter) {
+                $operator = "=";
 
+                $filterField = $filter["property"];
+                $filterOperator = $filter["operator"];
+
+                if ($filter["type"] == "string") {
+                    $operator = "LIKE";
+                } elseif ($filter["type"] == "numeric") {
+                    if ($filterOperator == "lt") {
+                        $operator = "<";
+                    } elseif ($filterOperator == "gt") {
+                        $operator = ">";
+                    } elseif ($filterOperator == "eq") {
+                        $operator = "=";
+                    }
+                } elseif ($filter["type"] == "date") {
+                    if ($filterOperator == "lt") {
+                        $operator = "<";
+                    } elseif ($filterOperator == "gt") {
+                        $operator = ">";
+                    } elseif ($filterOperator == "eq") {
+                        $operator = "=";
+                    }
+                    $filter["value"] = strtotime($filter["value"]);
+                } elseif ($filter["type"] == "list") {
+                    $operator = "=";
+                } elseif ($filter["type"] == "boolean") {
+                    $operator = "=";
+                    $filter["value"] = (int) $filter["value"];
+                }
+
+                $keyParts = explode("~", $filterField);
+
+                if (substr($filterField, 0, 1) != "~") {
+                    continue;
+                }
+
+                $type = $keyParts[1];
+                if ($type != "classificationstore") {
+                    continue;
+                }
+
+                $fieldName = $keyParts[2];
+                $groupKeyId = explode("-", $keyParts[3]);
+
+                $groupId = $groupKeyId[0];
+                $keyid = $groupKeyId[1];
+
+                $keyConfig = Model\Object\Classificationstore\KeyConfig::getById($keyid);
+                $type = $keyConfig->getType();
+                $definition = json_decode($keyConfig->getDefinition());
+                $field = \Pimcore\Model\Object\Classificationstore\Service::getFieldDefinitionFromJson($definition, $type);
+
+                if ($field instanceof ClassDefinition\Data) {
+                    $mappedKey = "cskey_" . $fieldName . "_" . $groupId . "_" . $keyid;
+                    $joins[] =  ['fieldname' => $fieldName, 'groupId' => $groupId, "keyId"=> $keyid];
+                    $condition = $field->getFilterConditionExt($filter["value"], $operator,
+                        [
+                            "name" => $mappedKey]
+                    );
+
+                    $conditions[$mappedKey] = $condition;
+                }
+            }
+        }
+
+        $result = [
+            "joins" => $joins,
+            "conditions" => $conditions
+        ];
+
+
+        return $result;
+    }
+
+    /**
+     *
+     * @param string $filterJson
+     * @param ClassDefinition $class
+     * @return string
+     */
+    public static function getFilterCondition($filterJson, $class)
+    {
+        $systemFields = self::getSystemFields();
+
+        // create filter condition
+        $conditionPartsFilters = [];
+
+        if ($filterJson) {
+            $db = \Pimcore\Db::get();
+            $filters = \Zend_Json::decode($filterJson);
+            foreach ($filters as $filter) {
                 $operator = "=";
 
                 /**
@@ -564,33 +698,33 @@ class Service extends Model\Element\Service {
                  */
                 $filterField = $filter["field"];
                 $filterOperator = $filter["comparison"];
-                if(\Pimcore\Tool\Admin::isExtJS6()) {
+                if (\Pimcore\Tool\Admin::isExtJS6()) {
                     $filterField = $filter["property"];
                     $filterOperator = $filter["operator"];
                 }
 
-                if($filter["type"] == "string") {
+                if ($filter["type"] == "string") {
                     $operator = "LIKE";
-                } else if ($filter["type"] == "numeric") {
-                    if($filterOperator == "lt") {
+                } elseif ($filter["type"] == "numeric") {
+                    if ($filterOperator == "lt") {
                         $operator = "<";
-                    } else if($filterOperator == "gt") {
+                    } elseif ($filterOperator == "gt") {
                         $operator = ">";
-                    } else if($filterOperator == "eq") {
+                    } elseif ($filterOperator == "eq") {
                         $operator = "=";
                     }
-                } else if ($filter["type"] == "date") {
-                    if($filterOperator == "lt") {
+                } elseif ($filter["type"] == "date") {
+                    if ($filterOperator == "lt") {
                         $operator = "<";
-                    } else if($filterOperator == "gt") {
+                    } elseif ($filterOperator == "gt") {
                         $operator = ">";
-                    } else if($filterOperator == "eq") {
+                    } elseif ($filterOperator == "eq") {
                         $operator = "=";
                     }
                     $filter["value"] = strtotime($filter["value"]);
-                } else if ($filter["type"] == "list") {
+                } elseif ($filter["type"] == "list") {
                     $operator = "=";
-                } else if ($filter["type"] == "boolean") {
+                } elseif ($filter["type"] == "boolean") {
                     $operator = "=";
                     $filter["value"] = (int) $filter["value"];
                 }
@@ -598,11 +732,11 @@ class Service extends Model\Element\Service {
                 $field = $class->getFieldDefinition($filterField);
                 $brickField = null;
                 $brickType = null;
-                if(!$field) {
+                if (!$field) {
 
                     // if the definition doesn't exist check for a localized field
                     $localized = $class->getFieldDefinition("localizedfields");
-                    if($localized instanceof ClassDefinition\Data\Localizedfields) {
+                    if ($localized instanceof ClassDefinition\Data\Localizedfields) {
                         $field = $localized->getFieldDefinition($filterField);
                     }
 
@@ -615,7 +749,7 @@ class Service extends Model\Element\Service {
 //                            $type = $keyParts[1];
 //                            $field = $keyParts[2];
 //                            $keyid = $keyParts[3];
-                    } else if(count($keyParts) > 1) {
+                    } elseif (count($keyParts) > 1) {
                         $brickType = $keyParts[0];
                         $brickKey = $keyParts[1];
 
@@ -624,14 +758,13 @@ class Service extends Model\Element\Service {
 
                         $brickClass = Objectbrick\Definition::getByKey($brickType);
                         $brickField = $brickClass->getFieldDefinition($brickKey);
-
                     }
                 }
-                if($field instanceof ClassDefinition\Data\Objectbricks) {
+                if ($field instanceof ClassDefinition\Data\Objectbricks) {
                     // custom field
-                    $db = \Pimcore\Resource::get();
-                    if(is_array($filter["value"])) {
-                        $fieldConditions = array();
+                    $db = \Pimcore\Db::get();
+                    if (is_array($filter["value"])) {
+                        $fieldConditions = [];
                         foreach ($filter["value"] as $filterValue) {
                             $fieldConditions[] = $db->getQuoteIdentifierSymbol() . $brickType . $db->getQuoteIdentifierSymbol() . "." . $brickField->getFilterCondition($filterValue, $operator);
                         }
@@ -639,10 +772,10 @@ class Service extends Model\Element\Service {
                     } else {
                         $conditionPartsFilters[] = $db->getQuoteIdentifierSymbol() . $brickType . $db->getQuoteIdentifierSymbol() . "." . $brickField->getFilterCondition($filter["value"], $operator);
                     }
-                } else if($field instanceof ClassDefinition\Data) {
+                } elseif ($field instanceof ClassDefinition\Data) {
                     // custom field
-                    if(is_array($filter["value"])) {
-                        $fieldConditions = array();
+                    if (is_array($filter["value"])) {
+                        $fieldConditions = [];
                         foreach ($filter["value"] as $filterValue) {
                             $fieldConditions[] = $field->getFilterCondition($filterValue, $operator);
                         }
@@ -650,13 +783,18 @@ class Service extends Model\Element\Service {
                     } else {
                         $conditionPartsFilters[] = $field->getFilterCondition($filter["value"], $operator);
                     }
-
-                } else if (in_array("o_".$filterField, $systemFields)) {
+                } elseif (in_array("o_".$filterField, $systemFields)) {
                     // system field
                     if ($filterField == "fullpath") {
                         $conditionPartsFilters[] = "concat(o_path, o_key) " . $operator . " " . $db->quote("%" . $filter["value"] . "%");
                     } else {
-                        $conditionPartsFilters[] = "`o_" . $filterField . "` " . $operator . " " . $db->quote($filter["value"]);
+                        if ($filter['type'] == 'date' && $operator == '=') {
+                            //if the equal operator is chosen with the date type, condition has to be changed
+                            $maxTime = $filter['value'] + (86400 - 1); //specifies the top point of the range used in the condition
+                            $conditionPartsFilters[] = "`o_" . $filterField . "` BETWEEN " . $db->quote($filter["value"]) . " AND " . $db->quote($maxTime);
+                        } else {
+                            $conditionPartsFilters[] = "`o_" . $filterField . "` " . $operator . " " . $db->quote($filter["value"]);
+                        }
                     }
                 }
             }
@@ -666,7 +804,8 @@ class Service extends Model\Element\Service {
         if (count($conditionPartsFilters) > 0) {
             $conditionFilters = "(" . implode(" AND ", $conditionPartsFilters) . ")";
         }
-        \Logger::log("ObjectController filter condition:" . $conditionFilters);
+        Logger::log("ObjectController filter condition:" . $conditionFilters);
+
         return $conditionFilters;
     }
 
@@ -676,27 +815,28 @@ class Service extends Model\Element\Service {
      * @param $fieldname
      * @return array
      */
-    public static function getOptionsForSelectField($object, $fieldname) {
+    public static function getOptionsForSelectField($object, $fieldname)
+    {
         $class = null;
-        $options = array();
+        $options = [];
 
-        if(is_object($object) && method_exists($object, "getClass")) {
+        if (is_object($object) && method_exists($object, "getClass")) {
             $class = $object->getClass();
-        } else if(is_string($object)) {
+        } elseif (is_string($object)) {
             $object = "\\" . ltrim($object, "\\");
             $object = new $object();
             $class = $object->getClass();
         }
 
-        if($class) {
+        if ($class) {
             /**
              * @var ClassDefinition\Data\Select $definition
              */
             $definition = $class->getFielddefinition($fieldname);
-            if($definition instanceof ClassDefinition\Data\Select || $definition instanceof ClassDefinition\Data\Multiselect) {
+            if ($definition instanceof ClassDefinition\Data\Select || $definition instanceof ClassDefinition\Data\Multiselect) {
                 $_options = $definition->getOptions();
 
-                foreach($_options as $option) {
+                foreach ($_options as $option) {
                     $options[$option["value"]] = $option["key"];
                 }
             }
@@ -711,7 +851,8 @@ class Service extends Model\Element\Service {
      * @param $fieldname
      * @return array
      */
-    public static function getOptionsForMultiSelectField($object, $fieldname) {
+    public static function getOptionsForMultiSelectField($object, $fieldname)
+    {
         return self::getOptionsForSelectField($object, $fieldname);
     }
 
@@ -720,20 +861,19 @@ class Service extends Model\Element\Service {
      * @param $path
      * @return bool
      */
-    public static function pathExists ($path, $type = null) {
-
+    public static function pathExists($path, $type = null)
+    {
         $path = Element\Service::correctPath($path);
 
         try {
             $object = new AbstractObject();
 
             if (\Pimcore\Tool::isValidPath($path)) {
-                $object->getResource()->getByPath($path);
+                $object->getDao()->getByPath($path);
+
                 return true;
             }
-        }
-        catch (\Exception $e) {
-
+        } catch (\Exception $e) {
         }
 
         return false;
@@ -754,15 +894,16 @@ class Service extends Model\Element\Service {
      * @param $rewriteConfig
      * @return AbstractObject
      */
-    public static function rewriteIds($object, $rewriteConfig) {
+    public static function rewriteIds($object, $rewriteConfig)
+    {
         // rewriting elements only for snippets and pages
-        if($object instanceof Concrete) {
+        if ($object instanceof Concrete) {
             $fields = $object->getClass()->getFieldDefinitions();
 
-            foreach($fields as $field) {
-                if(method_exists($field, "rewriteIds")) {
+            foreach ($fields as $field) {
+                if (method_exists($field, "rewriteIds")) {
                     $setter = "set" . ucfirst($field->getName());
-                    if(method_exists($object, $setter)) { // check for non-owner-objects
+                    if (method_exists($object, $setter)) { // check for non-owner-objects
                         $object->$setter($field->rewriteIds($object, $rewriteConfig));
                     }
                 }
@@ -783,10 +924,11 @@ class Service extends Model\Element\Service {
      * @param Concrete $object
      * @return array
      */
-    public static function getValidLayouts(Concrete $object) {
+    public static function getValidLayouts(Concrete $object)
+    {
         $user = AdminTool::getCurrentUser();
 
-        $resultList = array();
+        $resultList = [];
         $isMasterAllowed = $user->getAdmin();
 
         $permissionSet = $object->getPermissions("layouts", $user);
@@ -820,8 +962,8 @@ class Service extends Model\Element\Service {
         $list->setCondition($condition);
         $list = $list->load();
 
-        if ((!count($resultList) && !count($list)) || (count($resultList) == 1 && !count($list)))  {
-            return array();
+        if ((!count($resultList) && !count($list)) || (count($resultList) == 1 && !count($list))) {
+            return [];
         }
 
         foreach ($list as $customLayout) {
@@ -837,7 +979,8 @@ class Service extends Model\Element\Service {
      * @param $insideLocalizedField
      * @return mixed
      */
-    public static function extractLocalizedFieldDefinitions($layout, $targetList, $insideLocalizedField) {
+    public static function extractLocalizedFieldDefinitions($layout, $targetList, $insideLocalizedField)
+    {
         if ($insideLocalizedField && $layout instanceof ClassDefinition\Data and !$layout instanceof ClassDefinition\Data\Localizedfields) {
             $targetList[$layout->getName()] = $layout;
         }
@@ -851,6 +994,7 @@ class Service extends Model\Element\Service {
                 }
             }
         }
+
         return $targetList;
     }
 
@@ -859,21 +1003,32 @@ class Service extends Model\Element\Service {
      * @param Concrete $object
      * @return mixed
      */
-    public static function getSuperLayoutDefinition(Concrete $object) {
+    public static function getSuperLayoutDefinition(Concrete $object)
+    {
         $masterLayout = $object->getClass()->getLayoutDefinitions() ;
         $superLayout = unserialize(serialize($masterLayout));
 
         self::createSuperLayout($superLayout);
-        return $superLayout;
 
+        return $superLayout;
     }
 
 
-    private static function createSuperLayout(&$layout) {
+    public static function createSuperLayout(&$layout)
+    {
         if ($layout instanceof ClassDefinition\Data) {
             $layout->setInvisible(false);
             $layout->setNoteditable(false);
         }
+
+
+        if ($layout instanceof Model\Object\ClassDefinition\Data\Fieldcollections) {
+            unset($layout->disallowAddRemove);
+            unset($layout->disallowReorder);
+            $layout->layoutId = -1;
+        }
+
+
 
         if (method_exists($layout, "getChilds")) {
             $children = $layout->getChilds();
@@ -890,8 +1045,8 @@ class Service extends Model\Element\Service {
      * @param $layout
      * @return bool
      */
-    private static function synchronizeCustomLayoutFieldWithMaster($masterDefinition, &$layout) {
-
+    private static function synchronizeCustomLayoutFieldWithMaster($masterDefinition, &$layout)
+    {
         if ($layout instanceof ClassDefinition\Data) {
             $fieldname = $layout->name;
             if (!$masterDefinition[$fieldname]) {
@@ -918,19 +1073,21 @@ class Service extends Model\Element\Service {
                 }
             }
         }
+
         return true;
     }
 
     /** Synchronizes a custom layout with its master layout
      * @param ClassDefinition\CustomLayout $customLayout
      */
-    public static function synchronizeCustomLayout(ClassDefinition\CustomLayout $customLayout) {
+    public static function synchronizeCustomLayout(ClassDefinition\CustomLayout $customLayout)
+    {
         $classId = $customLayout->getClassId();
         $class = ClassDefinition::getById($classId);
         if ($class && ($class->getModificationDate() > $customLayout->getModificationDate())) {
             $masterDefinition = $class->getFieldDefinitions();
             $customLayoutDefinition = $customLayout->getLayoutDefinitions();
-            $targetList = self::extractLocalizedFieldDefinitions($class->getLayoutDefinitions(), array(), false);
+            $targetList = self::extractLocalizedFieldDefinitions($class->getLayoutDefinitions(), [], false);
             $masterDefinition = array_merge($masterDefinition, $targetList);
 
             self::synchronizeCustomLayoutFieldWithMaster($masterDefinition, $customLayoutDefinition);
@@ -938,7 +1095,8 @@ class Service extends Model\Element\Service {
         }
     }
 
-    public static function getCustomGridFieldDefinitions($classId, $objectId) {
+    public static function getCustomGridFieldDefinitions($classId, $objectId)
+    {
         $object = AbstractObject::getById($objectId);
 
         $class = ClassDefinition::getById($classId);
@@ -953,7 +1111,7 @@ class Service extends Model\Element\Service {
             return null;
         }
 
-        $permissionList = array();
+        $permissionList = [];
 
         $parentPermissionSet = $object->getPermissions(null, $user, true);
         if ($parentPermissionSet) {
@@ -964,7 +1122,7 @@ class Service extends Model\Element\Service {
         $permissionList = array_merge($permissionList, $childPermissions);
 
 
-        $layoutDefinitions = array();
+        $layoutDefinitions = [];
 
         foreach ($permissionList as $permissionSet) {
             $allowedLayoutIds = self::getLayoutPermissions($classId, $permissionSet);
@@ -995,8 +1153,6 @@ class Service extends Model\Element\Service {
                         $mergedLocalizedFieldDefinitions[$locKey]->setNotEditable(false);
                     }
                     $mergedFieldDefinition[$key]->setChilds($mergedLocalizedFieldDefinitions);
-
-
                 } else {
                     $mergedFieldDefinition[$key]->setInvisible(false);
                     $mergedFieldDefinition[$key]->setNotEditable(false);
@@ -1030,7 +1186,6 @@ class Service extends Model\Element\Service {
                         self::mergeFieldDefinition($mergedLocalizedFieldDefinitions, $customLocalizedFieldDefinitions, $locKey);
                     }
                     $mergedFieldDefinition[$key]->setChilds($mergedLocalizedFieldDefinitions);
-
                 } else {
                     self::mergeFieldDefinition($mergedFieldDefinition, $customFieldDefinitions, $key);
                 }
@@ -1045,10 +1200,11 @@ class Service extends Model\Element\Service {
      * @param $customFieldDefinitions
      * @param $key
      */
-    private static function mergeFieldDefinition(&$mergedFieldDefinition, &$customFieldDefinitions, $key) {
+    private static function mergeFieldDefinition(&$mergedFieldDefinition, &$customFieldDefinitions, $key)
+    {
         if (!$customFieldDefinitions[$key]) {
             unset($mergedFieldDefinition[$key]);
-        } else if (isset($mergedFieldDefinition[$key])) {
+        } elseif (isset($mergedFieldDefinition[$key])) {
             $def = $customFieldDefinitions[$key];
             if ($def->getNotEditable()) {
                 $mergedFieldDefinition[$key]->setNotEditable(true);
@@ -1056,6 +1212,7 @@ class Service extends Model\Element\Service {
             if ($def->getInvisible()) {
                 if ($mergedFieldDefinition[$key] instanceof ClassDefinition\Data\Objectbricks) {
                     unset($mergedFieldDefinition[$key]);
+
                     return;
                 } else {
                     $mergedFieldDefinition[$key]->setInvisible(true);
@@ -1073,7 +1230,8 @@ class Service extends Model\Element\Service {
      * @param $fieldDefinitions
      * @return bool
      */
-    private static function doFilterCustomGridFieldDefinitions(&$layout, $fieldDefinitions) {
+    private static function doFilterCustomGridFieldDefinitions(&$layout, $fieldDefinitions)
+    {
         if ($layout instanceof ClassDefinition\Data) {
             $name = $layout->getName();
             if (!$fieldDefinitions[$name] || $fieldDefinitions[$name]->getInvisible()) {
@@ -1084,7 +1242,6 @@ class Service extends Model\Element\Service {
         }
 
         if (method_exists($layout, "getChilds")) {
-
             $children = $layout->getChilds();
             if (is_array($children)) {
                 $count = count($children);
@@ -1093,11 +1250,11 @@ class Service extends Model\Element\Service {
                     if (!self::doFilterCustomGridFieldDefinitions($child, $fieldDefinitions)) {
                         unset($children[$i]);
                     }
-
                 }
                 $layout->setChilds(array_values($children));
             }
         }
+
         return true;
     }
 
@@ -1107,13 +1264,13 @@ class Service extends Model\Element\Service {
      * @param int $objectId
      * @return array layout
      */
-    public static function getCustomLayoutDefinitionForGridColumnConfig(ClassDefinition $class, $objectId) {
-
+    public static function getCustomLayoutDefinitionForGridColumnConfig(ClassDefinition $class, $objectId)
+    {
         $layoutDefinitions = $class->getLayoutDefinitions();
 
-        $result = array(
+        $result = [
             "layoutDefinition" => $layoutDefinitions
-        );
+        ];
 
         if (!$objectId) {
             return $result;
@@ -1131,7 +1288,7 @@ class Service extends Model\Element\Service {
             if ($mergedFieldDefinition["localizedfields"]) {
                 $childs = $mergedFieldDefinition["localizedfields"]->getFieldDefinitions();
                 if (is_array($childs)) {
-                    foreach($childs as $locKey => $locValue) {
+                    foreach ($childs as $locKey => $locValue) {
                         $mergedFieldDefinition[$locKey] = $locValue;
                     }
                 }
@@ -1144,35 +1301,36 @@ class Service extends Model\Element\Service {
         }
 
         return $result;
-
     }
 
-    public static function getUniqueKey($item,$nr = 0){
+    public static function getUniqueKey($item, $nr = 0)
+    {
         $list = new Listing();
         $list->setUnpublished(true);
-        $key = \Pimcore\File::getValidFilename($item->getKey());
-        if(!$key){
+        $key = Element\Service::getValidKey($item->getKey(), "object");
+        if (!$key) {
             throw new \Exception("No item key set.");
         }
-        if($nr){
+        if ($nr) {
             $key = $key . '_' . $nr;
         }
 
         $parent = $item->getParent();
-        if(!$parent){
+        if (!$parent) {
             throw new \Exception("You have to set a parent Object to determine a unique Key");
         }
 
-        if(!$item->getId()){
-            $list->setCondition('o_parentId = ? AND `o_key` = ? ',array($parent->getId(),$key));
-        }else{
-            $list->setCondition('o_parentId = ? AND `o_key` = ? AND o_id != ? ',array($parent->getId(),$key,$item->getId()));
+        if (!$item->getId()) {
+            $list->setCondition('o_parentId = ? AND `o_key` = ? ', [$parent->getId(), $key]);
+        } else {
+            $list->setCondition('o_parentId = ? AND `o_key` = ? AND o_id != ? ', [$parent->getId(), $key, $item->getId()]);
         }
         $check = $list->loadIdList();
-        if(!empty($check)){
+        if (!empty($check)) {
             $nr++;
-            $key = self::getUniqueKey($item,$nr);
+            $key = self::getUniqueKey($item, $nr);
         }
+
         return $key;
     }
 
@@ -1180,7 +1338,8 @@ class Service extends Model\Element\Service {
     /** Enriches the layout definition before it is returned to the admin interface.
      * @param $layout
      */
-    public static function enrichLayoutDefinition(&$layout, $object = null) {
+    public static function enrichLayoutDefinition(&$layout, $object = null)
+    {
         if (method_exists($layout, "enrichLayoutDefinition")) {
             $layout->enrichLayoutDefinition($object);
         }
@@ -1193,5 +1352,155 @@ class Service extends Model\Element\Service {
                 }
             }
         }
+    }
+
+    /**
+     * @param $object
+     * @param $data Model\Object\Data\CalculatedValue
+     * @return mixed|null
+     */
+    public static function getCalculatedFieldValueForEditMode($object, $params = [], $data)
+    {
+        if (!$data) {
+            return;
+        }
+        $fieldname = $data->getFieldname();
+        $ownerType = $data->getOwnerType();
+        /** @var $fd Model\Object\ClassDefinition\Data\CalculatedValue */
+        if ($ownerType == "object") {
+            $fd = $object->getClass()->getFieldDefinition($fieldname);
+        } elseif ($ownerType == "localizedfield") {
+            $fd = $object->getClass()->getFieldDefinition("localizedfields")->getFieldDefinition($fieldname);
+        } elseif ($ownerType == "classificationstore") {
+            $fd = $data->getKeyDefinition();
+        } elseif ($ownerType == "fieldcollection" || $ownerType == "objectbrick") {
+            $fd = $data->getKeyDefinition();
+        }
+
+        if (!$fd) {
+            return $data;
+        }
+        $className = $fd->getCalculatorClass();
+        if (!$className || !\Pimcore\Tool::classExists($className)) {
+            Logger::error("Class does not exist: " . $className);
+
+            return null;
+        }
+
+        $inheritanceEnabled = Model\Object\Concrete::getGetInheritedValues();
+        Model\Object\Concrete::setGetInheritedValues(true);
+
+        if (method_exists($className, 'getCalculatedValueForEditMode')) {
+            $result = call_user_func($className . '::getCalculatedValueForEditMode', $object, $data);
+        } else {
+            $result = self::getCalculatedFieldValue($object, $data);
+        }
+        Model\Object\Concrete::setGetInheritedValues($inheritanceEnabled);
+
+        return $result;
+    }
+
+
+    /**
+     * @param $object
+     * @param $data Model\Object\Data\CalculatedValue
+     * @return mixed|null
+     */
+    public static function getCalculatedFieldValue($object, $data)
+    {
+        if (!$data) {
+            return null;
+        }
+        $fieldname = $data->getFieldname();
+        $ownerType = $data->getOwnerType();
+        /** @var $fd Model\Object\ClassDefinition\Data\CalculatedValue */
+        if ($ownerType == "object") {
+            $fd = $object->getClass()->getFieldDefinition($fieldname);
+        } elseif ($ownerType == "localizedfield") {
+            $fd = $object->getClass()->getFieldDefinition("localizedfields")->getFieldDefinition($fieldname);
+        } elseif ($ownerType == "classificationstore") {
+            $fd = $data->getKeyDefinition();
+        } elseif ($ownerType == "fieldcollection" || $ownerType == "objectbrick") {
+            $fd = $data->getKeyDefinition();
+        }
+
+        if (!$fd) {
+            return null;
+        }
+        $className = $fd->getCalculatorClass();
+        if (!$className || !\Pimcore\Tool::classExists($className)) {
+            Logger::error("Class does not exsist: " . $className);
+
+            return null;
+        }
+
+        if (method_exists($className, 'compute')) {
+            $inheritanceEnabled = Model\Object\Concrete::getGetInheritedValues();
+            Model\Object\Concrete::setGetInheritedValues(true);
+
+            $result = call_user_func($className . '::compute', $object, $data);
+            Model\Object\Concrete::setGetInheritedValues($inheritanceEnabled);
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    /** Adds all the query stuff that is needed for displaying, filtering and exporting the feature grid data.
+     * @param $list list
+     * @param $featureJoins
+     * @param $class
+     * @param $featureFilters
+     * @param $requestedLanguage
+     */
+    public static function addGridFeatureJoins($list, $featureJoins, $class, $featureFilters, $requestedLanguage)
+    {
+        if ($featureJoins) {
+            $me = $list;
+            $list->onCreateQuery(function (\Zend_Db_Select $select) use ($list, $featureJoins, $class, $featureFilters, $requestedLanguage, $me) {
+                $db = \Pimcore\Db::get();
+
+                $alreadyJoined = [];
+
+                foreach ($featureJoins as $featureJoin) {
+                    $fieldname = $featureJoin["fieldname"];
+                    $mappedKey = "cskey_" . $fieldname . "_" . $featureJoin["groupId"] . "_" . $featureJoin["keyId"];
+                    if ($alreadyJoined[$mappedKey]) {
+                        continue;
+                    }
+                    $alreadyJoined[$mappedKey] = 1;
+
+                    $table = $me->getDao()->getTableName();
+                    $select->joinLeft(
+                        [$mappedKey => "object_classificationstore_data_" . $class->getId()],
+                        "("
+                        . $mappedKey . ".o_id = " . $table . ".o_id"
+                        . " and " . $mappedKey . ".fieldname = " . $db->quote($fieldname)
+                        . " and " . $mappedKey . ".groupId=" . $featureJoin["groupId"]
+                        . " and " . $mappedKey . ".keyId=" . $featureJoin["keyId"]
+                        . " and " . $mappedKey . ".language = " . $db->quote($requestedLanguage)
+                        . ")",
+                        [
+                            $mappedKey => "value"
+                        ]
+                    );
+                }
+
+                $havings = $featureFilters["conditions"];
+                if ($havings) {
+                    $havings = implode(" AND ", $havings);
+                    $select->having($havings);
+                }
+            });
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public static function getSystemFields()
+    {
+        return self::$systemFields;
     }
 }

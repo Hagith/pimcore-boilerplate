@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.element.scheduler");
@@ -139,12 +138,13 @@ pimcore.element.scheduler = Class.create({
                     mode: 'local'
                 }),renderer: function(value, metaData, record, rowIndex, colIndex, store, view) {
                     try {
-                        var rec = actionTypes.findRecord("name", value);
+                        var rec = actionTypes.findRecord("key", value);
                         if (rec) {
                             return rec.get("name");
                         }
                     }
                     catch (e) {
+                        console.log(e);
 
                     }
 
@@ -170,7 +170,7 @@ pimcore.element.scheduler = Class.create({
                     width: 30,
                     items: [{
                         tooltip: t('delete'),
-                        icon: "/pimcore/static6/img/icon/cross.png",
+                        icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                         handler: function (grid, rowIndex) {
                             grid.getStore().removeAt(rowIndex);
                         }.bind(this)
@@ -211,9 +211,11 @@ pimcore.element.scheduler = Class.create({
 
 
             this.layout = new Ext.Panel({
-                title: t('schedule'),
+                tabConfig: {
+                    tooltip: t('schedule')
+                },
                 border: false,
-                iconCls: "pimcore_icon_tab_schedule",
+                iconCls: "pimcore_icon_schedule",
                 items: [this.grid],
                 layout: "fit"
             });
@@ -233,12 +235,12 @@ pimcore.element.scheduler = Class.create({
     },
 
     onDelete: function () {
-        var rec = this.grid.getSelectionModel().getSelectedCell();
+        var rec = this.grid.getSelectionModel().getSelection();
 
         if (!rec) {
             return false;
         }
-        this.grid.store.removeAt(rec[0]);
+        this.grid.store.remove(rec[0]);
     },
 
     getValues: function () {
@@ -260,8 +262,6 @@ pimcore.element.scheduler = Class.create({
             });
         }
 
-
         return values;
     }
-
 });

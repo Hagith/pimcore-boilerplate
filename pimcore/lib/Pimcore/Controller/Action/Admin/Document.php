@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Controller\Action\Admin;
@@ -20,20 +19,22 @@ use Pimcore\Tool;
 use Pimcore\Tool\Session;
 use Pimcore\Config;
 use Pimcore\Model;
-use Pimcore\Model\Element;
 use Pimcore\Model\Property;
 use Pimcore\Model\Schedule;
+use Pimcore\Logger;
 
-abstract class Document extends Admin {
+abstract class Document extends Admin
+{
 
     /**
      * @throws \Exception
      */
-    public function init() {
+    public function init()
+    {
         parent::init();
 
         // check permissions
-        $notRestrictedActions = array();
+        $notRestrictedActions = [];
         if (!in_array($this->getParam("action"), $notRestrictedActions)) {
             $this->checkPermission("documents");
         }
@@ -43,12 +44,12 @@ abstract class Document extends Admin {
      * @param Model\Document $document
      * @throws \Zend_Json_Exception
      */
-    protected function addPropertiesToDocument(Model\Document $document) {
+    protected function addPropertiesToDocument(Model\Document $document)
+    {
 
         // properties
         if ($this->getParam("properties")) {
-
-            $properties = array();
+            $properties = [];
             // assign inherited properties
             foreach ($document->getProperties() as $p) {
                 if ($p->isInherited()) {
@@ -60,7 +61,6 @@ abstract class Document extends Admin {
 
             if (is_array($propertiesData)) {
                 foreach ($propertiesData as $propertyName => $propertyData) {
-
                     $value = $propertyData["data"];
 
                     try {
@@ -72,11 +72,9 @@ abstract class Document extends Admin {
                         $property->setInheritable($propertyData["inheritable"]);
 
                         $properties[$propertyName] = $property;
+                    } catch (\Exception $e) {
+                        Logger::warning("Can't add " . $propertyName . " to document " . $document->getRealFullPath());
                     }
-                    catch (\Exception $e) {
-                        \Logger::warning("Can't add " . $propertyName . " to document " . $document->getFullPath());
-                    }
-
                 }
             }
             if ($document->isAllowed("properties")) {
@@ -92,11 +90,12 @@ abstract class Document extends Admin {
      * @param Model\Document $document
      * @throws \Zend_Json_Exception
      */
-    protected function addSchedulerToDocument(Model\Document $document) {
+    protected function addSchedulerToDocument(Model\Document $document)
+    {
 
         // scheduled tasks
         if ($this->getParam("scheduler")) {
-            $tasks = array();
+            $tasks = [];
             $tasksData = \Zend_Json::decode($this->getParam("scheduler"));
 
             if (!empty($tasksData)) {
@@ -118,7 +117,8 @@ abstract class Document extends Admin {
      * @param Model\Document $document
      * @throws \Zend_Json_Exception
      */
-    protected function addSettingsToDocument(Model\Document $document) {
+    protected function addSettingsToDocument(Model\Document $document)
+    {
 
         // settings
         if ($this->getParam("settings")) {
@@ -133,7 +133,8 @@ abstract class Document extends Admin {
      * @param Model\Document $document
      * @throws \Zend_Json_Exception
      */
-    protected function addDataToDocument(Model\Document $document) {
+    protected function addDataToDocument(Model\Document $document)
+    {
 
         // data
         if ($this->getParam("data")) {
@@ -147,12 +148,23 @@ abstract class Document extends Admin {
     }
 
     /**
+     * @param Model\Document $document
+     */
+    protected function addTranslationsData(Model\Document $document)
+    {
+        $service = new Model\Document\Service;
+        $translations = $service->getTranslations($document);
+        $language = $document->getProperty("language");
+        unset($translations[$language]);
+        $document->translations = $translations;
+    }
+
+    /**
      *
      */
-    public function saveToSessionAction() {
-
+    public function saveToSessionAction()
+    {
         if ($this->getParam("id")) {
-
             $key = "document_" . $this->getParam("id");
 
             $session = Session::get("pimcore_documents");
@@ -162,7 +174,7 @@ abstract class Document extends Admin {
                 $document = $this->getLatestVersion($document);
             }
 
-            // set _fulldump otherwise the properties will be removed because of the session-serialize 
+            // set _fulldump otherwise the properties will be removed because of the session-serialize
             $document->_fulldump = true;
             $this->setValuesToDocument($document);
 
@@ -171,69 +183,45 @@ abstract class Document extends Admin {
             Session::writeClose();
         }
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
     /**
      * @param $doc
+     * @param bool $useForSave
      */
-    protected function saveToSession($doc) {
+    protected function saveToSession($doc, $useForSave = false)
+    {
         // save to session
-        Session::useSession(function ($session) use ($doc) {
-            $key = "document_" . $doc->getId();
-            $session->$key = $doc;
-        }, "pimcore_documents");
-    }
+        Session::useSession(function ($session) use ($doc, $useForSave) {
+            $session->{"document_" . $doc->getId()} = $doc;
 
-    /**
-     * @throws \Zend_Json_Exception
-     */
-    public function translateAction () {
-
-        $conf = Config::getSystemConfig();
-        $key  = $conf->services->translate->apikey;
-        $locale = new \Zend_Locale($this->getParam("language"));
-        $language = $locale->getLanguage();
-
-        $supportedTypes = array("input","textarea","wysiwyg");
-        $data = \Zend_Json::decode($this->getParam("data"));
-
-        foreach ($data as &$d) {
-            if(in_array($d["type"],$supportedTypes)) {
-
-                $response = Tool::getHttpData("https://www.googleapis.com/language/translate/v2?key=" . $key . "&q=" . urlencode($d["data"]) . "&target=" . $language);
-
-                $tData = \Zend_Json::decode($response);
-                if($tData["data"]["translations"][0]["translatedText"]) {
-                    $d["data"] = $tData["data"]["translations"][0]["translatedText"];
-                }
-
+            if ($useForSave) {
+                $session->{"document_" . $doc->getId() . "_useForSave"} = true;
             }
-        }
-
-        $this->getRequest()->setParam("data", \Zend_Json::encode($data));
-
-        $this->saveToSessionAction();
+        }, "pimcore_documents");
     }
 
     /**
      *
      */
-    public function removeFromSessionAction() {
+    public function removeFromSessionAction()
+    {
         $key = "document_" . $this->getParam("id");
 
         Session::useSession(function ($session) use ($key) {
             $session->$key = null;
         }, "pimcore_documents");
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 
     /**
      * @param $document
      */
-    protected function minimizeProperties($document) {
-        $properties = Element\Service::minimizePropertiesForEditmode($document->getProperties());
+    protected function minimizeProperties($document)
+    {
+        $properties = Model\Element\Service::minimizePropertiesForEditmode($document->getProperties());
         $document->setProperties($properties);
     }
 
@@ -241,31 +229,32 @@ abstract class Document extends Admin {
      * @param Model\Document $document
      * @return Model\Document
      */
-    protected function getLatestVersion (Model\Document $document) {
-        
+    protected function getLatestVersion(Model\Document $document)
+    {
         $latestVersion = $document->getLatestVersion();
-        if($latestVersion) {
+        if ($latestVersion) {
             $latestDoc = $latestVersion->loadData();
-            if($latestDoc instanceof Model\Document) {
+            if ($latestDoc instanceof Model\Document) {
                 $latestDoc->setModificationDate($document->getModificationDate()); // set de modification-date from published version to compare it in js-frontend
                 return $latestDoc;
             }
         }
+
         return $document;
     }
 
     /**
      * this is used for pages and snippets to change the master document (which is not saved with the normal save button)
      */
-    public function changeMasterDocumentAction() {
-
+    public function changeMasterDocumentAction()
+    {
         $doc = Model\Document::getById($this->getParam("id"));
-        if($doc instanceof Model\Document\PageSnippet) {
-            $doc->setElements(array());
+        if ($doc instanceof Model\Document\PageSnippet) {
+            $doc->setElements([]);
             $doc->setContentMasterDocumentId($this->getParam("contentMasterDocumentPath"));
-            $doc->saveVersion(true, true, true);
+            $doc->saveVersion();
         }
 
-        $this->_helper->json(array("success" => true));
+        $this->_helper->json(["success" => true]);
     }
 }

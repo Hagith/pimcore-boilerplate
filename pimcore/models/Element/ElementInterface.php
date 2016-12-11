@@ -2,46 +2,57 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Element
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Element;
 
-interface ElementInterface {
+interface ElementInterface
+{
 
     /**
      * @return integer $id
      */
     public function getId();
 
-
     /**
      * @return string
      */
     public function getKey();
-
 
     /**
      * @return string
      */
     public function getPath();
 
+    /**
+     * @return string
+     */
+    public function getRealPath();
+
+    /**
+     * @return string
+     */
+    public function getFullPath();
+
+    /**
+     * @return string
+     */
+    public function getRealFullPath();
 
     /**
      * @return string
      */
     public function getType();
-
 
     /**
      * @return integer
@@ -53,7 +64,6 @@ interface ElementInterface {
      * @return void
      */
     public function setCreationDate($creationDate);
-
 
     /**
      * @return integer
@@ -77,12 +87,10 @@ interface ElementInterface {
      */
     public function setUserOwner($userOwner);
 
-
     /**
      * @return integer
      */
     public function getUserModification();
-
 
     /**
      * @param integer $userModification
@@ -93,13 +101,12 @@ interface ElementInterface {
     /**
      *
      * @param $id
-     * @return Element\ElementInterface $resource
+     * @return ElementInterface $resource
      */
     public static function getById($id);
 
-
     /**
-     * get possible types 
+     * get possible types
      * @return array
      */
     public static function getTypes();
@@ -127,7 +134,13 @@ interface ElementInterface {
     public function getParentId();
 
     /**
-     *
+     * @return string
      */
+    public function getCacheTag();
 
+    /**
+     * @param array $tags
+     * @return array
+     */
+    public function getCacheTags($tags = []);
 }

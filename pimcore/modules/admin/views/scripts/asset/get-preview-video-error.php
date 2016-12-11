@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" href="/pimcore/static/css/admin.css"/>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/pimcore/static6/css/admin.css"/>
 
     <style type="text/css">
 
@@ -34,8 +34,6 @@
     <tr>
         <td class="error" align="center" valign="center">
             <?php if ($this->thumbnail && $this->thumbnail["status"] == "inprogress") { ?>
-                <?php $progress = \Pimcore\Model\Asset\Video\Thumbnail\Processor::getProgress($this->thumbnail["processId"]) ?>
-
                 <style type="text/css">
                     .pimcore_tag_video_progress {
                         position:relative;
@@ -49,7 +47,7 @@
                         color:#555;
                         font-family:Arial,Verdana,sans-serif;
                         line-height:66px;
-                        background:#fff url(/pimcore/static/img/video-loading.gif) center center no-repeat;
+                        background:#fff url(/pimcore/static6/img/video-loading.gif) center center no-repeat;
                         width:66px;
                         height:66px;
                         padding:20px;
@@ -71,7 +69,7 @@
                     <br />
                     <?= $this->translate("please_wait"); ?>
 
-                    <div class="pimcore_tag_video_progress_status"><?= number_format($progress,0) ?>%</div>
+                    <div class="pimcore_tag_video_progress_status"></div>
                 </div>
 
 

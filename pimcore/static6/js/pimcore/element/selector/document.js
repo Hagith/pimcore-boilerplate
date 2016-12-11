@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.element.selector.document");
@@ -28,8 +27,12 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
                     rootProperty: 'data'
                 }
             },
-            fields: ["id","fullpath","type","subtype","published","title","description","keywords","name","filename"]
+            fields: ["id","fullpath","type","subtype","published","title","description","name","filename"]
         });
+    },
+
+    getTabTitle: function() {
+        return "document_search";
     },
 
     getForm: function () {
@@ -56,7 +59,7 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
                 handler: function () {
                     window.open("http://dev.mysql.com/doc/refman/5.6/en/fulltext-boolean.html");
                 },
-                iconCls: "pimcore_icon_menu_help"
+                iconCls: "pimcore_icon_help"
             })]
         };
 
@@ -92,7 +95,7 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
             mode: "local",
             name: "subtype",
             triggerAction: "all",
-            forceSelection: true,
+            editable: false,
             value: selectedValue
         });
 
@@ -143,9 +146,7 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
                 columns: [
                     {header: t("type"), width: 40, sortable: true, dataIndex: 'subtype',
                         renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                            return '<div style="background: url(/pimcore/static6/img/icon/'
-                                + value + '.png) center center no-repeat; height: 16px;" name="'
-                                + t(record.data.subtype) + '">&nbsp;</div>';
+                            return '<div class="pimcore_icon_' + value + '" name="' + t(record.data.subtype) + '">&nbsp;</div>';
                         }
                     },
                     {header: t("filename"), flex: 1, sortable: true, dataIndex: 'filename'}
@@ -190,9 +191,7 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
             var columns = [
                 {header: t("type"), width: 40, sortable: true, dataIndex: 'subtype',
                     renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                        return '<div style="background: url(/pimcore/static6/img/icon/' + value
-                            + '.png) center center no-repeat; height: 16px;" name="'
-                            + t(record.data.subtype) + '">&nbsp;</div>';
+                        return '<div class="pimcore_icon_' + value + '" name="' + t(record.data.subtype) + '">&nbsp;</div>';
                     }
                 },
                 {header: 'ID', width: 40, sortable: true, dataIndex: 'id', hidden: true},
@@ -200,7 +199,6 @@ pimcore.element.selector.document = Class.create(pimcore.element.selector.abstra
                 {header: t("path"), flex: 200, sortable: true, dataIndex: 'fullpath'},
                 {header: t("title"), flex: 200, sortable: false, dataIndex: 'title', hidden: false},
                 {header: t("description"), width: 200, sortable: false, dataIndex: 'description', hidden: true},
-                {header: t("keywords"), width: 200, sortable: false, dataIndex: 'keywords', hidden: true},
                 {header: t("filename"), width: 200, sortable: false, dataIndex: 'filename', hidden: true}
             ];
 

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.translation.xliff");
@@ -89,7 +88,7 @@ pimcore.settings.translation.xliff = Class.create({
                         width: 30,
                         items: [{
                             tooltip: t('remove'),
-                            icon: "/pimcore/static6/img/icon/cross.png",
+                            icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                             handler: function (grid, rowIndex) {
                                 grid.getStore().removeAt(rowIndex);
                             }.bind(this)
@@ -322,7 +321,7 @@ pimcore.settings.translation.xliff = Class.create({
             html: '<div style="font: 12px tahoma,arial,helvetica; padding: 10px;">' + t("xliff_import_notice") + '</div>',
             buttons: [{
                 text: t("select_a_file") + " (.xlf / .xliff)",
-                iconCls: "pimcore_icon_newfile",
+                iconCls: "pimcore_icon_file pimcore_icon_overlay_add",
                 handler: function () {
                     pimcore.helpers.uploadDialog('/admin/translation/xliff-import-upload', "file", function(res) {
 

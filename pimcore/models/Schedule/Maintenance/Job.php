@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Schedule
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Schedule\Maintenance;
@@ -20,7 +19,8 @@ namespace Pimcore\Model\Schedule\Maintenance;
 use Pimcore\Model;
 use Pimcore\Model\Tool;
 
-class Job {
+class Job
+{
 
     /**
      * @var string
@@ -46,8 +46,8 @@ class Job {
      */
     public $arguments;
 
-    public function __construct($id, $object, $method, $arguments=null) {
-
+    public function __construct($id, $object, $method, $arguments=null)
+    {
         $this->setId($id);
         $this->setObject($object);
         $this->setMethod($method);
@@ -58,17 +58,20 @@ class Job {
      * execute job
      * @return mixed
      */
-    public function execute() {
+    public function execute()
+    {
         if (method_exists($this->getObject(), $this->getMethod())) {
             $arguments = $this->getArguments();
-            if(!is_array($arguments)){
-                $arguments = array();
+            if (!is_array($arguments)) {
+                $arguments = [];
             }
-            return call_user_func_array(array($this->getObject(), $this->getMethod()), $arguments);
+
+            return call_user_func_array([$this->getObject(), $this->getMethod()], $arguments);
         }
     }
 
-    public function getLockKey() {
+    public function getLockKey()
+    {
         return "maintenance-job-" . $this->getId();
     }
 
@@ -76,7 +79,8 @@ class Job {
      * create lock file
      * @return void
      */
-    public function lock() {
+    public function lock()
+    {
         Tool\Lock::lock($this->getLockKey());
     }
 
@@ -84,30 +88,35 @@ class Job {
      * delete lock file
      * @return void
      */
-    public function unlock() {
+    public function unlock()
+    {
         Tool\Lock::release($this->getLockKey());
     }
 
     /**
      * @return bool
      */
-    public function isLocked() {
+    public function isLocked()
+    {
         return Tool\Lock::isLocked($this->getLockKey(), 86400); // 24h expire
     }
 
     /**
      * @param  string $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = $id;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
@@ -115,15 +124,18 @@ class Job {
      * @param  object $object
      * @return void
      */
-    public function setObject($object) {
+    public function setObject($object)
+    {
         $this->object = $object;
+
         return $this;
     }
 
     /**
      * @return object
      */
-    public function getObject() {
+    public function getObject()
+    {
         return $this->object;
     }
 
@@ -131,22 +143,26 @@ class Job {
      * @param  string $method
      * @return void
      */
-    public function setMethod($method) {
+    public function setMethod($method)
+    {
         $this->method = $method;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getMethod() {
+    public function getMethod()
+    {
         return $this->method;
     }
 
     /**
      * @return array
      */
-    public function getArguments(){
+    public function getArguments()
+    {
         return $this->arguments;
     }
 
@@ -154,9 +170,10 @@ class Job {
      * @param  array $args
      * @return void
      */
-    public function setArguments($args){
+    public function setArguments($args)
+    {
         $this->arguments = $args;
+
         return $this;
     }
-
 }

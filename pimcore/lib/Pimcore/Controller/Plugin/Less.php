@@ -2,20 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Controller\Plugin;
 
-class Less extends \Zend_Controller_Plugin_Abstract {
+class Less extends \Zend_Controller_Plugin_Abstract
+{
 
     /**
      * @var bool
@@ -31,11 +31,11 @@ class Less extends \Zend_Controller_Plugin_Abstract {
      * @param \Zend_Controller_Request_Abstract $request
      * @return bool|void
      */
-    public function routeStartup(\Zend_Controller_Request_Abstract $request) {
-
+    public function routeStartup(\Zend_Controller_Request_Abstract $request)
+    {
         $this->conf = \Pimcore\Config::getSystemConfig();
 
-        if($request->getParam('disable_less_compiler') || $_COOKIE["disable_less_compiler"]){
+        if ($request->getParam('disable_less_compiler') || (isset($_COOKIE["disable_less_compiler"]) && $_COOKIE["disable_less_compiler"])) {
             return $this->disable();
         }
 
@@ -46,28 +46,28 @@ class Less extends \Zend_Controller_Plugin_Abstract {
         if (!$this->conf->outputfilters->less) {
             return $this->disable();
         }
-
     }
 
     /**
      * @return bool
      */
-    public function disable() {
+    public function disable()
+    {
         $this->enabled = false;
+
         return true;
     }
 
     /**
      *
      */
-    public function dispatchLoopShutdown() {
-
-        if(!\Pimcore\Tool::isHtmlResponse($this->getResponse())) {
+    public function dispatchLoopShutdown()
+    {
+        if (!\Pimcore\Tool::isHtmlResponse($this->getResponse())) {
             return;
         }
         
         if ($this->enabled) {
-
             include_once("simple_html_dom.php");
 
             $body = $this->getResponse()->getBody();
@@ -76,4 +76,3 @@ class Less extends \Zend_Controller_Plugin_Abstract {
         }
     }
 }
-

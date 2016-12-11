@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.bulkimport");
@@ -22,10 +21,8 @@ pimcore.object.bulkimport = Class.create({
     },
 
     getUploadUrl: function(){
-        return this.uploadUrl + '?pimcore_admin_sid=' + pimcore.settings.sessionId;
+        return this.uploadUrl;
     },
-
-
 
     upload: function() {
 
@@ -47,40 +44,35 @@ pimcore.object.bulkimport = Class.create({
     getLayout: function () {
 
         if (this.window == null) {
-            var store = new Ext.data.GroupingStore({
+            var store = new Ext.data.Store({
                 autoDestroy: true,
-                data: this,
+                data: this.data,
                 sortInfo:{field: 'name', direction: "ASC"},
-                reader: new Ext.data.JsonReader({
-                    root: 'data',
-                    fields: [
-                        {name: "icon", allowBlank: true},
-                        {name: "checked", allowBlank: true},
-                        {name: "type", allowBlank: true},
-                        {name: "name", allowBlank: true},
-                        {name: "displayName", allowBlank: true}
-                    ]
-                }),
+                fields: [
+                    {name: "icon", allowBlank: true},
+                    {name: "checked", allowBlank: true},
+                    {name: "type", allowBlank: true},
+                    {name: "name", allowBlank: true},
+                    {name: "displayName", allowBlank: true}
+                ],
                 groupField: 'type'
             });
 
-            var checkColumn = new Ext.grid.CheckColumn({
+            var checkColumn = Ext.create('Ext.grid.column.Check', {
                 header: t("import"),
                 dataIndex: 'checked',
                 width: 30
             });
 
-            this.gridPanel = new Ext.grid.EditorGridPanel({
+            this.gridPanel = new Ext.grid.Panel({
                 autoScroll: true,
-                reference: this,
                 trackMouseOver: true,
                 store: store,
-                plugins: checkColumn,
-                clicksToEdit: 1,
-                sm: checkColumn,
-                view: new Ext.grid.GroupingView({
-                    groupTextTpl: '{text}'
-                }),
+                features: [
+                    Ext.create('Ext.grid.feature.Grouping', {
+                        groupHeaderTpl: t("type") + " " + '{name}'
+                    })
+                ],
                 autoExpandColumn: "bulk_import_defintion_name",
                 columnLines: true,
                 stripeRows: true,
@@ -120,11 +112,14 @@ pimcore.object.bulkimport = Class.create({
                         dataIndex: 'displayName',
                         id: "bulk_import_defintion_name",
                         editable: false,
-//                        hidden: true,
+                        flex: 1,
                         sortable: true
                     }
 
-                ]
+                ],
+                viewConfig: {
+                    forceFit: true
+                }
             });
 
 
@@ -140,7 +135,7 @@ pimcore.object.bulkimport = Class.create({
                     {
                         xtype: "button",
                         text: t("close"),
-                        icon: "/pimcore/static6/img/icon/cancel.png",
+                        iconCls: "pimcore_icon_cancel",
                         handler: function () {
                             this.window.close();
                         }.bind(this)
@@ -161,9 +156,7 @@ pimcore.object.bulkimport = Class.create({
     },
 
     getTypeRenderer: function (value, metaData, record, rowIndex, colIndex, store) {
-
-        return '<div style="background: url(/pimcore/static6/img/icon/' + value + '.png) '
-            + 'center center no-repeat; height: 16px;" name="' + record.data.name + '">&nbsp;</div>';
+        return '<div class="pimcore_icon_' + value + '" style="min-height: 16px;" name="' + record.data.name + '">&nbsp;</div>';
     },
 
     applyData: function() {
@@ -248,7 +241,6 @@ pimcore.object.bulkimport = Class.create({
                             this.commitData(idx);
                             return;
                         } else {
-//                            this.window.close();
                             pimcore.helpers.showNotification(t("success"), t("definitions_saved"));
                         }
                     } else {
@@ -289,9 +281,4 @@ pimcore.object.bulkimport = Class.create({
             currentData.set("checked", value);
         }
     }
-
-
-
-
-
 });

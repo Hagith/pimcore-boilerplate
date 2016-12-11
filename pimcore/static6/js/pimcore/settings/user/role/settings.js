@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -22,6 +21,40 @@ pimcore.settings.user.role.settings = Class.create({
     },
 
     getPanel: function () {
+
+        var generalItems = [];
+
+        generalItems.push({
+            xtype:"displayfield",
+            fieldLabel:t("id"),
+            value: this.data.role.id
+        });
+
+        var perspectivesStore = Ext.create('Ext.data.JsonStore', {
+            data: this.data.availablePerspectives
+        });
+
+        this.perspectivesField = Ext.create('Ext.ux.form.MultiSelect', {
+            name:"perspectives",
+            triggerAction:"all",
+            editable:false,
+            fieldLabel:t("perspectives"),
+            width:400,
+            minHeight: 100,
+            store: perspectivesStore,
+            displayField: "name",
+            valueField: "name",
+            value:this.data.role.perspectives ? this.data.role.perspectives.join(",") : null
+        });
+
+        generalItems.push(this.perspectivesField);
+
+
+        this.generalSet = new Ext.form.FieldSet({
+            collapsible: true,
+            title:t("general"),
+            items:generalItems
+        });
 
         var availPermsItems = [];
         // add available permissions
@@ -71,7 +104,7 @@ pimcore.settings.user.role.settings = Class.create({
 
         this.panel = new Ext.form.FormPanel({
             title: t("settings"),
-            items: [this.permissionsSet, this.typesSet],
+            items: [this.generalSet, this.permissionsSet, this.typesSet],
             bodyStyle: "padding:10px;",
             autoScroll: true
         });

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.variantsTab");
@@ -35,21 +34,27 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
             Ext.Ajax.request({
                 url: "/admin/object-helper/grid-get-column-config",
                 params: {name: this.selectedClass, gridtype: "grid"},
-                success: this.createGrid.bind(this)
+                success: this.createGrid.bind(this, false)
             });
 
             this.layout = new Ext.Panel({
                 title: t('variants'),
                 border: false,
-                iconCls: "pimcore_icon_tab_variants",
-                layout: "fit"
+                iconCls: "pimcore_icon_variant",
+                layout: "fit",
+                /* In order to #953, loading layout has to be also run when the column configuration is changed
+                listeners: {
+                    activate: function() {
+                        this.store.load();
+                    }.bind(this)
+                }*/
             });
         }
 
         return this.layout;
     },
 
-    createGrid: function(response) {
+    createGrid: function(fromConfig, response) {
         var fields = [];
         if(response.responseText) {
             response = Ext.decode(response.responseText);
@@ -73,12 +78,17 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
             false
         );
 
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize(-1);
+
+
         gridHelper.showSubtype = false;
         gridHelper.showKey = true;
         gridHelper.enableEditor = true;
         gridHelper.baseParams.objectId = this.element.id;
 
         this.store = gridHelper.getStore();
+        this.store.setPageSize(itemsPerPage);
+
         var gridColumns = gridHelper.getGridColumns();
 
         gridColumns.push({
@@ -88,7 +98,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
             items: [
                 {
                     tooltip: t('open'),
-                    icon: "/pimcore/static6/img/icon/pencil_go.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/cursor.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
                         pimcore.helpers.openObject(data.id, "variant");
@@ -103,7 +113,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
             items: [
                 {
                     tooltip: t('remove'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
                         Ext.MessageBox.confirm(t('remove_variant'), t('remove_variant_text'),
@@ -116,21 +126,22 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
 
         this.gridfilters = gridHelper.getGridFilters();
 
-        this.pagingtoolbar = new Ext.PagingToolbar({
-            pageSize: 15,
-            store: this.store,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: t("no_objects_found")
-        });
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, {pageSize: itemsPerPage});
 
         this.languageInfo = new Ext.Toolbar.TextItem({
             text: t("grid_current_language") + ": " + pimcore.available_languages[this.gridLanguage]
         });
 
-        this.toolbarFilterInfo = new Ext.Toolbar.TextItem({
-            text: ""
+        this.toolbarFilterInfo =  new Ext.Button({
+            iconCls: "pimcore_icon_filter_condition",
+            hidden: true,
+            text: '<b>' + t("filter_active") + '</b>',
+            tooltip: t("filter_condition"),
+            handler: function (button) {
+                Ext.MessageBox.alert(t("filter_condition"), button.pimcore_filter_condition);
+            }.bind(this)
         });
+
 
         this.createSqlEditor();
 
@@ -148,9 +159,12 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
             columnLines: true,
             plugins: plugins,
             stripeRows: true,
+            cls: 'pimcore_object_grid_panel',
+            bodyCls: "pimcore_editable_grid",
             trackMouseOver: true,
             viewConfig: {
-                forceFit: false
+                forceFit: false,
+                xtype: 'patchedgridview'
             },
             selModel: gridHelper.getSelectionColumn(),
             bbar: this.pagingtoolbar,
@@ -173,7 +187,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
                             buttons: Ext.Msg.OKCANCEL ,
                             fn: function(btn){
                                 if (btn == 'ok'){
-                                    this.startCsvExport();
+                                    this.exportPrepare();
                                 }
                             }.bind(this),
                             icon: Ext.MessageBox.WARNING
@@ -184,7 +198,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
                     }.bind(this)
                 },"-",{
                     text: t("grid_column_config"),
-                    iconCls: "pimcore_icon_grid_column_config",
+                    iconCls: "pimcore_icon_table_col pimcore_icon_overlay_edit",
                     handler: this.openColumnConfig.bind(this)
                 } 
             ],
@@ -205,8 +219,8 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
         }.bind(this));
 
         // check for filter updates
-        this.grid.on("filterupdate", function () {
-            this.filterUpdateFunction(this.gridfilters, this.toolbarFilterInfo);
+        this.grid.on("filterchange", function () {
+            this.filterUpdateFunction(this.grid, this.toolbarFilterInfo);
         }.bind(this));
 
         gridHelper.applyGridEvents(this.grid);
@@ -227,7 +241,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
 
         menu.add(new Ext.menu.Item({
             text: t('rename'),
-            iconCls: "pimcore_icon_edit_key",
+            iconCls: "pimcore_icon_key pimcore_icon_overlay_go",
             handler: function (data) {
                 Ext.MessageBox.prompt(t('rename'), t('please_enter_the_new_name'),
                                                 this.editKey.bind(this, data.id), null, null, data.data.filename);
@@ -269,7 +283,7 @@ pimcore.object.variantsTab = Class.create(pimcore.object.helpers.gridTabAbstract
                     classId: this.element.data.general.o_classId,
                     parentId: this.element.id,
                     objecttype: "variant",
-                    key: pimcore.helpers.getValidFilename(this.element.data.general.o_key + "_" + value)
+                    key: pimcore.helpers.getValidFilename(this.element.data.general.o_key + "_" + value, "object")
                 },
                 success: function(response) {
                     var responseJson = Ext.decode(response.responseText);

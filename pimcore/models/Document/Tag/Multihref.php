@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document\Tag;
@@ -23,39 +22,46 @@ use Pimcore\Model\Document;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Object;
 
-class Multihref extends Model\Document\Tag implements \Iterator {
+/**
+ * @method \Pimcore\Model\Document\Tag\Dao getDao()
+ */
+class Multihref extends Model\Document\Tag implements \Iterator
+{
 
     /**
      * @var array
      */
-    public $elements = array();
+    public $elements = [];
 
     /**
      * @var array
      */
-    public $elementIds = array();
+    public $elementIds = [];
 
      /**
      * @see Document\Tag\TagInterface::getType
      * @return string
      */
-    public function getType() {
+    public function getType()
+    {
         return "multihref";
     }
 
     /*
      *
      */
-    public function setElements() {
-        if(empty($this->elements)) {
-            $this->elements = array();
+    public function setElements()
+    {
+        if (empty($this->elements)) {
+            $this->elements = [];
             foreach ($this->elementIds as $elementId) {
                 $el = Element\Service::getElementById($elementId["type"], $elementId["id"]);
-                if($el instanceof Element\ElementInterface) {
+                if ($el instanceof Element\ElementInterface) {
                     $this->elements[] = $el;
                 }
             }
         }
+
         return $this;
     }
 
@@ -63,8 +69,10 @@ class Multihref extends Model\Document\Tag implements \Iterator {
      * @see Document\Tag\TagInterface::getData
      * @return mixed
      */
-    public function getData() {
+    public function getData()
+    {
         $this->setElements();
+
         return $this->elements;
     }
 
@@ -72,7 +80,8 @@ class Multihref extends Model\Document\Tag implements \Iterator {
      * @see Document\Tag\TagInterface::getDataForResource
      * @return void
      */
-    public function getDataForResource() {
+    public function getDataForResource()
+    {
         return $this->elementIds;
     }
 
@@ -80,24 +89,21 @@ class Multihref extends Model\Document\Tag implements \Iterator {
      * Converts the data so it's suitable for the editmode
      * @return mixed
      */
-    public function getDataEditmode() {
-
+    public function getDataEditmode()
+    {
         $this->setElements();
-        $return = array();
+        $return = [];
 
         if (is_array($this->elements) && count($this->elements) > 0) {
             foreach ($this->elements as $element) {
                 if ($element instanceof Object\Concrete) {
-                    $return[] = array($element->getId(), $element->getFullPath(), "object", $element->getClassName());
-                }
-                else if ($element instanceof Object\AbstractObject) {
-                    $return[] = array($element->getId(), $element->getFullPath(), "object", "folder");
-                }
-                else if ($element instanceof Asset) {
-                    $return[] = array($element->getId(), $element->getFullPath(), "asset", $element->getType());
-                }
-                else if ($element instanceof Document) {
-                    $return[] = array($element->getId(), $element->getFullPath(), "document", $element->getType());
+                    $return[] = [$element->getId(), $element->getRealFullPath(), "object", $element->getClassName()];
+                } elseif ($element instanceof Object\AbstractObject) {
+                    $return[] = [$element->getId(), $element->getRealFullPath(), "object", "folder"];
+                } elseif ($element instanceof Asset) {
+                    $return[] = [$element->getId(), $element->getRealFullPath(), "asset", $element->getType()];
+                } elseif ($element instanceof Document) {
+                    $return[] = [$element->getId(), $element->getRealFullPath(), "document", $element->getType()];
                 }
             }
         }
@@ -107,10 +113,10 @@ class Multihref extends Model\Document\Tag implements \Iterator {
 
     /**
      * @see Document\Tag\TagInterface::frontend
-     * @return void
+     * @return string
      */
-    public function frontend() {
-
+    public function frontend()
+    {
         $this->setElements();
         $return = "";
 
@@ -126,62 +132,69 @@ class Multihref extends Model\Document\Tag implements \Iterator {
     /**
      * @see Document\Tag\TagInterface::setDataFromResource
      * @param mixed $data
-     * @return void
+     * @return $this
      */
-    public function setDataFromResource($data) {
-        if($data = \Pimcore\Tool\Serialize::unserialize($data)) {
+    public function setDataFromResource($data)
+    {
+        if ($data = \Pimcore\Tool\Serialize::unserialize($data)) {
             $this->setDataFromEditmode($data);
         }
+
         return $this;
     }
 
     /**
      * @see Document\Tag\TagInterface::setDataFromEditmode
      * @param mixed $data
-     * @return void
+     * @return $this
      */
-    public function setDataFromEditmode($data) {
-        if(is_array($data)) {
+    public function setDataFromEditmode($data)
+    {
+        if (is_array($data)) {
             $this->elementIds = $data;
         }
+
         return $this;
     }
 
     /**
      * @return Element\ElementInterface[]
      */
-    public function getElements() {
+    public function getElements()
+    {
         $this->setElements();
+
         return $this->elements;
     }
 
     /**
      * @return boolean
      */
-    public function isEmpty() {
+    public function isEmpty()
+    {
         $this->setElements();
+
         return count($this->elements) > 0 ? false : true;
     }
 
     /**
      * @return array
      */
-    public function resolveDependencies() {
-
+    public function resolveDependencies()
+    {
         $this->setElements();
-        $dependencies = array();
+        $dependencies = [];
 
         if (is_array($this->elements) && count($this->elements) > 0) {
             foreach ($this->elements as $element) {
                 if ($element instanceof Element\ElementInterface) {
-
                     $elementType = Element\Service::getElementType($element);
                     $key = $elementType . "_" . $element->getId();
 
-                    $dependencies[$key] = array(
+                    $dependencies[$key] = [
                         "id" => $element->getId(),
                         "type" => $elementType
-                    );
+                    ];
                 }
             }
         }
@@ -202,16 +215,16 @@ class Multihref extends Model\Document\Tag implements \Iterator {
      * @param array $idMapping
      * @return void
      */
-    public function rewriteIds($idMapping) {
+    public function rewriteIds($idMapping)
+    {
         // reset existing elements store
-        $this->elements = array();
+        $this->elements = [];
 
         foreach ($this->elementIds as &$elementId) {
-
             $type = $elementId["type"];
             $id = $elementId["id"];
 
-            if(array_key_exists($type, $idMapping) and array_key_exists((int) $id, $idMapping[$type])) {
+            if (array_key_exists($type, $idMapping) and array_key_exists((int) $id, $idMapping[$type])) {
                 $elementId["id"] = $idMapping[$type][$id];
             }
         }
@@ -219,20 +232,27 @@ class Multihref extends Model\Document\Tag implements \Iterator {
         $this->setElements();
     }
 
-    public function getFromWebserviceImport($wsElement, $idMapper = null) {
+    /**
+     * @param Model\Webservice\Data\Document\Element $wsElement
+     * @param mixed $params
+     * @param null $idMapper
+     * @throws \Exception
+     */
+    public function getFromWebserviceImport($wsElement, $document = null, $params = [], $idMapper = null)
+    {
         // currently unsupported
-        return array();
+        return [];
     }
 
 
     /**
      * @return array
      */
-    public function __sleep() {
-
-        $finalVars = array();
+    public function __sleep()
+    {
+        $finalVars = [];
         $parentVars = parent::__sleep();
-        $blockedVars = array("elements");
+        $blockedVars = ["elements"];
         foreach ($parentVars as $key) {
             if (!in_array($key, $blockedVars)) {
                 $finalVars[] = $key;
@@ -245,7 +265,8 @@ class Multihref extends Model\Document\Tag implements \Iterator {
     /**
      *
      */
-    public function load () {
+    public function load()
+    {
         $this->setElements();
     }
 
@@ -253,32 +274,41 @@ class Multihref extends Model\Document\Tag implements \Iterator {
      * Methods for Iterator
      */
 
-    public function rewind() {
+    public function rewind()
+    {
         $this->setElements();
         reset($this->elements);
     }
 
-    public function current() {
+    public function current()
+    {
         $this->setElements();
         $var = current($this->elements);
+
         return $var;
     }
 
-    public function key() {
+    public function key()
+    {
         $this->setElements();
         $var = key($this->elements);
+
         return $var;
     }
 
-    public function next() {
+    public function next()
+    {
         $this->setElements();
         $var = next($this->elements);
+
         return $var;
     }
 
-    public function valid() {
+    public function valid()
+    {
         $this->setElements();
         $var = $this->current() !== false;
+
         return $var;
     }
 }

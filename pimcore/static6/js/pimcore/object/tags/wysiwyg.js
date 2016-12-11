@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.wysiwyg");
@@ -58,13 +57,19 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
 
     getLayout: function () {
 
+        var iconCls = null;
+        if(this.fieldConfig.noteditable == false) {
+            iconCls = "pimcore_icon_droptarget";
+        }
+
         var html = '<div class="pimcore_tag_wysiwyg" id="' + this.editableDivId + '" contenteditable="true">' + this.data + '</div>';
         var pConf = {
-            iconCls: "pimcore_icon_droptarget",
+            iconCls: iconCls,
             title: this.fieldConfig.title,
             html: html,
             border: true,
             style: "margin-bottom: 10px",
+            manageHeight: false,
             cls: "object_field"
         };
 
@@ -77,6 +82,7 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
             pConf["autoScroll"] = true;
         } else {
             pConf["autoHeight"] = true;
+            pConf["autoScroll"] = true;
         }
 
         this.component = new Ext.Panel(pConf);
@@ -87,12 +93,13 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
         this.component.on("afterrender", function() {
             Ext.get(this.editableDivId).dom.setAttribute("contenteditable", "false");
         }.bind(this));
+        this.component.disable();
         return this.component;
     },
 
     getLayoutEdit: function () {
         this.getLayout();
-        this.component.on("afterrender", this.initCkEditor.bind(this));
+        this.component.on("afterlayout", this.initCkEditor.bind(this));
         this.component.on("beforedestroy", function() {
             if(this.ckeditor) {
                 this.ckeditor.destroy();
@@ -103,6 +110,10 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
     },
 
     initCkEditor: function () {
+
+        if (this.ckeditor) {
+            return;
+        }
 
         // add drop zone, use the parent panel here (container), otherwise this can cause problems when specifying a fixed height on the wysiwyg
         var dd = new Ext.dd.DropZone(Ext.get(this.editableDivId).parent(), {
@@ -122,34 +133,44 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
         var eConfig = {
             width: this.fieldConfig.width,
             height: this.fieldConfig.height,
-            resize_enabled: false,
             language: pimcore.settings["language"]
         };
 
-
         eConfig.toolbarGroups = [
-            { name: 'clipboard', groups: [ "sourcedialog", 'clipboard', 'undo', "find" ] },
+            { name: 'clipboard', groups: [ 'sourcedialog', 'clipboard', 'undo', 'find' ] },
             { name: 'basicstyles', groups: [ 'basicstyles', 'list'] },
             '/',
             { name: 'paragraph', groups: [ 'align', 'indent'] },
             { name: 'blocks' },
             { name: 'links' },
             { name: 'insert' },
-            "/",
+            '/',
             { name: 'styles' },
-            { name: 'tools', groups: ['colors', "tools", 'cleanup', 'mode', "others"] }
+            { name: 'tools', groups: ['colors', 'tools', 'cleanup', 'mode', 'others'] }
         ];
 
         if(this.fieldConfig.toolbarConfig) {
-            eConfig.toolbarGroups = Ext.decode("[" + this.fieldConfig.toolbarConfig + "]")
-        }
 
-        eConfig.allowedContent = true; // disables CKEditor ACF (will remove pimcore_* attributes from links, etc.)
-        eConfig.removePlugins = "tableresize";
+            var elementCustomConfig = Ext.decode(this.fieldConfig.toolbarConfig);
+            eConfig = mergeObject(eConfig, elementCustomConfig);
+
+        }
 
         if(typeof(pimcore.object.tags.wysiwyg.defaultEditorConfig) == 'object'){
             eConfig = mergeObject(pimcore.object.tags.wysiwyg.defaultEditorConfig,eConfig);
         }
+
+        //prevent override important settings!
+        eConfig.resize_enabled = false;
+        eConfig.entities = false;
+        eConfig.entities_greek = false;
+        eConfig.entities_latin = false;
+        eConfig.extraAllowedContent = "*[pimcore_type,pimcore_id]";
+
+        if(eConfig.hasOwnProperty('removePlugins'))
+            eConfig.removePlugins += ",tableresize";
+        else
+            eConfig.removePlugins = "tableresize";
 
         if (intval(this.fieldConfig.width) > 1) {
             eConfig.width = this.fieldConfig.width;
@@ -172,12 +193,6 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
                     urlField.getParent().getParent().getParent().show();
                 }
             });
-
-            // HACK - clean all pasted html
-            this.ckeditor.on('paste', function(evt) {
-                evt.data.dataValue = '<!--class="Mso"-->' + evt.data.dataValue;
-            }, null, null, 1);
-
         } catch (e) {
             console.log(e);
         }
@@ -191,7 +206,8 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
 
         this.ckeditor.focus();
 
-        var wrappedText = data.node.attributes.text;
+        var node = data.records[0];
+        var wrappedText = node.data.text;
         var textIsSelected = false;
         
         try {
@@ -228,28 +244,28 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
             return $0;
         });
 
-        var id = data.node.attributes.id;
-        var uri = data.node.attributes.path;
+        var id = node.data.id;
+        var uri = node.data.path;
         var browserPossibleExtensions = ["jpg","jpeg","gif","png"];
         
-        if (data.node.attributes.elementType == "asset") {
-            if (data.node.attributes.type == "image" && textIsSelected == false) {
+        if (node.data.elementType == "asset") {
+            if (node.data.type == "image" && textIsSelected == false) {
                 // images bigger than 600px or formats which cannot be displayed by the browser directly will be
                 // converted by the pimcore thumbnailing service so that they can be displayed in the editor
                 var defaultWidth = 600;
                 var additionalAttributes = "";
                 uri = "/admin/asset/get-image-thumbnail/id/" + id + "/width/" + defaultWidth + "/aspectratio/true";
 
-                if(typeof data.node.attributes.imageWidth != "undefined") {
-                    if(data.node.attributes.imageWidth < defaultWidth
-                                && in_arrayi(pimcore.helpers.getFileExtension(data.node.attributes.text),
+                if(typeof node.data.imageWidth != "undefined") {
+                    if(node.data.imageWidth < defaultWidth
+                                && in_arrayi(pimcore.helpers.getFileExtension(node.data.text),
                                                                         browserPossibleExtensions)) {
-                        uri = data.node.attributes.path;
+                        uri = node.data.path;
                         additionalAttributes += ' pimcore_disable_thumbnail="true"';
                     }
 
-                    if(data.node.attributes.imageWidth < defaultWidth) {
-                        defaultWidth = data.node.attributes.imageWidth;
+                    if(node.data.imageWidth < defaultWidth) {
+                        defaultWidth = node.data.imageWidth;
                     }
                 }
 
@@ -264,8 +280,8 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
             }
         }
 
-        if (data.node.attributes.elementType == "document" && (data.node.attributes.type=="page"
-                                || data.node.attributes.type=="hardlink" || data.node.attributes.type=="link")){
+        if (node.data.elementType == "document" && (node.data.type=="page"
+                                || node.data.type=="hardlink" || node.data.type=="link")){
             this.ckeditor.insertHtml('<a href="' + uri + '" pimcore_type="document" pimcore_id="'
                                 + id + '">' + wrappedText + '</a>');
             return true;
@@ -301,22 +317,19 @@ pimcore.object.tags.wysiwyg = Class.create(pimcore.object.tags.abstract, {
         if(this.dirty) {
             return this.dirty;
         }
-        
+
         if(this.ckeditor) {
-            return this.ckeditor.checkDirty();
+            var ckeditorDirty = this.ckeditor.checkDirty();
+            if(ckeditorDirty) {
+                // once dirty, always dirty
+                // this is due the way checkDirty() is implemented in CKEditor, because it relies on the initial content
+                this.dirty = ckeditorDirty;
+            }
+            return ckeditorDirty;
         }
+
         return false;
     }
 });
 
 CKEDITOR.disableAutoInline = true;
-
-// IE Hack see: http://dev.ckeditor.com/ticket/9958
-// problem is that every button in a CKEDITOR window fires the onbeforeunload event
-CKEDITOR.on('instanceReady', function (event) {
-    event.editor.on('dialogShow', function (dialogShowEvent) {
-        if (CKEDITOR.env.ie) {
-            $(dialogShowEvent.data._.element.$).find('a[href*="void(0)"]').removeAttr('href');
-        }
-    });
-});

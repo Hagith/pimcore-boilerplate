@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Placeholder;
@@ -53,7 +52,7 @@ abstract class AbstractPlaceholder
      *
      * @var array
      */
-    protected $params = array();
+    protected $params = [];
 
     /**
      * The Content as string
@@ -74,6 +73,7 @@ abstract class AbstractPlaceholder
     public function setPlaceholderString($string)
     {
         $this->placeholderString = $string;
+
         return $this;
     }
 
@@ -92,6 +92,7 @@ abstract class AbstractPlaceholder
     public function setPlaceholderKey($key)
     {
         $this->placeholderKey = $key;
+
         return $this;
     }
 
@@ -112,6 +113,7 @@ abstract class AbstractPlaceholder
     public function setPlaceholderConfig(\Zend_Config_Json $config)
     {
         $this->placeholderConfig = $config;
+
         return $this;
     }
 
@@ -134,6 +136,7 @@ abstract class AbstractPlaceholder
         if (is_array($params)) {
             $this->params = $params;
         }
+
         return $this;
     }
 
@@ -155,9 +158,10 @@ abstract class AbstractPlaceholder
      */
     public function getParam($key)
     {
-        if(array_key_exists($key, $this->params)) {
+        if (array_key_exists($key, $this->params)) {
             return $this->params[$key];
         }
+
         return null;
     }
 
@@ -170,6 +174,7 @@ abstract class AbstractPlaceholder
         if (is_string($contentString)) {
             $this->contentString = $contentString;
         }
+
         return $this;
     }
 
@@ -202,6 +207,7 @@ abstract class AbstractPlaceholder
         if ($document instanceof Document) {
             $this->document = $document;
         }
+
         return $this;
     }
 
@@ -225,6 +231,7 @@ abstract class AbstractPlaceholder
         if (is_null($this->locale)) {
             $this->setLocale();
         }
+
         return $this->locale;
     }
 
@@ -232,7 +239,7 @@ abstract class AbstractPlaceholder
      * Try to set the locale from different sources
      *
      * @param $locale
-     * @return void
+     * @return $this
      */
     public function setLocale($locale = null)
     {
@@ -249,7 +256,7 @@ abstract class AbstractPlaceholder
             }
 
             if (is_null($this->locale)) { //last chance -> get it from registry or use the first Language defined in the system settings
-                if(\Zend_Registry::isRegistered("Zend_Locale")) {
+                if (\Zend_Registry::isRegistered("Zend_Locale")) {
                     $this->locale = \Zend_Registry::get("Zend_Locale");
                 } else {
                     list($language) = \Pimcore\Tool::getValidLanguages();
@@ -257,6 +264,7 @@ abstract class AbstractPlaceholder
                 }
             }
         }
+
         return $this;
     }
 
@@ -287,7 +295,7 @@ abstract class AbstractPlaceholder
      * @abstract
      * @return string
      */
-    abstract function getTestValue();
+    abstract public function getTestValue();
 
     /**
      * Has to return the placeholder with the corresponding value
@@ -295,6 +303,5 @@ abstract class AbstractPlaceholder
      * @abstract
      * @return string
      */
-    abstract function getReplacement();
-
+    abstract public function getReplacement();
 }

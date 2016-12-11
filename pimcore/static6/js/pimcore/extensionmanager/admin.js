@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.extensionmanager.admin");
@@ -31,7 +30,7 @@ pimcore.extensionmanager.admin = Class.create({
             this.panel = new Ext.Panel({
                 id: "pimcore_extensionmanager_admin",
                 title: t("manage_extensions"),
-                iconCls: "pimcore_icon_extensionmanager_admin",
+                iconCls: "pimcore_icon_plugin pimcore_icon_overlay_edit",
                 border: false,
                 layout: "fit",
                 closable:true,
@@ -64,40 +63,24 @@ pimcore.extensionmanager.admin = Class.create({
                 proxy: {
                     type: 'ajax',
                     url: '/admin/extensionmanager/admin/get-extensions',
-                    // Reader is now on the proxy, as the message was explaining
                     reader: {
                         type: 'json',
                         rootProperty: "extensions"
-                        //totalProperty:'total',            // default
-                        //successProperty:'success'         // default
                     }
-                    //,                                     // default
-                    //writer: {
-                    //    type: 'json'
-                    //}
                 }
             });
         }
 
         this.store = new Ext.data.Store({
-            model: 'pimcore.model.extensions.admin',
-            id: 'redirects_store'
+            model: 'pimcore.model.extensions.admin'
         });
 
         this.store.load();
 
         var typesColumns = [
-            {header: t("type"), width: 30, sortable: false, dataIndex: 'type', renderer:
-                                        function (value, metaData, record, rowIndex, colIndex, store) {
-
-                var icon = "";
-                if(value == "plugin") {
-                    icon = "cog.png";
-                } else if (value == "brick") {
-                    icon = "bricks.png";
-                }
-                return '<img src="/pimcore/static6/img/icon/' + icon + '" alt="'+ t("value") +'" title="'
-                                                             + t("value") +'" />';
+            {header: t("type"), width: 50, sortable: false, dataIndex: 'type', renderer:
+            function (value, metaData, record, rowIndex, colIndex, store) {
+                return '<div class="pimcore_icon_' + value + '" style="min-height: 16px;" title="' + t("value") +'"></div>';
             }},
             {header: "ID", width: 100, sortable: true, dataIndex: 'id', flex: 1},
             {header: t("name"), width: 200, sortable: true, dataIndex: 'name', flex: 2},
@@ -106,13 +89,13 @@ pimcore.extensionmanager.admin = Class.create({
             {
                 header: t('enable') + " / " + t("disable"),
                 xtype: 'actioncolumn',
-                width: 70,
+                width: 100,
                 items: [{
                     tooltip: t('enable') + " / " + t("disable"),
                     getClass: function (v, meta, rec) {
                         var klass = "pimcore_action_column ";
                         if(rec.get("active")) {
-                            klass += "pimcore_icon_disable ";
+                            klass += "pimcore_icon_stop ";
                         } else {
                             klass += "pimcore_icon_add ";
                         }
@@ -150,7 +133,7 @@ pimcore.extensionmanager.admin = Class.create({
             {
                 header: t('install') + "/" + t("uninstall"),
                 xtype: 'actioncolumn',
-                width: 70,
+                width: 100,
                 items: [{
                     tooltip: t('install') + "/" + t("uninstall"),
                     getClass: function (v, meta, rec) {
@@ -164,7 +147,7 @@ pimcore.extensionmanager.admin = Class.create({
                         if(rec.get("installed") == null) {
                             return "";
                         } else if(rec.get("installed")) {
-                            klass += "pimcore_action_column pimcore_icon_disable ";
+                            klass += "pimcore_action_column pimcore_icon_stop ";
                         } else {
                             klass += "pimcore_action_column pimcore_icon_add ";
                         }
@@ -228,17 +211,15 @@ pimcore.extensionmanager.admin = Class.create({
                                                                         + pimcore.globalmanager.get("user").language;
                         var xmlEditorFile =  rec.get("xmlEditorFile");
 
-                        try {
-                            pimcore.globalmanager.get("extension_settings_" + id + "_" + type).activate();
-                        }
-                        catch (e) {
-                            if(xmlEditorFile){
-                                pimcore.globalmanager.add("extension_settings_" + id + "_" + type,
-                                                new pimcore.extensionmanager.xmlEditor(id, type, xmlEditorFile));
-                            }else{
-                                pimcore.globalmanager.add("extension_settings_" + id + "_" + type,
-                                                new pimcore.extensionmanager.settings(id, type, iframeSrc));
+                        if(xmlEditorFile){
+                            try {
+                                pimcore.globalmanager.get("extension_settings_" + id + "_" + type).activate();
                             }
+                            catch (e) {
+                                pimcore.globalmanager.add("extension_settings_" + id + "_" + type, new pimcore.extensionmanager.xmlEditor(id, type, xmlEditorFile));
+                            }
+                        } else {
+                            pimcore.helpers.openGenericIframeWindow("extension_settings_" + id + "_" + type, iframeSrc, "pimcore_icon_plugin", id);
                         }
                     }.bind(this)
                 }]
@@ -294,7 +275,7 @@ pimcore.extensionmanager.admin = Class.create({
                     handler: this.reload.bind(this)
                 }, "-", {
                     text: t("create_new_plugin_skeleton"),
-                    iconCls: "pimcore_icon_plugin_add",
+                    iconCls: "pimcore_icon_plugin pimcore_icon_overlay_add",
                     handler: function () {
                         Ext.MessageBox.prompt(t('create_new_plugin_skeleton'), t('enter_the_name_of_the_new_extension') + "(a-zA-Z0-9_)",  function (button, value) {
                             var regresult = value.match(/[a-zA-Z0-9_]+/);

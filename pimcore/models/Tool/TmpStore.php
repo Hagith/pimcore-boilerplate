@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Tool
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool;
 
 use Pimcore\Model;
 
-class TmpStore extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Tool\TmpStore\Dao getDao()
+ */
+class TmpStore extends Model\AbstractModel
+{
 
     /**
      * @var string
@@ -59,8 +62,9 @@ class TmpStore extends Model\AbstractModel {
     /**
      * @return Lock
      */
-    protected static function getInstance () {
-        if(!self::$instance) {
+    protected static function getInstance()
+    {
+        if (!self::$instance) {
             self::$instance = new self();
         }
 
@@ -74,60 +78,68 @@ class TmpStore extends Model\AbstractModel {
      * @param null $lifetime
      * @return mixed
      */
-    public static function add ($id, $data, $tag = null, $lifetime = null) {
+    public static function add($id, $data, $tag = null, $lifetime = null)
+    {
         $instance = self::getInstance();
 
-        if(!$lifetime) {
+        if (!$lifetime) {
             $lifetime = 86400;
         }
 
-        if(self::get($id)) {
+        if (self::get($id)) {
             return true;
         }
 
-        return $instance->getResource()->add($id, $data, $tag, $lifetime);
+        return $instance->getDao()->add($id, $data, $tag, $lifetime);
     }
 
     /**
      * @param $id
      * @return mixed
      */
-    public static function delete($id) {
+    public static function delete($id)
+    {
         $instance = self::getInstance();
-        return $instance->getResource()->delete($id);
+
+        return $instance->getDao()->delete($id);
     }
 
     /**
      * @param $id
      * @return null|TmpStore
      */
-    public static function get($id) {
+    public static function get($id)
+    {
         $item = new self;
-        if($item->getById($id)) {
-            if($item->getExpiryDate() < time()) {
+        if ($item->getById($id)) {
+            if ($item->getExpiryDate() < time()) {
                 self::delete($id);
             } else {
                 return $item;
             }
         }
+
         return null;
     }
 
     /**
      *
      */
-    public static function cleanup() {
+    public static function cleanup()
+    {
         $instance = self::getInstance();
-        $instance->getResource()->cleanup();
+        $instance->getDao()->cleanup();
     }
 
     /**
      * @param $tag
      * @return array
      */
-    public static function getIdsByTag($tag) {
+    public static function getIdsByTag($tag)
+    {
         $instance = self::getInstance();
-        $items = $instance->getResource()->getIdsByTag($tag);
+        $items = $instance->getDao()->getIdsByTag($tag);
+
         return $items;
     }
 
@@ -225,5 +237,18 @@ class TmpStore extends Model\AbstractModel {
     public function setExpiryDate($expiryDate)
     {
         $this->expiryDate = $expiryDate;
+    }
+
+    /**
+     * @param null $lifetime
+     * @return mixed
+     */
+    public function update($lifetime = null)
+    {
+        if (!$lifetime) {
+            $lifetime = 86400;
+        }
+
+        return $this->getDao()->add($this->getId(), $this->getData(), $this->getTag(), $lifetime);
     }
 }

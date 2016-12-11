@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Tool
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool;
 
 use Pimcore\Model;
 
-class Lock extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Tool\Lock\Dao getDao()
+ */
+class Lock extends Model\AbstractModel
+{
 
     /**
      * @var string
@@ -34,7 +37,7 @@ class Lock extends Model\AbstractModel {
     /**
      * @var array
      */
-    protected static $acquiredLocks = array();
+    protected static $acquiredLocks = [];
 
     /**
      * @var Lock
@@ -44,8 +47,9 @@ class Lock extends Model\AbstractModel {
     /**
      * @return Lock
      */
-    protected static function getInstance () {
-        if(!self::$instance) {
+    protected static function getInstance()
+    {
+        if (!self::$instance) {
             self::$instance = new self();
         }
 
@@ -55,10 +59,10 @@ class Lock extends Model\AbstractModel {
     /**
      * @param string $key
      */
-    public static function acquire ($key, $expire = 120, $refreshInterval = 1) {
-
+    public static function acquire($key, $expire = 120, $refreshInterval = 1)
+    {
         $instance = self::getInstance();
-        $instance->getResource()->acquire($key, $expire, $refreshInterval);
+        $instance->getDao()->acquire($key, $expire, $refreshInterval);
 
         self::$acquiredLocks[$key] = $key;
     }
@@ -66,10 +70,10 @@ class Lock extends Model\AbstractModel {
     /**
      * @param string $key
      */
-    public static function release ($key) {
-
+    public static function release($key)
+    {
         $instance = self::getInstance();
-        $instance->getResource()->release($key);
+        $instance->getDao()->release($key);
 
         unset(self::$acquiredLocks[$key]);
     }
@@ -78,10 +82,11 @@ class Lock extends Model\AbstractModel {
      * @param string $key
      * @return bool
      */
-    public static function lock ($key) {
-
+    public static function lock($key)
+    {
         $instance = self::getInstance();
-        return $instance->getResource()->lock($key);
+
+        return $instance->getDao()->lock($key);
     }
 
     /**
@@ -89,28 +94,33 @@ class Lock extends Model\AbstractModel {
      * @param int $expire
      * @return mixed
      */
-    public static function isLocked ($key, $expire = 120) {
+    public static function isLocked($key, $expire = 120)
+    {
         $instance = self::getInstance();
-        return $instance->getResource()->isLocked($key, $expire);
+
+        return $instance->getDao()->isLocked($key, $expire);
     }
 
     /**
      * @param $key
      * @return Lock
      */
-    public static function get($key) {
+    public static function get($key)
+    {
         $lock = new self;
         $lock->getById($key);
+
         return $lock;
     }
 
     /**
      *
      */
-    public static function releaseAll() {
+    public static function releaseAll()
+    {
         $locks = self::$acquiredLocks;
 
-        foreach($locks as $key) {
+        foreach ($locks as $key) {
             self::release($key);
         }
     }

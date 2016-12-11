@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.versions");
@@ -63,33 +62,42 @@ pimcore.asset.versions = Class.create({
 
             });
 
+            this.store.on("update", this.dataUpdate.bind(this));
+
+            this.cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
+                clicksToEdit: 2
+            });
+
+
             var grid = Ext.create('Ext.grid.Panel', {
                 store: this.store,
+                plugins: [this.cellEditing],
                 columns: [
-                    {header: t("date"), width:130, sortable: true, dataIndex: 'date', renderer: function(d) {
+                    {header: t("published"), width:50, sortable: false, dataIndex: 'date', renderer: function(d, metaData) {
+                        if (d == this.asset.data.modificationDate) {
+                            metaData.tdCls = "pimcore_icon_publish";
+                        }
+                        return "";
+                    }.bind(this), editable: false},
+                    {header: t("date"), width:150, sortable: true, dataIndex: 'date', renderer: function(d) {
                         var date = new Date(d * 1000);
                         return Ext.Date.format(date, "Y-m-d H:i:s");
                     }},
+                    {header: "ID", sortable: true, dataIndex: 'id', editable: false, width: 60},
                     {header: t("user"), sortable: true, dataIndex: 'name'},
                     {header: t("scheduled"), width:130, sortable: true, dataIndex: 'scheduled', renderer: function(d) {
                         if (d != null){
                         	var date = new Date(d * 1000);
                             return Ext.Date.format(date, "Y-m-d H:i:s");
                     	}
-                    }, editable: false}
+                    }, editable: false},
+                    {header: t("note"), sortable: true, dataIndex: 'note', editor: new Ext.form.TextField()}
                 ],
                 stripeRows: true,
-                width:370,
+                width: 450,
                 title: t('available_versions'),
                 region: "west",
-                viewConfig: {
-                    getRowClass: function(record, rowIndex, rp, ds) {
-                        if (record.data.date == this.asset.data.modificationDate) {
-                            return "version_published";
-                        }
-                        return "";
-                    }.bind(this)
-                }
+                split: true
             });
 
             grid.on("rowclick", this.onRowClick.bind(this));
@@ -103,8 +111,8 @@ pimcore.asset.versions = Class.create({
             var preview = new Ext.Panel({
                 title: t("preview"),
                 region: "center",
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
-                html: '<iframe src="about:blank" frameborder="0" id="asset_version_iframe_'
+                bodyCls: "pimcore_overflow_scrolling",
+                html: '<iframe src="about:blank" frameborder="0" style="width:100%;" id="asset_version_iframe_'
                                                                     + this.asset.id + '"></iframe>'
             });
 
@@ -113,24 +121,19 @@ pimcore.asset.versions = Class.create({
                 bodyStyle:'padding:20px 5px 20px 5px;',
                 border: false,
                 layout: "border",
-                iconCls: "pimcore_icon_tab_versions",
+                iconCls: "pimcore_icon_versions",
                 items: [grid,preview]
             });
 
-            preview.on("resize", this.onLayoutResize.bind(this));
+            preview.on("resize", this.setLayoutFrameDimensions.bind(this));
         }
 
         return this.layout;
     },
 
-    onLayoutResize: function (el, width, height, rWidth, rHeight) {
-        this.setLayoutFrameDimensions(width, height);
-    },
-
-    setLayoutFrameDimensions: function (width, height) {
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
         Ext.get("asset_version_iframe_" + this.asset.id).setStyle({
-            width: width + "px",
-            height: (height - 25) + "px"
+            height: (height - 38) + "px"
         });
     },
 
@@ -193,6 +196,19 @@ pimcore.asset.versions = Class.create({
 
     reload: function () {
         this.store.reload();
+    },
+
+    dataUpdate: function (store, record, operation) {
+
+        if (operation == "edit") {
+            Ext.Ajax.request({
+                url: "/admin/element/version-update",
+                params: {
+                    data: Ext.encode(record.data)
+                }
+            });
+        }
+
+        store.commitChanges();
     }
-    
 });

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.system");
@@ -153,6 +152,19 @@ pimcore.settings.system = Class.create({
                         defaults: {width: 150},
                         items :[
                             {
+                                fieldLabel: t("user_interface") + " / " + t("extjs_version"),
+                                xtype: "combo",
+                                width: 300,
+                                name: "general.extjs6",
+                                value: this.getValue("general.extjs6"),
+                                store: [
+                                    ["",t("legacy_user_interface") + " (" + t("extjs_34") + ")"],
+                                    ["1",t("new_user_interface") + " (" + t("extjs_6") + ")"]
+                                ],
+                                mode: "local",
+                                triggerAction: "all"
+                            },
+                            {
                                 fieldLabel: t('timezone'),
                                 name: 'general.timezone',
                                 xtype: "combo",
@@ -160,8 +172,8 @@ pimcore.settings.system = Class.create({
                                 triggerAction: 'all',
                                 store: this.data.config.timezones,
                                 value: this.getValue("general.timezone"),
-                                width: 400,
-                                listWidth: 400
+                                width: 300,
+                                listWidth: 300
                             },
                             {
                                 fieldLabel: t("view_suffix"),
@@ -177,10 +189,10 @@ pimcore.settings.system = Class.create({
                                 mode: "local",
                                 triggerAction: "all"
                             },{
-                                fieldLabel: t("absolute_path_to_php_cli_binary"),
+                                fieldLabel: t("additional_path_variable_colon_separated") + " (/x/y:/foo/bar)",
                                 xtype: "textfield",
-                                name: "general.php_cli",
-                                value: this.getValue("general.php_cli"),
+                                name: "general.path_variable",
+                                value: this.getValue("general.path_variable"),
                                 width: 300
                             },
                             {
@@ -197,25 +209,6 @@ pimcore.settings.system = Class.create({
                                 forceSelection: true,
                                 triggerAction: 'all',
                                 hiddenName: 'general.language'
-                            },{
-                                fieldLabel: t("contact_email"),
-                                xtype: "textfield",
-                                name: "general.contactemail",
-                                value: this.getValue("general.contactemail"),
-                                width: 300
-                            },
-                            {
-                                fieldLabel: t("extjs_version"),
-                                //xtype: "combo",
-                                xtype: "hidden",
-                                name: "general.extjs6",
-                                value: this.getValue("general.extjs6"),
-                                store: [
-                                    ["0",t("extjs_34")],
-                                    ["1",t("extjs_6")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all"
                             },
                             {
                                 fieldLabel: t("url_to_custom_image_on_login_screen"),
@@ -328,34 +321,6 @@ pimcore.settings.system = Class.create({
                         defaultType: 'textfield',
                         defaults: {width: 150},
                         items :[
-                            {
-                                fieldLabel: t("environment"),
-                                xtype: "combo",
-                                name: "general.environment",
-                                value: this.getValue("general.environment"),
-                                store: [
-                                    ["production", t("production")],
-                                    ["stage", t("stage")],
-                                    ["test", t("test")],
-                                    ["development", t("development")],
-                                    ["local", t("local")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all",
-                                listeners: {
-                                    "select": function (el) {
-                                        if(el.getValue() == "production") {
-                                            var ipField = Ext.getCmp("system.settings.general.debug_ip");
-                                            if(empty(ipField.getValue())) {
-                                                Ext.getCmp("system.settings.general.debug").setValue(false);
-                                            }
-
-                                            Ext.getCmp("system.settings.general.debugloglevel").setValue("error");
-                                            Ext.getCmp("system.settings.general.devmode").setValue(false);
-                                        }
-                                    }
-                                }
-                            },
                             {
                                 fieldLabel: "DEBUG",
                                 xtype: "checkbox",
@@ -940,33 +905,10 @@ pimcore.settings.system = Class.create({
                                 mode: "local",
                                 triggerAction: "all"
                             },{
-                                fieldLabel: t("allow_capitals_for_documents"),
-                                xtype: "combo",
-                                name: "documents.allowcapitals",
-                                value: this.getValue("documents.allowcapitals"),
-                                store: [
-                                    ["",t("yes")],
-                                    ["no",t("no")]
-                                ],
-                                mode: "local",
-                                triggerAction: "all"
-                            },{
                                 fieldLabel: t("generate_previews"),
                                 xtype: "checkbox",
                                 name: "documents.generatepreview",
                                 checked: this.getValue("documents.generatepreview")
-                            },
-                            {
-                                fieldLabel: t('absolute_path_to_wkhtmltoimage_binary'),
-                                name: 'documents.wkhtmltoimage',
-                                value: this.getValue("documents.wkhtmltoimage"),
-                                width: 300
-                            },
-                            {
-                                fieldLabel: t('absolute_path_to_wkhtmltopdf_binary'),
-                                name: 'documents.wkhtmltopdf',
-                                value: this.getValue("documents.wkhtmltopdf"),
-                                width: 300
                             }
                         ]
                     },
@@ -1019,11 +961,6 @@ pimcore.settings.system = Class.create({
                         defaults: {width: 150},
                         items :[
                             {
-                                fieldLabel: t('hostname_for_webdav'),
-                                name: 'assets.webdav.hostname',
-                                value: this.getValue("assets.webdav.hostname")
-                            },
-                            {
                                 fieldLabel: t('store_version_history_in_days'),
                                 name: 'assets.versions.days',
                                 value: this.getValue("assets.versions.days"),
@@ -1050,41 +987,6 @@ pimcore.settings.system = Class.create({
                                 }
                             },
                             {
-                                fieldLabel: t('absolute_path_to_ffmpeg_binary'),
-                                name: 'assets.ffmpeg',
-                                value: this.getValue("assets.ffmpeg"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_ghostscript'),
-                                name: 'assets.ghostscript',
-                                value: this.getValue("assets.ghostscript"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_libreoffice'),
-                                name: 'assets.libreoffice',
-                                value: this.getValue("assets.libreoffice"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_pngcrush'),
-                                name: 'assets.pngcrush',
-                                value: this.getValue("assets.pngcrush"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_imgmin'),
-                                name: 'assets.imgmin',
-                                value: this.getValue("assets.imgmin"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_jpegoptim'),
-                                name: 'assets.jpegoptim',
-                                value: this.getValue("assets.jpegoptim"),
-                                width: 300
-                            },{
-                                fieldLabel: t('absolute_path_to_pdftotext'),
-                                name: 'assets.pdftotext',
-                                value: this.getValue("assets.pdftotext"),
-                                width: 300
-                            },{
                                 fieldLabel: t('absolute_path_to_icc_rgb_profile') + " (imagick)",
                                 name: 'assets.icc_rgb_profile',
                                 value: this.getValue("assets.icc_rgb_profile"),
@@ -1173,25 +1075,6 @@ pimcore.settings.system = Class.create({
                                 fieldLabel: t('browser_api_key'),
                                 name: 'services.google.browserapikey',
                                 value: this.getValue("services.google.browserapikey"),
-                                width: 650
-                            },{
-                                xtype: "displayfield",
-                                hideLabel: true,
-                                style: "margin-top: 10px;",
-                                width: 600,
-                                value: "&nbsp;"
-                            },
-                            {
-                                xtype: "displayfield",
-                                hideLabel: true,
-                                width: 600,
-                                value: "<b>" + t('translate_api_key') + "</b>",
-                                cls: "pimcore_extra_label"
-                            },
-                            {
-                                fieldLabel: t('api_key'),
-                                name: 'services.translate.apikey',
-                                value: this.getValue("services.translate.apikey"),
                                 width: 650
                             }
                         ]

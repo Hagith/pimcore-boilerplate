@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Element
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Element\Reference;
 
 use Pimcore\Model;
 
-class Placeholder {
+class Placeholder
+{
 
     /**
      * @var int
@@ -35,18 +35,20 @@ class Placeholder {
      * @param int $id
      * @param string $type
      */
-    public function __construct($id, $type) {
+    public function __construct($id, $type)
+    {
         $this->setId($id);
         $this->setType($type);
     }
 
     /**
      * @param int $id
-     * @return void
+     * @return $this
      */
     public function setId($id)
     {
         $this->id = (int) $id;
+
         return $this;
     }
 
@@ -60,11 +62,12 @@ class Placeholder {
 
     /**
      * @param string $type
-     * @return void
+     * @return $this
      */
     public function setType($type)
     {
         $this->type = $type;
+
         return $this;
     }
 

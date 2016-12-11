@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -21,7 +20,6 @@
 pimcore.registerNS("pimcore.object.helpers.grid");
 pimcore.object.helpers.grid = Class.create({
 
-    limit: 20,
     baseParams: {},
     showSubtype: true,
     showKey: true,
@@ -39,9 +37,6 @@ pimcore.object.helpers.grid = Class.create({
             this.baseParams = {};
         }
 
-        if(!this.baseParams.limit) {
-            this.baseParams.limit = this.limit;
-        }
         if(!this.baseParams["class"]) {
             this.baseParams["class"] = this.selectedClass;
         }
@@ -95,10 +90,20 @@ pimcore.object.helpers.grid = Class.create({
                 destroy : this.url + "?xaction=destroy"
             },
             actionMethods: {
-                create : 'GET',
-                read   : 'GET',
-                update : 'GET',
-                destroy: 'GET'
+                create : 'POST',
+                read   : 'POST',
+                update : 'POST',
+                destroy: 'POST'
+            },
+            listeners: {
+                exception: function (proxy, request, operation, eOpts) {
+                    console.log("exception");
+                    if(operation.getAction() == "update") {
+                        Ext.MessageBox.alert(t('error'),
+                            t('cannot_save_object_please_try_to_edit_the_object_in_detail_view'));
+                        this.store.rejectChanges();
+                    }
+                }.bind(this)
             },
             extraParams: this.baseParams
         };
@@ -110,16 +115,7 @@ pimcore.object.helpers.grid = Class.create({
                 type: 'json',
                 //writeAllFields: true,
                 rootProperty: 'data',
-                encode: 'true',
-                listeners: {
-                    exception: function (conn, mode, action, request, response, store) {
-                        if(action == "update") {
-                            Ext.MessageBox.alert(t('error'),
-                                t('cannot_save_object_please_try_to_edit_the_object_in_detail_view'));
-                            this.store.rejectChanges();
-                        }
-                    }.bind(this)
-                }
+                encode: 'true'
             };
         }
 
@@ -209,16 +205,26 @@ pimcore.object.helpers.grid = Class.create({
                         return Ext.Date.format(d, "Y-m-d H:i:s");
                     }/*, hidden: !propertyVisibility.modificationDate*/});
             } else {
-                var fc = pimcore.object.tags[field.type].prototype.getGridColumnConfig(field);
-                fc.width = this.getColumnWidth(field, 100);
+                var fieldType = fields[i].type;
+                var tag = pimcore.object.tags[fieldType];
+                if (tag) {
+                    var fc = tag.prototype.getGridColumnConfig(field);
+                    fc.width = this.getColumnWidth(field, 100);
 
-                if (typeof gridFilters[field.key] !== 'undefined') {
-                    fc.filter = gridFilters[field.key];
+                    if (typeof gridFilters[field.key] !== 'undefined') {
+                        fc.filter = gridFilters[field.key];
+                    }
+
+                    if (this.isSearch) {
+                        fc.sortable = false;
+                    }
+
+                    gridColumns.push(fc);
+                    gridColumns[gridColumns.length-1].hidden = false;
+                    gridColumns[gridColumns.length-1].layout = fields[i];
+                } else {
+                    console.log("could not resolve field type: " + fieldType);
                 }
-
-                gridColumns.push(fc);
-                gridColumns[gridColumns.length-1].hidden = false;
-                gridColumns[gridColumns.length-1].layout = fields[i];
             }
         }
 
@@ -228,6 +234,8 @@ pimcore.object.helpers.grid = Class.create({
     getColumnWidth: function(field, defaultValue) {
         if (field.width) {
             return field.width;
+        } else if(field.layout && field.layout.width) {
+            return field.layout.width;
         } else {
             return defaultValue;
         }
@@ -252,9 +260,16 @@ pimcore.object.helpers.grid = Class.create({
                         type: "string"
                     };
                 } else {
-                    var filter = pimcore.object.tags[fields[i].type].prototype.getGridColumnFilter(fields[i]);
-                    if (filter) {
-                        configuredFilters[filter.dataIndex] = filter;
+                    var fieldType = fields[i].type;
+                    var tag = pimcore.object.tags[fieldType];
+                    if (tag) {
+                        var filter = tag.prototype.getGridColumnFilter(fields[i]);
+                        if (filter) {
+                            configuredFilters[filter.dataIndex] = filter;
+                        }
+                    } else {
+                        console.log("could not resolve fieldType: " + fieldType);
+
                     }
                 }
             }
@@ -274,8 +289,13 @@ pimcore.object.helpers.grid = Class.create({
                 && fields[i].key != "filename" && fields[i].key != "classname"
                 && fields[i].key != "creationDate" && fields[i].key != "modificationDate") {
 
-
-                pimcore.object.tags[fields[i].type].prototype.applyGridEvents(grid, fields[i]);
+                var fieldType = fields[i].type;
+                var tag = pimcore.object.tags[fieldType];
+                if (tag) {
+                    tag.prototype.applyGridEvents(grid, fields[i]);
+                } else {
+                    console.log("could not resolve field type " + fieldType);
+                }
             }
 
         }

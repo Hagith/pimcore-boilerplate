@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Controller\Action;
@@ -24,8 +23,10 @@ use Pimcore\Model\Document;
 use Pimcore\Model\Object;
 use Pimcore\Model;
 use Pimcore\Translate;
+use Pimcore\Logger;
 
-abstract class Frontend extends Action {
+abstract class Frontend extends Action
+{
 
     /**
      * @var Document
@@ -58,9 +59,20 @@ abstract class Frontend extends Action {
     public static $isInitial = true;
 
     /**
+     * @var string
+     */
+    private static $locale;
+
+    /**
      * @throws \Zend_Controller_Router_Exception
      */
-    public function init() {
+    public function init()
+    {
+
+        // this is only executed once per request (first request)
+        if (self::$isInitial) {
+            \Pimcore::getEventManager()->trigger("frontend.controller.preInit", $this);
+        }
 
         parent::init();
 
@@ -68,7 +80,7 @@ abstract class Frontend extends Action {
         $this->checkForErrors();
 
         // general definitions
-        if(self::$isInitial) {
+        if (self::$isInitial) {
             \Pimcore::unsetAdminMode();
             Document::setHideUnpublished(true);
             Object\AbstractObject::setHideUnpublished(true);
@@ -77,13 +89,13 @@ abstract class Frontend extends Action {
         }
 
         // assign variables
-        $this->view->controller = $this; 
-        
+        $this->view->controller = $this;
+
         // init website config
         $config = Config::getWebsiteConfig();
         $this->config = $config;
         $this->view->config = $config;
-        
+
         $document = $this->getParam("document");
         if (!$document instanceof Document) {
             \Zend_Registry::set("pimcore_editmode", false);
@@ -93,11 +105,11 @@ abstract class Frontend extends Action {
             self::$isInitial = false;
 
             // check for a locale first, and set it if available
-            if($this->getParam("pimcore_parentDocument")) {
+            if ($this->getParam("pimcore_parentDocument")) {
                 // this is a special exception for renderlets in editmode (ajax request), because they depend on the locale of the parent document
                 // otherwise there'll be notices like:  Notice: 'No translation for the language 'XX' available.'
-                if($parentDocument = Document::getById($this->getParam("pimcore_parentDocument"))) {
-                    if($parentDocument->getProperty("language")) {
+                if ($parentDocument = Document::getById($this->getParam("pimcore_parentDocument"))) {
+                    if ($parentDocument->getProperty("language")) {
                         $this->setLocaleFromDocument($parentDocument->getProperty("language"));
                     }
                 }
@@ -105,25 +117,20 @@ abstract class Frontend extends Action {
 
             // no document available, continue, ...
             return;
-        }
-        else {
+        } else {
             $this->setDocument($document);
 
             // register global locale if the document has the system property "language"
-            if($this->getDocument()->getProperty("language")) {
+            if ($this->getDocument()->getProperty("language")) {
                 $this->setLocaleFromDocument($this->getDocument()->getProperty("language"));
             }
 
-            if(self::$isInitial) {
+            if (self::$isInitial) {
                 // append meta-data to the headMeta() view helper,  if it is a document-request
-                if(!Model\Staticroute::getCurrentRoute() && ($this->getDocument() instanceof Document\Page)) {
-                    if(is_array($this->getDocument()->getMetaData())) {
+                if (!Model\Staticroute::getCurrentRoute() && ($this->getDocument() instanceof Document\Page)) {
+                    if (is_array($this->getDocument()->getMetaData())) {
                         foreach ($this->getDocument()->getMetaData() as $meta) {
-                            // only name
-                            if(!empty($meta["idName"]) && !empty($meta["idValue"]) && !empty($meta["contentValue"])) {
-                                $method = "append" . ucfirst($meta["idName"]);
-                                $this->view->headMeta()->$method($meta["idValue"], $meta["contentValue"]);
-                            }
+                            $this->view->headMeta()->addRaw($meta);
                         }
                     }
                 }
@@ -131,7 +138,7 @@ abstract class Frontend extends Action {
         }
 
         // this is only executed once per request (first request)
-        if(self::$isInitial) {
+        if (self::$isInitial) {
 
             // contains the logged in user if necessary
             $user = null;
@@ -146,7 +153,7 @@ abstract class Frontend extends Action {
                 $user = Authentication::authenticateSession();
             }
 
-            if(\Pimcore::inDebugMode()) {
+            if (\Pimcore::inDebugMode()) {
                 $this->disableBrowserCache();
             }
 
@@ -155,8 +162,7 @@ abstract class Frontend extends Action {
                     if (!$user) {
                         throw new \Zend_Controller_Router_Exception("access denied for " . $this->document->getFullPath());
                     }
-                }
-                else {
+                } else {
                     throw new \Zend_Controller_Router_Exception("access denied for " . $this->document->getFullPath());
                 }
             }
@@ -181,9 +187,9 @@ abstract class Frontend extends Action {
                     } else {
                         // set the latest available version for editmode if there is no doc in the session
                         $latestVersion = $this->getDocument()->getLatestVersion();
-                        if($latestVersion) {
+                        if ($latestVersion) {
                             $latestDoc = $latestVersion->loadData();
-                            if($latestDoc instanceof Document\PageSnippet) {
+                            if ($latestDoc instanceof Document\PageSnippet) {
                                 $this->setDocument($latestDoc);
                             }
                         }
@@ -210,7 +216,7 @@ abstract class Frontend extends Action {
                     $key = "object_" . $this->getParam("pimcore_object_preview");
 
                     $session = Session::getReadOnly("pimcore_objects");
-                    if($session->$key) {
+                    if ($session->$key) {
                         $object = $session->$key;
                         // add the object to the registry so every call to Object::getById() will return this object instead of the real one
                         \Zend_Registry::set("object_" . $object->getId(), $object);
@@ -220,7 +226,7 @@ abstract class Frontend extends Action {
                 // for version preview
                 if ($this->getParam("pimcore_version")) {
                     // only get version data at the first call || because of embedded Snippets ...
-                    if(!\Zend_Registry::isRegistered("pimcore_version_active")) {
+                    if (!\Zend_Registry::isRegistered("pimcore_version_active")) {
                         $version = Model\Version::getById($this->getParam("pimcore_version"));
                         $this->setDocument($version->getData());
 
@@ -237,29 +243,43 @@ abstract class Frontend extends Action {
                     if ($version->getPublic()) {
                         $this->setDocument($version->getData());
                     }
-                }
-                catch (\Exception $e) {
+                } catch (\Exception $e) {
                 }
             }
 
             // check for persona
-            if($this->getDocument() instanceof Document\Page) {
+            if ($this->getDocument() instanceof Document\Page) {
                 $this->getDocument()->setUsePersona(null); // reset because of preview and editmode (saved in session)
-                if($this->getParam("_ptp") && self::$isInitial) {
+                if ($this->getParam("_ptp") && self::$isInitial) {
                     $this->getDocument()->setUsePersona($this->getParam("_ptp"));
                 }
             }
 
             // check if document is a wrapped hardlink, if this is the case send a rel=canonical header to the source document
-            if($this->getDocument() instanceof Document\Hardlink\Wrapper\WrapperInterface) {
+            if ($this->getDocument() instanceof Document\Hardlink\Wrapper\WrapperInterface) {
                 // get the cononical (source) document
                 $hardlinkCanonicalSourceDocument = Document::getById($this->getDocument()->getId());
                 $request = $this->getRequest();
+                $canonical = null;
 
-                if(\Pimcore\Tool\Frontend::isDocumentInCurrentSite($hardlinkCanonicalSourceDocument)) {
-                    $this->getResponse()->setHeader("Link", '<' . $request->getScheme() . "://" . $request->getHttpHost() . $hardlinkCanonicalSourceDocument->getFullPath() . '>; rel="canonical"');
+                if (\Pimcore\Tool\Frontend::isDocumentInCurrentSite($hardlinkCanonicalSourceDocument)) {
+                    $canonical = $request->getScheme() . "://" . $request->getHttpHost() . $hardlinkCanonicalSourceDocument->getFullPath();
+                } elseif (Model\Site::isSiteRequest()) {
+                    $sourceSite = \Pimcore\Tool\Frontend::getSiteForDocument($hardlinkCanonicalSourceDocument);
+                    if ($sourceSite) {
+                        if ($sourceSite->getMainDomain()) {
+                            $sourceSiteRelPath = preg_replace("@^" . preg_quote($sourceSite->getRootPath(), "@") . "@", "", $hardlinkCanonicalSourceDocument->getRealFullPath());
+                            $canonical = $request->getScheme() . "://" . $sourceSite->getMainDomain() . $sourceSiteRelPath;
+                        }
+                    }
+                }
+
+                if ($canonical) {
+                    $this->getResponse()->setHeader("Link", '<' . $canonical . '>; rel="canonical"');
                 }
             }
+
+            \Pimcore::getEventManager()->trigger("frontend.controller.postInit", $this);
         }
 
 
@@ -273,22 +293,24 @@ abstract class Frontend extends Action {
     /**
      * @return \Zend_Config
      */
-    public function getConfig () {
+    public function getConfig()
+    {
         return $this->config;
     }
 
     /**
      * @param $locale
      */
-    protected function setLocaleFromDocument($locale) {
+    protected function setLocaleFromDocument($locale)
+    {
 
         // we need to backup the locale that is currently set (if so), so that we can restore it on ::postDispatch()
         // this is especially important when a document includes another document ($this->inc, $this->snippet, ...)
         // and the included document has a different locale. If we do not restore the previous locale this would have
         // the effect that the parent document will have a wrong language from the point on where the document with
         // the different locale was included, so e.g. $this->translate() would end in wrong translations
-        if(\Zend_Registry::isRegistered("Zend_Locale")) {
-            if( (string) \Zend_Registry::get("Zend_Locale") != (string) $locale) {
+        if (\Zend_Registry::isRegistered("Zend_Locale")) {
+            if ((string) \Zend_Registry::get("Zend_Locale") != (string) $locale) {
                 $this->previousLocale = \Zend_Registry::get("Zend_Locale");
             }
         }
@@ -298,18 +320,44 @@ abstract class Frontend extends Action {
     /**
      * @param $locale
      */
-    public function setLocale($locale) {
-        if(\Zend_Locale::isLocale($locale)) {
+    public function setLocale($locale)
+    {
+        if ((string) $locale != self::$locale && \Zend_Locale::isLocale($locale)) {
             $locale = new \Zend_Locale($locale);
             \Zend_Registry::set('Zend_Locale', $locale);
-            $this->getResponse()->setHeader("Content-Language",strtolower(str_replace("_","-", (string) $locale)), true);
+            $this->getResponse()->setHeader("Content-Language", strtolower(str_replace("_", "-", (string) $locale)), true);
 
-            if(\Zend_Registry::isRegistered("Zend_Translate")) {
+            // now we prepare everything for setlocale()
+            $localeList = [(string) $locale . ".utf8"];
+
+            if ($locale->getRegion()) {
+                // add only the language to the list as a fallback
+                $localeList[] = $locale->getLanguage() . ".utf8";
+            } else {
+                // try to get a list of territories for this language
+                // usually OS have no "language only" locale, only the combination language-territory (eg. Debian)
+                $languageRegionMapping = include PIMCORE_PATH . "/config/data/cldr-language-territory-mapping.php";
+                if (isset($languageRegionMapping[$locale->getLanguage()])) {
+                    foreach ($languageRegionMapping[$locale->getLanguage()] as $territory) {
+                        $localeList[] = $locale->getLanguage() . "_" . $territory . ".utf8";
+                    }
+                }
+            }
+
+            // currently we have to exclude LC_MONETARY from being set, because of issues in combination with
+            // Zend_Currency -> see also https://github.com/zendframework/zf1/issues/706
+            // once this is resolved we can safely set the locale for LC_MONETARY as well.
+            setlocale(LC_ALL & ~LC_MONETARY, $localeList);
+
+            // reconfigure translation management
+            if (\Zend_Registry::isRegistered("Zend_Translate")) {
                 $translator = \Zend_Registry::get("Zend_Translate");
-                if($translator instanceof Translate) {
+                if ($translator instanceof Translate) {
                     $translator->setLocale($locale);
                 }
             }
+
+            self::$locale = (string) $locale;
         }
     }
 
@@ -317,18 +365,21 @@ abstract class Frontend extends Action {
      * @param $document
      * @return $this
      */
-    public function setDocument($document) {
+    public function setDocument($document)
+    {
         if ($document instanceof Document) {
             $this->document = $document;
             $this->view->document = $document;
         }
+
         return $this;
     }
 
     /**
      * @return Document
      */
-    public function getDocument() {
+    public function getDocument()
+    {
         return $this->document;
     }
 
@@ -336,33 +387,33 @@ abstract class Frontend extends Action {
      * @return null|\Pimcore\Translate|\Pimcore\Translate\Website
      * @throws \Zend_Exception
      */
-    public function initTranslation() {
-
+    public function initTranslation()
+    {
         $translate = null;
-        if(\Zend_Registry::isRegistered("Zend_Translate")) {
+        if (\Zend_Registry::isRegistered("Zend_Translate")) {
             $t = \Zend_Registry::get("Zend_Translate");
             // this check is necessary for the case that a document is rendered within an admin request
             // example: send test newsletter
-            if($t instanceof \Pimcore\Translate) {
+            if ($t instanceof \Pimcore\Translate) {
                 $translate = $t;
             }
         }
 
-        if(!$translate) {
+        if (!$translate) {
             // setup \Zend_Translate
             try {
                 $locale = \Zend_Registry::get("Zend_Locale");
 
                 $translate = new \Pimcore\Translate\Website($locale);
 
-                if(Tool::isValidLanguage($locale)) {
-                    $translate->setLocale($locale);    
+                if (Tool::isValidLanguage($locale)) {
+                    $translate->setLocale($locale);
                 } else {
-                    \Logger::error("You want to use an invalid language which is not defined in the system settings: " . $locale);
+                    Logger::error("You want to use an invalid language which is not defined in the system settings: " . $locale);
                     // fall back to the first (default) language defined
                     $languages = Tool::getValidLanguages();
-                    if($languages[0]) {
-                        \Logger::error("Using '" . $languages[0] . "' as a fallback, because the language '".$locale."' is not defined in system settings");
+                    if ($languages[0]) {
+                        Logger::error("Using '" . $languages[0] . "' as a fallback, because the language '".$locale."' is not defined in system settings");
                         $translate = new \Pimcore\Translate\Website($languages[0]); // reinit with new locale
                         $translate->setLocale($languages[0]);
                     } else {
@@ -373,10 +424,9 @@ abstract class Frontend extends Action {
 
                 // register the translator in \Zend_Registry with the key "\Zend_Translate" to use the translate helper for \Zend_View
                 \Zend_Registry::set("Zend_Translate", $translate);
-            }
-            catch (\Exception $e) {
-                \Logger::error("initialization of Pimcore_Translate failed");
-                \Logger::error($e);
+            } catch (\Exception $e) {
+                Logger::error("initialization of Pimcore_Translate failed");
+                Logger::error($e);
             }
         }
 
@@ -386,7 +436,8 @@ abstract class Frontend extends Action {
     /**
      * @return null
      */
-    public function getRenderScript() {
+    public function getRenderScript()
+    {
 
         // try to get the template out of the params
         if ($this->getParam("template")) {
@@ -396,8 +447,8 @@ abstract class Frontend extends Action {
         // try to get template out of the document object, but only if the parameter `staticroute´ is not set, which indicates
         // if a request comes through a static/custom route (contains the route Object => Staticroute)
         // see PIMCORE-1545
-        if ($this->document instanceof Document && !in_array($this->getParam("pimcore_request_source"), array("staticroute", "renderlet"))) {
-            if(method_exists($this->document, "getTemplate") && $this->document->getTemplate()) {
+        if ($this->document instanceof Document && !in_array($this->getParam("pimcore_request_source"), ["staticroute", "renderlet"])) {
+            if (method_exists($this->document, "getTemplate") && $this->document->getTemplate()) {
                 return $this->document->getTemplate();
             }
         }
@@ -408,12 +459,12 @@ abstract class Frontend extends Action {
     /**
      *
      */
-    protected function forceRender() {
+    protected function forceRender()
+    {
         if (!$this->viewRendered) {
             if ($script = $this->getRenderScript()) {
                 $this->renderScript($script);
-            }
-        else {
+            } else {
                 $this->render();
             }
         }
@@ -424,8 +475,9 @@ abstract class Frontend extends Action {
      * @param null $name
      * @param bool $noController
      */
-    public function render($action = null, $name = null, $noController = false) {
-        if(!$this->viewRendered) {
+    public function render($action = null, $name = null, $noController = false)
+    {
+        if (!$this->viewRendered) {
             $this->viewRendered = true;
             parent::render($action, $name, $noController);
         }
@@ -435,8 +487,9 @@ abstract class Frontend extends Action {
      * @param string $script
      * @param null $name
      */
-    public function renderScript($script, $name = null) {
-        if(!$this->viewRendered) {
+    public function renderScript($script, $name = null)
+    {
+        if (!$this->viewRendered) {
             $this->viewRendered = true;
             parent::renderScript($script, $name);
         }
@@ -445,7 +498,8 @@ abstract class Frontend extends Action {
     /**
      *
      */
-    public function preDispatch() {
+    public function preDispatch()
+    {
 
         // initialize translation if required
         $this->initTranslation();
@@ -459,16 +513,16 @@ abstract class Frontend extends Action {
                 \Zend_Registry::set("pimcore_tag_block_current", null);
                 \Zend_Registry::set("pimcore_tag_block_numeration", null);
             }
-        }
-        catch (\Exception $e) {
-            \Logger::debug($e);
+        } catch (\Exception $e) {
+            Logger::debug($e);
         }
     }
 
     /**
      *
      */
-    public function postDispatch() {
+    public function postDispatch()
+    {
         parent::postDispatch();
 
         if (isset($this->parentBlockCurrent) && $this->parentBlockCurrent && !$this->getParam("disableBlockClearing")) {
@@ -478,9 +532,9 @@ abstract class Frontend extends Action {
             \Zend_Registry::set("pimcore_tag_block_numeration", $this->parentBlockNumeration);
         }
 
-        // restore the previois set locale if available
+        // restore the previous set locale if available
         // for a detailed description on this, please have a look at $this->setLocaleFromDocument()
-        if($this->previousLocale) {
+        if ($this->previousLocale) {
             $this->forceRender();
             $this->setLocale($this->previousLocale);
             $this->previousLocale = null;
@@ -490,10 +544,10 @@ abstract class Frontend extends Action {
     /**
      * @throws \Zend_Controller_Response_Exception
      */
-    public function checkForErrors() {
+    public function checkForErrors()
+    {
         if ($error = $this->getParam('error_handler')) {
             if ($error->exception) {
-
                 if ($error->exception instanceof \Zend_Controller_Router_Exception || $error->exception instanceof \Zend_Controller_Action_Exception) {
                     header('HTTP/1.1 404 Not Found');
                     //$this->getResponse()->setRawHeader('HTTP/1.1 404 Not Found');
@@ -501,36 +555,49 @@ abstract class Frontend extends Action {
 
                     // check if the resource that wasn't found is a common static file
                     // for them we don't show the error page, as generating this is very heavy in terms of performance
-                    if(preg_match("/\.(js|css|png|jpe?g|gif|eot|ttf|woff|svg|ico|map|swf|txt)$/", $this->getRequest()->getPathInfo())) {
+                    if (preg_match("/\.(js|css|png|jpe?g|gif|eot|ttf|woff|svg|ico|map|swf|txt)$/", $this->getRequest()->getPathInfo())) {
                         echo "HTTP/1.1 404 Not Found\nFiltered by error handler (static file exception)";
                         exit;
                     }
-                }
-                else {
+                } else {
                     header('HTTP/1.1 503 Service Temporarily Unavailable');
                     //$this->getResponse()->setRawHeader('HTTP/1.1 503 Service Temporarily Unavailable');
                     $this->getResponse()->setHttpResponseCode(503);
                 }
 
-                \Logger::error("Unable to find URL: " . $_SERVER["REQUEST_URI"]);
-                \Logger::error($error->exception);
+                Logger::error("Unable to find URL: " . $_SERVER["REQUEST_URI"]);
+                Logger::error($error->exception);
+
+                $results = \Pimcore::getEventManager()->trigger("frontend.error", $this, [
+                    "exception" => $error->exception
+                ]);
+
+                $cacheKeySuffix = "";
+                foreach ($results as $result) {
+                    $cacheKeySuffix .= "_" . $result;
+                }
 
                 try {
                     // check if we have the error page already in the cache
-                    // the cache is written in Pimcore_Controller_Plugin_HttpErrorLog::dispatchLoopShutdown()
-                    $cacheKey = "error_page_response_" . \Pimcore\Tool\Frontend::getSiteKey();
-                    if($responseBody = \Pimcore\Model\Cache::load($cacheKey)) {
+                    // the cache is written in Pimcore\Controller\Plugin\HttpErrorLog::dispatchLoopShutdown()
+                    $responseCode = $this->getResponse()->getHttpResponseCode();
+                    $cacheKey = "error_" . $responseCode . "_" . \Pimcore\Tool\Frontend::getSiteKey() . $cacheKeySuffix;
+                    if ($responseBody = \Pimcore\Cache::load($cacheKey)) {
                         $this->getResponse()->setBody($responseBody);
                         $this->getResponse()->sendResponse();
 
                         // write to http_error log
                         $errorLogPlugin = \Zend_Controller_Front::getInstance()->getPlugin("Pimcore\\Controller\\Plugin\\HttpErrorLog");
-                        if($errorLogPlugin) {
+                        if ($errorLogPlugin) {
                             $errorLogPlugin->writeLog();
                         }
 
                         exit;
                     } else {
+                        $errorLogPlugin = \Zend_Controller_Front::getInstance()->getPlugin("Pimcore\\Controller\\Plugin\\HttpErrorLog");
+                        if ($errorLogPlugin) {
+                            $errorLogPlugin->setCacheKey($cacheKey);
+                        }
                         $document = \Zend_Registry::get("pimcore_error_document");
                         $this->setDocument($document);
                         $this->setParam("document", $document);
@@ -538,8 +605,7 @@ abstract class Frontend extends Action {
 
                         // http_error log writing is done in Pimcore_Controller_Plugin_HttpErrorLog in this case
                     }
-                }
-                catch (\Exception $e) {
+                } catch (\Exception $e) {
                     $m = "Unable to load error document";
                     Tool::exitWithError($m);
                 }

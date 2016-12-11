@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.document");
@@ -59,7 +58,7 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
         try {
             Ext.getCmp("pimcore_panel_tree_documents").expand();
             var tree = pimcore.globalmanager.get("layout_document_tree");
-            pimcore.helpers.selectPathInTree(tree.tree, this.data.idPath);
+            pimcore.treenodelocator.showInTree(this.id, "document");
         } catch (e) {
             console.log(e);
         }
@@ -110,8 +109,8 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
                             pimcore.plugin.broker.fireEvent("postSaveDocument", this, this.getType(), task, only);
                         }
                         else {
-                            pimcore.helpers.showNotification(t("error"), t("error_saving_document"), "error",
-                                                                                                    t(rdata.message));
+                            pimcore.helpers.showPrettyError(rdata.type, t("error"), t("error_saving_document"),
+                                rdata.message, rdata.stack, rdata.code);
                         }
                     } catch (e) {
                         pimcore.helpers.showNotification(t("error"), t("error_saving_document"), "error");
@@ -146,7 +145,11 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
     },
 
     remove: function () {
-        pimcore.helpers.deleteDocument(this.id);
+        var options = {
+            "elementType" : "document",
+            "id": this.id
+        };
+        pimcore.elementservice.deleteElement(options);
     },
 
     saveClose: function(only){
@@ -172,22 +175,11 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
             this.toolbarButtons.save.hide();
         }
 
-        // remove class in tree panel
-        try {
-            var tree = pimcore.globalmanager.get("layout_document_tree").tree;
-            var store = tree.getStore();
-            var record = store.getById(this.data.id);
-            if (record) {
-                var view = tree.getView();
-                var nodeEl = Ext.fly(view.getNodeByRecord(record));
-                if (nodeEl) {
-                    nodeEl.removeCls("pimcore_unpublished");
-                }
-            }
-        } catch (e) {
-            console.log(e);
-        }
-
+        pimcore.elementservice.setElementPublishedState({
+            elementType: "document",
+            id: this.id,
+            published: true
+        });
 
         this.save("publish", only, callback);
     },
@@ -202,21 +194,11 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
             this.toolbarButtons.save.show();
         }
 
-        // set class in tree panel
-        try {
-            var tree = pimcore.globalmanager.get("layout_document_tree").tree;
-            var store = tree.getStore();
-            var record = store.getById(this.data.id);
-            if (record) {
-                var view = tree.getView();
-                var nodeEl = Ext.fly(view.getNodeByRecord(record));
-                if (nodeEl) {
-                    nodeEl.addCls("pimcore_unpublished");
-                }
-            }
-        } catch (e) {
-            console.log(e);
-        }
+        pimcore.elementservice.setElementPublishedState({
+            elementType: "document",
+            id: this.id,
+            published: false
+        });
 
         this.save("unpublish");
     },
@@ -241,5 +223,319 @@ pimcore.document.document = Class.create(pimcore.element.abstract, {
 
     getType: function () {
         return this.type;
+    },
+
+    linkTranslation: function () {
+
+        var win = null;
+
+        var checkLanguage = function (el) {
+
+            Ext.Ajax.request({
+                url: "/admin/document/translation-check-language",
+                params: {
+                    path: el.getValue()
+                },
+                success: function (response) {
+                    var data = Ext.decode(response.responseText);
+                    if(data["success"]) {
+                        win.getComponent("language").setValue(pimcore.available_languages[data["language"]] + " [" + data["language"] + "]");
+                        win.getComponent("language").show();
+                        win.getComponent("info").hide();
+                    } else {
+                        win.getComponent("language").hide();
+                        win.getComponent("info").show();
+                    }
+                }
+            });
+        };
+
+        win = new Ext.Window({
+            width: 600,
+            bodyStyle: "padding:10px",
+            items: [{
+                xtype: "textfield",
+                name: "translation",
+                itemId: "translation",
+                width: "100%",
+                cls: "input_drop_target",
+                fieldLabel: t("translation"),
+                enableKeyListeners: true,
+                listeners: {
+                    "render": function (el) {
+                        new Ext.dd.DropZone(el.getEl(), {
+                            reference: this,
+                            ddGroup: "element",
+                            getTargetFromEvent: function(e) {
+                                return this.getEl();
+                            }.bind(el),
+
+                            onNodeOver : function(target, dd, e, data) {
+                                return Ext.dd.DropZone.prototype.dropAllowed;
+                            },
+
+                            onNodeDrop : function (target, dd, e, data) {
+                                data = data.records[0].data;
+                                if (data.elementType == "document") {
+                                    this.setValue(data.path);
+                                    return true;
+                                }
+                                return false;
+                            }.bind(el)
+                        });
+                    },
+                    "change": checkLanguage,
+                    "keyup": checkLanguage
+                }
+            },{
+                xtype: "displayfield",
+                name: "language",
+                itemId: "language",
+                value: "",
+                hidden: true,
+                fieldLabel: t("language")
+            },{
+                xtype: "displayfield",
+                name: "language",
+                itemId: "info",
+                fieldLabel: t("info"),
+                value: t("target_document_needs_language")
+            }],
+            buttons: [{
+                text: t("cancel"),
+                iconCls: "pimcore_icon_delete",
+                handler: function () {
+                    win.close();
+                }
+            }, {
+                text: t("apply"),
+                iconCls: "pimcore_icon_apply",
+                handler: function () {
+
+                    Ext.Ajax.request({
+                        url: "/admin/document/translation-add",
+                        params: {
+                            sourceId: this.id,
+                            targetPath: win.getComponent("translation").getValue()
+                        },
+                        success: function (response) {
+                            this.reload();
+                        }.bind(this)
+                    });
+
+                    win.close();
+                }.bind(this)
+            }]
+        });
+
+        win.show();
+    },
+
+    createTranslation: function (inheritance) {
+
+        var languagestore = [];
+        var websiteLanguages = pimcore.settings.websiteLanguages;
+        var selectContent = "";
+        for (var i=0; i<websiteLanguages.length; i++) {
+            if(this.data.properties["language"]["data"] != websiteLanguages[i]) {
+                selectContent = pimcore.available_languages[websiteLanguages[i]] + " [" + websiteLanguages[i] + "]";
+                languagestore.push([websiteLanguages[i], selectContent]);
+            }
+        }
+
+        var pageForm = new Ext.form.FormPanel({
+            border: false,
+            defaults: {
+                labelWidth: 170
+            },
+            items: [{
+                xtype: "combo",
+                name: "language",
+                store: languagestore,
+                editable: false,
+                triggerAction: 'all',
+                mode: "local",
+                fieldLabel: t('language'),
+                listeners: {
+                    select: function (el) {
+                        pageForm.getComponent("parent").disable();
+                        Ext.Ajax.request({
+                            url: "/admin/document/translation-determine-parent",
+                            params: {
+                                language: el.getValue(),
+                                id: this.id
+                            },
+                            success: function (response) {
+                                var data = Ext.decode(response.responseText);
+                                if(data["success"]) {
+                                    pageForm.getComponent("parent").setValue(data["targetPath"]);
+                                }
+                                pageForm.getComponent("parent").enable();
+                            }
+                        });
+                    }.bind(this)
+                }
+            }, {
+                xtype: "textfield",
+                name: "parent",
+                itemId: "parent",
+                width: "100%",
+                cls: "input_drop_target",
+                fieldLabel: t("parent_document"),
+                listeners: {
+                    "render": function (el) {
+                        new Ext.dd.DropZone(el.getEl(), {
+                            reference: this,
+                            ddGroup: "element",
+                            getTargetFromEvent: function(e) {
+                                return this.getEl();
+                            }.bind(el),
+
+                            onNodeOver : function(target, dd, e, data) {
+                                return Ext.dd.DropZone.prototype.dropAllowed;
+                            },
+
+                            onNodeDrop : function (target, dd, e, data) {
+                                data = data.records[0].data;
+                                if (data.elementType == "document") {
+                                    this.setValue(data.path);
+                                    return true;
+                                }
+                                return false;
+                            }.bind(el)
+                        });
+                    }
+                }
+            },{
+                xtype: "textfield",
+                width: "100%",
+                fieldLabel: t('key'),
+                itemId: "key",
+                name: 'key',
+                enableKeyEvents: true,
+                listeners: {
+                    keyup: function (el) {
+                        pageForm.getComponent("name").setValue(el.getValue());
+                    }
+                }
+            },{
+                xtype: "textfield",
+                itemId: "name",
+                fieldLabel: t('navigation'),
+                name: 'name',
+                width: "100%"
+            },{
+                xtype: "textfield",
+                itemId: "title",
+                fieldLabel: t('title'),
+                name: 'title',
+                width: "100%"
+            }]
+        });
+
+        var win = new Ext.Window({
+            width: 600,
+            bodyStyle: "padding:10px",
+            items: [pageForm],
+            buttons: [{
+                text: t("cancel"),
+                iconCls: "pimcore_icon_delete",
+                handler: function () {
+                    win.close();
+                }
+            }, {
+                text: t("apply"),
+                iconCls: "pimcore_icon_apply",
+                handler: function () {
+
+                    var params = pageForm.getForm().getFieldValues();
+                    win.disable();
+
+                    Ext.Ajax.request({
+                        url: "/admin/element/get-subtype",
+                        params: {
+                            id: pageForm.getComponent("parent").getValue(),
+                            type: "document"
+                        },
+                        success: function (response) {
+                            var res = Ext.decode(response.responseText);
+                            if(res.success) {
+                                if(params["key"].length >= 1) {
+                                    params["parentId"] = res["id"];
+                                    params["type"] = this.getType();
+                                    params["translationsBaseDocument"] = this.id;
+                                    if(inheritance) {
+                                        params["inheritanceSource"] = this.id;
+                                    }
+
+                                    Ext.Ajax.request({
+                                        url: "/admin/document/add/",
+                                        params: params,
+                                        success: function (response) {
+                                            response = Ext.decode(response.responseText);
+                                            if (response && response.success) {
+                                                pimcore.helpers.openDocument(response.id, response.type);
+                                            }
+                                        }
+                                    });
+                                }
+                            } else {
+                                Ext.MessageBox.alert(t("error"), t("element_not_found"));
+                            }
+
+                            win.close();
+                        }.bind(this)
+                    });
+                }.bind(this)
+            }]
+        });
+
+        win.show();
+    },
+
+    getTranslationButtons: function () {
+
+        var translationsMenu = [];
+        if(this.data["translations"]) {
+            Ext.iterate(this.data["translations"], function (language, documentId, myself) {
+                translationsMenu.push({
+                    text: pimcore.available_languages[language] + " [" + language + "]",
+                    iconCls: "pimcore_icon_language_" + language,
+                    handler: function () {
+                        pimcore.helpers.openElement(documentId, "document");
+                    }
+                });
+            });
+        }
+
+        return {
+            tooltip: t("translation"),
+            iconCls: "pimcore_icon_translations",
+            scale: "medium",
+            menu: [{
+                text: t("new_document"),
+                hidden: !in_array(this.getType(), ["page","snippet","email","printpage","printcontainer"]),
+                iconCls: "pimcore_icon_page pimcore_icon_overlay_add",
+                menu: [{
+                    text: t("using_inheritance"),
+                    hidden: !in_array(this.getType(), ["page","snippet","printpage","printcontainer"]),
+                    handler: this.createTranslation.bind(this, true),
+                    iconCls: "pimcore_icon_clone"
+                },{
+                    text: t("empty_document"),
+                    handler: this.createTranslation.bind(this, false),
+                    iconCls: "pimcore_icon_file_plain"
+                }]
+            }, {
+                text: t("link_existing_document"),
+                handler: this.linkTranslation.bind(this),
+                iconCls: "pimcore_icon_page pimcore_icon_overlay_reading"
+            }, {
+                text: t("open_translation"),
+                menu: translationsMenu,
+                hidden: !translationsMenu.length,
+                iconCls: "pimcore_icon_open"
+            }]
+        };
     }
 });

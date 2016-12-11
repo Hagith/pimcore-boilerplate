@@ -2,24 +2,28 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    User
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\User\UserRole;
 
 use Pimcore\Model;
 
-class Folder extends Model\User\AbstractUser {
+/**
+ * @method \Pimcore\Model\User\UserRole\Dao getDao()
+ */
+class Folder extends Model\User\AbstractUser
+{
+    use Model\Element\ChildsCompatibilityTrait;
 
     /**
      * @var boolean
@@ -30,8 +34,10 @@ class Folder extends Model\User\AbstractUser {
      * @param $state
      * @return $this
      */
-    function setHasChilds($state){
+    public function setHasChilds($state)
+    {
         $this->hasChilds= $state;
+
         return $this;
     }
 
@@ -40,10 +46,12 @@ class Folder extends Model\User\AbstractUser {
      *
      * @return boolean
      */
-    public function hasChilds() {
+    public function hasChildren()
+    {
         if ($this->hasChilds !== null) {
             return $this->hasChilds;
         }
-        return $this->getResource()->hasChilds();
+
+        return $this->getDao()->hasChilds();
     }
 }

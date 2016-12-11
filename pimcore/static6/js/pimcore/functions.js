@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 function t(key) {
     if (pimcore && pimcore.system_i18n && pimcore.system_i18n[key]) {
@@ -1600,4 +1599,164 @@ function insertTextToContenteditableAtCursor (text, win, doc) {
         doc.selection.createRange().text = text;
     }
 };
+
+stringToFunction = function(str) {
+    if (typeof str !== "string") {
+        return str;
+    }
+    
+    var arr = str.split(".");
+
+    var fn = (window || this);
+    for (var i = 0, len = arr.length; i < len; i++) {
+        fn = fn[arr[i]];
+    }
+
+    if (typeof fn !== "function") {
+        throw new Error("function not found");
+    }
+
+    return  fn;
+};
+
+sprintf = function ()
+{
+    if (!arguments || arguments.length < 1 || !RegExp)
+    {
+        return;
+    }
+    var str = arguments[0];
+    var re = /([^%]*)%('.|0|\x20)?(-)?(\d+)?(\.\d+)?(%|b|c|d|u|f|o|s|x|X)(.*)/;
+    var a = b = [], numSubstitutions = 0, numMatches = 0;
+    while (a = re.exec(str))
+    {
+        var leftpart = a[1], pPad = a[2], pJustify = a[3], pMinLength = a[4];
+        var pPrecision = a[5], pType = a[6], rightPart = a[7];
+
+        numMatches++;
+        if (pType == '%')
+        {
+            subst = '%';
+        }
+        else
+        {
+            numSubstitutions++;
+            if (numSubstitutions >= arguments.length)
+            {
+                alert('Error! Not enough function arguments (' + (arguments.length - 1) + ', excluding the string)\nfor the number of substitution parameters in string (' + numSubstitutions + ' so far).');
+            }
+            var param = arguments[numSubstitutions];
+            var pad = '';
+            if (pPad && pPad.substr(0,1) == "'") pad = leftpart.substr(1,1);
+            else if (pPad) pad = pPad;
+            var justifyRight = true;
+            if (pJustify && pJustify === "-") justifyRight = false;
+            var minLength = -1;
+            if (pMinLength) minLength = parseInt(pMinLength);
+            var precision = -1;
+            if (pPrecision && pType == 'f') precision = parseInt(pPrecision.substring(1));
+            var subst = param;
+            if (pType == 'b') subst = parseInt(param).toString(2);
+            else if (pType == 'c') subst = String.fromCharCode(parseInt(param));
+            else if (pType == 'd') subst = parseInt(param) ? parseInt(param) : 0;
+            else if (pType == 'u') subst = Math.abs(param);
+            else if (pType == 'f') subst = (precision > -1) ? Math.round(parseFloat(param) * Math.pow(10, precision)) / Math.pow(10, precision): parseFloat(param);
+            else if (pType == 'o') subst = parseInt(param).toString(8);
+            else if (pType == 's') subst = param;
+            else if (pType == 'x') subst = ('' + parseInt(param).toString(16)).toLowerCase();
+            else if (pType == 'X') subst = ('' + parseInt(param).toString(16)).toUpperCase();
+        }
+        str = leftpart + subst + rightPart;
+    }
+    return str;
+}
+
+function array_merge () {
+    // http://kevin.vanzonneveld.net
+    // +   original by: Brett Zamir (http://brett-zamir.me)
+    // +   bugfixed by: Nate
+    // +   input by: josh
+    // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+    // *     example 1: arr1 = {"color": "red", 0: 2, 1: 4}
+    // *     example 1: arr2 = {0: "a", 1: "b", "color": "green", "shape": "trapezoid", 2: 4}
+    // *     example 1: array_merge(arr1, arr2)
+    // *     returns 1: {"color": "green", 0: 2, 1: 4, 2: "a", 3: "b", "shape": "trapezoid", 4: 4}
+    // *     example 2: arr1 = []
+    // *     example 2: arr2 = {1: "data"}
+    // *     example 2: array_merge(arr1, arr2)
+    // *     returns 2: {0: "data"}
+
+    var args = Array.prototype.slice.call(arguments),
+        retObj = {}, k, j = 0, i = 0, retArr = true;
+
+    for (i=0; i < args.length; i++) {
+        if (!(args[i] instanceof Array)) {
+            retArr=false;
+            break;
+        }
+    }
+
+    if (retArr) {
+        retArr = [];
+        for (i=0; i < args.length; i++) {
+            retArr = retArr.concat(args[i]);
+        }
+        return retArr;
+    }
+    var ct = 0;
+
+    for (i=0, ct=0; i < args.length; i++) {
+        if (args[i] instanceof Array) {
+            for (j=0; j < args[i].length; j++) {
+                retObj[ct++] = args[i][j];
+            }
+        } else {
+            for (k in args[i]) {
+                if (args[i].hasOwnProperty(k)) {
+                    if (parseInt(k, 10)+'' === k) {
+                        retObj[ct++] = args[i][k];
+                    } else {
+                        retObj[k] = args[i][k];
+                    }
+                }
+            }
+        }
+    }
+    return retObj;
+}
+
+function array_merge_recursive (arr1, arr2){
+    // http://kevin.vanzonneveld.net
+    // +   original by: Subhasis Deb
+    // +      input by: Brett Zamir (http://brett-zamir.me)
+    // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // -    depends on: array_merge
+    // *     example 1: arr1 = {'color': {'favourite': 'read'}, 0: 5}
+    // *     example 1: arr2 = {0: 10, 'color': {'favorite': 'green', 0: 'blue'}}
+    // *     example 1: array_merge_recursive(arr1, arr2)
+    // *     returns 1: {'color': {'favorite': {0: 'red', 1: 'green'}, 0: 'blue'}, 1: 5, 1: 10}
+
+    var idx = '';
+
+    if ((arr1 && (arr1 instanceof Array)) && (arr2 && (arr2 instanceof Array))) {
+        for (idx in arr2) {
+            arr1.push(arr2[idx]);
+        }
+    } else if ((arr1 && (arr1 instanceof Object)) && (arr2 && (arr2 instanceof Object))) {
+        for (idx in arr2) {
+            if (idx in arr1) {
+                if (typeof arr1[idx] == 'object' && typeof arr2 == 'object') {
+                    arr1[idx] = this.array_merge(arr1[idx], arr2[idx]);
+                } else {
+                    arr1[idx] = arr2[idx];
+                }
+            } else {
+                arr1[idx] = arr2[idx];
+            }
+        }
+    }
+
+    return arr1;
+}
+
 

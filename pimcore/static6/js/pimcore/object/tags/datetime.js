@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.datetime");
@@ -35,22 +34,25 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
     },
 
     getGridColumnConfig:function (field) {
-        return {header:ts(field.label), width:150, sortable:true, dataIndex:field.key,
-                    renderer:function (key, value, metaData, record) {
-                                this.applyPermissionStyle(key, value, metaData, record);
+        return {
+            header:ts(field.label),
+            width:150,
+            sortable:true,
+            dataIndex:field.key,
+            renderer:function (key, value, metaData, record) {
+                        this.applyPermissionStyle(key, value, metaData, record);
 
-                                if (record.data.inheritedFields[key]
-                                                        && record.data.inheritedFields[key].inherited == true) {
-                                    metaData.tdCls += " grid_value_inherited";
-                                }
+                        if (record.data.inheritedFields[key] && record.data.inheritedFields[key].inherited == true) {
+                            metaData.tdCls += " grid_value_inherited";
+                        }
 
-                                if (value) {
-                                    var timestamp = intval(value) * 1000;
-                                    var date = new Date(timestamp);
-                                    return Ext.Date.format(date, "Y-m-d H:i");
-                                }
-                                return "";
-                            }.bind(this, field.key)};
+                        if (value) {
+                            var timestamp = intval(value) * 1000;
+                            var date = new Date(timestamp);
+                            return Ext.Date.format(date, "Y-m-d H:i");
+                        }
+                        return "";
+                    }.bind(this, field.key)};
     },
 
     getGridColumnFilter:function (field) {
@@ -115,8 +117,8 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
                 dateString += " 00:00";
             }
 
-            var date = Date.parse(dateString, "Y-m-d H:i");
-            return date / 1000;
+            var date = Ext.Date.parseDate(dateString, "Y-m-d H:i").getTime();
+            return date;
         }
         return false;
     },

@@ -2,26 +2,30 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition;
 
 use Pimcore\Model;
 use Pimcore\Model\Object;
-use Pimcore\Model\Cache;
+use Pimcore\Cache;
+use Pimcore\Logger;
 
-class CustomLayout extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Object\ClassDefinition\CustomLayout\Dao getDao()
+ */
+class CustomLayout extends Model\AbstractModel
+{
 
     /**
      * @var int
@@ -78,8 +82,9 @@ class CustomLayout extends Model\AbstractModel {
      * @return mixed|null|CustomLayout
      * @throws \Exception
      */
-    public static function getById($id) {
-        if($id === null) {
+    public static function getById($id)
+    {
+        if ($id === null) {
             throw new \Exception("CustomLayout id is null");
         }
 
@@ -87,18 +92,19 @@ class CustomLayout extends Model\AbstractModel {
 
         try {
             $customLayout = \Zend_Registry::get($cacheKey);
-            if(!$customLayout){
+            if (!$customLayout) {
                 throw new \Exception("Custom Layout in registry is null");
             }
         } catch (\Exception $e) {
             try {
                 $customLayout = new self();
-                $customLayout->getResource()->getById($id);
+                $customLayout->getDao()->getById($id);
 
                 Object\Service::synchronizeCustomLayout($customLayout);
                 \Zend_Registry::set($cacheKey, $customLayout);
             } catch (\Exception $e) {
-                \Logger::error($e);
+                Logger::error($e);
+
                 return null;
             }
         }
@@ -111,22 +117,23 @@ class CustomLayout extends Model\AbstractModel {
      * @param array $values
      * @return CustomLayout
      */
-    public static function create($values = array()) {
+    public static function create($values = [])
+    {
         $class = new self();
         $class->setValues($values);
+
         return $class;
     }
 
     /**
      * @return void
      */
-    public function save() {
-
+    public function save()
+    {
         $isUpdate = false;
         if ($this->getId()) {
             $isUpdate = true;
             \Pimcore::getEventManager()->trigger("object.customLayout.preUpdate", $this);
-
         } else {
             \Pimcore::getEventManager()->trigger("object.customLayout.preAdd", $this);
         }
@@ -139,93 +146,103 @@ class CustomLayout extends Model\AbstractModel {
             \Pimcore\File::mkdir(PIMCORE_CUSTOMLAYOUT_DIRECTORY);
         }
 
-        $this->getResource()->save();
+        $this->getDao()->save();
 
         // empty custom layout cache
         try {
             Cache::clearTag("customlayout_" . $this->getId());
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
         }
     }
 
     /**
      * @return void
      */
-    public function delete() {
+    public function delete()
+    {
         // empty object cache
         try {
             Cache::clearTag("customlayout_" . $this->getId());
+        } catch (\Exception $e) {
         }
-        catch (\Exception $e) {}
 
         // empty output cache
         try {
             Cache::clearTag("output");
+        } catch (\Exception $e) {
         }
-        catch (\Exception $e) {}
 
-        $this->getResource()->delete();
+        $this->getDao()->delete();
     }
 
 
     /**
      * @return int
      */
-    function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
     /**
      * @return string
      */
-    function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
     /**
      * @return int
      */
-    function getCreationDate() {
+    public function getCreationDate()
+    {
         return $this->creationDate;
     }
 
     /**
      * @return int
      */
-    function getModificationDate() {
+    public function getModificationDate()
+    {
         return $this->modificationDate;
     }
 
     /**
      * @return int
      */
-    function getUserOwner() {
+    public function getUserOwner()
+    {
         return $this->userOwner;
     }
 
     /**
      * @return int
      */
-    function getUserModification() {
+    public function getUserModification()
+    {
         return $this->userModification;
     }
 
     /**
      * @param int $id
-     * @return void
+     * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = (int) $id;
+
         return $this;
     }
 
     /**
      * @param string $name
-     * @return void
+     * @return $this
      */
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
+
         return $this;
     }
 
@@ -244,6 +261,7 @@ class CustomLayout extends Model\AbstractModel {
     public function setDefault($default)
     {
         $this->default = (int)$default;
+
         return $this;
     }
 
@@ -253,8 +271,10 @@ class CustomLayout extends Model\AbstractModel {
      * @param int $creationDate
      * @return void
      */
-    public function setCreationDate($creationDate) {
+    public function setCreationDate($creationDate)
+    {
         $this->creationDate = (int) $creationDate;
+
         return $this;
     }
 
@@ -262,8 +282,10 @@ class CustomLayout extends Model\AbstractModel {
      * @param int $modificationDate
      * @return void
      */
-    public function setModificationDate($modificationDate) {
+    public function setModificationDate($modificationDate)
+    {
         $this->modificationDate = (int) $modificationDate;
+
         return $this;
     }
 
@@ -271,8 +293,10 @@ class CustomLayout extends Model\AbstractModel {
      * @param int $userOwner
      * @return void
      */
-    public function setUserOwner($userOwner) {
+    public function setUserOwner($userOwner)
+    {
         $this->userOwner = (int) $userOwner;
+
         return $this;
     }
 
@@ -280,8 +304,10 @@ class CustomLayout extends Model\AbstractModel {
      * @param int $userModification
      * @return void
      */
-    public function setUserModification($userModification) {
+    public function setUserModification($userModification)
+    {
         $this->userModification = (int) $userModification;
+
         return $this;
     }
 
@@ -292,6 +318,7 @@ class CustomLayout extends Model\AbstractModel {
     public function setDescription($description)
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -331,7 +358,7 @@ class CustomLayout extends Model\AbstractModel {
      * @return int
      */
     public function getClassId()
-        {
+    {
         return $this->classId;
     }
 }

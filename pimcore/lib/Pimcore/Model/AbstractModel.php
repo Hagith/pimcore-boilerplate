@@ -2,172 +2,175 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model;
 
 use Pimcore\File;
-use Pimcore\Resource;
-use Pimcore\Tool; 
+use Pimcore\Db;
+use Pimcore\Tool;
+use Pimcore\Logger;
 
-abstract class AbstractModel {
+/**
+ * @method void beginTransaction()
+ * @method void commit()
+ * @method void rollBack()
+ * @method void configure()
+ * @method array getValidTableColumns(string $table, bool $cache)
+ * @method void resetValidTableColumnsCache(string $table)
+ */
+abstract class AbstractModel
+{
 
     /**
-     * @var \Pimcore\Model\Resource\AbstractResource
+     * @var \Pimcore\Model\Dao\AbstractDao
      */
-    protected $resource;
+    protected $dao;
 
     /**
      * @var array
      */
-    private static $resourceClassCache = array();
+    private static $daoClassCache = [];
 
     /**
-     * @return \Pimcore\Model\Resource\AbstractResource
+     * @return \Pimcore\Model\Dao\AbstractDao
      */
-    public function getResource() {
-
-        if (!$this->resource) {
-            $this->initResource();
+    public function getDao()
+    {
+        if (!$this->dao) {
+            $this->initDao();
         }
-        return $this->resource;
+
+        return $this->dao;
     }
 
     /**
-     * @param  $resource
-     * @return void
+     * @param $dao
+     * @return self
      */
-    public function setResource($resource) {
-        $this->resource = $resource;
+    public function setDao($dao)
+    {
+        $this->dao = $dao;
+
         return $this;
     }
 
     /**
+     * @deprecated
+     * @return Dao\AbstractDao
+     */
+    public function getResource()
+    {
+        return $this->getDao();
+    }
+
+    /**
      * @param null $key
+     * @param bool $forceDetection
      * @throws \Exception
      */
-    public function initResource($key = null) {
-
+    public function initDao($key = null, $forceDetection = false)
+    {
         $myClass = get_class($this);
-        $resource = null;
+        $cacheKey = $myClass . ($key ? ("-" . $key) : "");
+        $dao = null;
 
-        if (!$key) {
-            // check for a resource in the cache
-            if(array_key_exists($myClass, self::$resourceClassCache)) {
-                $resource = self::$resourceClassCache[$myClass];
-            } else {
-                $classes = $this->getParentClasses($myClass);
+        if (!$forceDetection && array_key_exists($cacheKey, self::$daoClassCache)) {
+            $dao = self::$daoClassCache[$cacheKey];
+        } elseif (!$key || $forceDetection) {
+            $classes = $this->getParentClasses($key ? $key : $myClass);
 
-                foreach ($classes as $class) {
-
-                    $delimiter = "_"; // old prefixed class style
-                    if(strpos($class, "\\")) {
-                        $delimiter = "\\"; // that's the new with namespaces
-                    }
-
-                    $classParts = explode($delimiter, $class);
-                    $length = count($classParts);
-                    $className = null;
-
-                    for ($i = 0; $i < $length; $i++) {
-
-                        // check for a general DBMS resource adapter
-                        $tmpClassName = implode($delimiter, $classParts) . $delimiter . "Resource";
-                        if($className = $this->determineResourceClass($tmpClassName)) {
-                            break;
-                        }
-
-                        // this is just for compatibility anymore, this was before the standard way
-                        // but as there will not be a specialized implementation anymore eg. Oracle, PostgreSQL, ...
-                        // we can move that below the general resource adapter as a fallback
-                        $tmpClassName = implode($delimiter, $classParts) . $delimiter . "Resource" . $delimiter . ucfirst(Resource::getType());
-                        if($className = $this->determineResourceClass($tmpClassName)) {
-                            break;
-                        }
-
-                        array_pop($classParts);
-                    }
-
-                    if($className && $className != "Pimcore\\Resource") {
-                        //\Logger::debug("Found resource implementation " . $className . " for " . $myClass);
-                        $resource = $className;
-                        self::$resourceClassCache[$myClass] = $resource;
-
-                        break;
-                    }
-                }
-            }
-        } else {
-            // check in cache
-            $cacheKey = $myClass . "-" . $key;
-            if(array_key_exists($cacheKey, self::$resourceClassCache)) {
-                $resource = self::$resourceClassCache[$cacheKey];
-            } else {
+            foreach ($classes as $class) {
                 $delimiter = "_"; // old prefixed class style
-                if(strpos($key, "\\") !== false) {
+                if (strpos($class, "\\")) {
                     $delimiter = "\\"; // that's the new with namespaces
                 }
 
-                // check for a specialized resource adapter for the current DBMS
-                $resourceClass = $key . $delimiter . "Resource" . $delimiter . ucfirst(Resource::getType());
-                if(!$resource = $this->determineResourceClass($resourceClass)) {
-                    $resource = $key . $delimiter . "Resource";
+                $classParts = explode($delimiter, $class);
+                $length = count($classParts);
+                $className = null;
+
+                for ($i = 0; $i < $length; $i++) {
+
+                    // check for a general dao adapter
+                    $tmpClassName = implode($delimiter, $classParts) . $delimiter . "Dao";
+                    if ($className = $this->determineResourceClass($tmpClassName)) {
+                        break;
+                    }
+
+                    // check for the old style resource adapter
+                    $tmpClassName = implode($delimiter, $classParts) . $delimiter . "Resource";
+                    if ($className = $this->determineResourceClass($tmpClassName)) {
+                        break;
+                    }
+
+                    array_pop($classParts);
                 }
 
-                self::$resourceClassCache[$cacheKey] = $resource;
+                if ($className) {
+                    $dao = $className;
+                    self::$daoClassCache[$cacheKey] = $dao;
+
+                    break;
+                }
             }
+        } elseif ($key) {
+            $delimiter = "_"; // old prefixed class style
+            if (strpos($key, "\\") !== false) {
+                $delimiter = "\\"; // that's the new with namespaces
+            }
+
+            $dao = $key . $delimiter . "Dao";
+
+            self::$daoClassCache[$cacheKey] = $dao;
         }
 
-        if(!$resource) {
-            \Logger::critical("No resource implementation found for: " . $myClass);
-            throw new \Exception("No resource implementation found for: " . $myClass);
+        if (!$dao) {
+            Logger::critical("No dao implementation found for: " . $myClass);
+            throw new \Exception("No dao implementation found for: " . $myClass);
         }
 
-        $resource = "\\" . ltrim($resource, "\\");
+        $dao = "\\" . ltrim($dao, "\\");
 
-        $this->resource = new $resource();
-        $this->resource->setModel($this);
+        $this->dao = new $dao();
+        $this->dao->setModel($this);
 
-        $db = Resource::get();
-        $this->resource->configure($db);
+        $this->dao->configure();
 
-        if (method_exists($this->resource, "init")) {
-            $this->resource->init();
+        if (method_exists($this->dao, "init")) {
+            $this->dao->init();
         }
     }
 
     /**
      * @param $className
      */
-    protected function determineResourceClass ($className) {
-
+    protected function determineResourceClass($className)
+    {
         $filesToInclude = [];
 
-        $filePath = str_replace(["_","\\"], "/", $className) . ".php";
+        $filePath = str_replace(["_", "\\"], "/", $className) . ".php";
         $filesToInclude[] = preg_replace("@^Pimcore/Model/@", "", $filePath);
         $filesToInclude[] = $filePath;
 
-        foreach($filesToInclude as $fileToInclude) {
-            if($fileToInclude == "Resource.php" || $fileToInclude == "Resource/Mysql.php") {
+        foreach ($filesToInclude as $fileToInclude) {
+            if ($fileToInclude == "Dao.php" || $fileToInclude == "Resource.php") {
                 return;
             }
 
             if (File::isIncludeable($fileToInclude)) {
                 include_once($fileToInclude);
-                if(Tool::classExists($className)) {
+                if (Tool::classExists($className)) {
                     return $className;
                 }
-            } else {
-                //\Logger::debug("Couldn't find resource implementation " . $className . " for " . get_class($this));
             }
         }
 
@@ -179,13 +182,13 @@ abstract class AbstractModel {
      * @param  $class
      * @return array
      */
-    protected function getParentClasses ($class) {
-
-        $classes = array();
+    protected function getParentClasses($class)
+    {
+        $classes = [];
         $classes[] = $class;
 
         $parentClass = get_parent_class($class);
-        if($parentClass && $parentClass != get_class()) {
+        if ($parentClass && $parentClass != get_class()) {
             $classes = array_merge($classes, $this->getParentClasses($parentClass));
         }
 
@@ -196,12 +199,14 @@ abstract class AbstractModel {
      * @param array $data
      * @return $this
      */
-    public function setValues($data = array()) {
+    public function setValues($data = [])
+    {
         if (is_array($data) && count($data) > 0) {
             foreach ($data as $key => $value) {
-                $this->setValue($key,$value);
+                $this->setValue($key, $value);
             }
         }
+
         return $this;
     }
 
@@ -210,53 +215,62 @@ abstract class AbstractModel {
      * @param  $value
      * @return $this
      */
-    public function setValue($key, $value) {
+    public function setValue($key, $value)
+    {
         $method = "set" . $key;
         if (method_exists($this, $method)) {
             $this->$method($value);
-        } else if(method_exists($this, "set" . preg_replace("/^o_/","",$key))) {
+        } elseif (method_exists($this, "set" . preg_replace("/^o_/", "", $key))) {
             // compatibility mode for objects (they do not have any set_oXyz() methods anymore)
             $this->$method($value);
         }
+
         return $this;
     }
 
     /**
      * @return array
      */
-    public function __sleep() {
-
-        $finalVars = array();
-        $blockedVars = array("resource","_fulldump"); // _fulldump is a temp var which is used to trigger a full serialized dump in __sleep eg. in Document, \Object_Abstract
+    public function __sleep()
+    {
+        $finalVars = [];
+        $blockedVars = ["dao", "_fulldump"]; // _fulldump is a temp var which is used to trigger a full serialized dump in __sleep eg. in Document, \Object_Abstract
         $vars = get_object_vars($this);
         foreach ($vars as $key => $value) {
             if (!in_array($key, $blockedVars)) {
                 $finalVars[] = $key;
             }
         }
+
         return $finalVars;
     }
 
     /**
      * @param $method
      * @param $args
+     * @return mixed
      * @throws \Exception
      */
-    public function __call($method, $args) {
+    public function __call($method, $args)
+    {
 
-        // check if the method is defined in resource
-        if (method_exists($this->getResource(), $method)) {
+        // protected / private methods shouldn't be delegated to the dao -> this can have dangerous effects
+        if (!is_callable([$this, $method])) {
+            throw new \Exception("Unable to call private/protected method '" . $method . "' on object " . get_class($this));
+        }
+
+        // check if the method is defined in ´dao
+        if (method_exists($this->getDao(), $method)) {
             try {
-                $r = call_user_func_array(array($this->getResource(), $method), $args);
+                $r = call_user_func_array([$this->getDao(), $method], $args);
+
                 return $r;
-            }
-            catch (\Exception $e) {
-                \Logger::emergency($e);
+            } catch (\Exception $e) {
+                Logger::emergency($e);
                 throw $e;
             }
-        }
-        else {
-            \Logger::error("Class: " . get_class($this) . " => call to undefined method " . $method);
+        } else {
+            Logger::error("Class: " . get_class($this) . " => call to undefined method " . $method);
             throw new \Exception("Call to undefined method " . $method . " in class " . get_class($this));
         }
     }
@@ -264,18 +278,21 @@ abstract class AbstractModel {
     /**
      * @return void
      */
-    public function __clone() {
-        $this->resource = null;
+    public function __clone()
+    {
+        $this->dao = null;
     }
 
     /**
-     * returns object values without the resource
+     * returns object values without the dao
      *
      * @return array
      */
-    public function getObjectVars(){
+    public function getObjectVars()
+    {
         $data = get_object_vars($this);
-        unset($data['resource']);
+        unset($data['dao']);
+
         return $data;
     }
 }

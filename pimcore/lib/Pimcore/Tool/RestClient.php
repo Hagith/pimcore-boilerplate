@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
@@ -23,6 +22,7 @@ use Pimcore\Model\Object;
 use Pimcore\Model\Document;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Webservice;
+use Pimcore\Logger;
 
 class RestClient
 {
@@ -68,22 +68,23 @@ class RestClient
 
     /**
      * @param array $data
-     * @return void
+     * @return $this
      */
-    public function setValues($data = array())
+    public function setValues($data = [])
     {
         if (is_array($data) && count($data) > 0) {
             foreach ($data as $key => $value) {
                 $this->setValue($key, $value);
             }
         }
+
         return $this;
     }
 
     /**
      * @param  $key
      * @param  $value
-     * @return void
+     * @return $this
      */
     public function setValue($key, $value)
     {
@@ -91,6 +92,7 @@ class RestClient
         if (method_exists($this, $method)) {
             $this->$method($value);
         }
+
         return $this;
     }
 
@@ -101,6 +103,7 @@ class RestClient
     public function setDisableMappingExceptions($disableMappingExceptions)
     {
         $this->disableMappingExceptions = $disableMappingExceptions;
+
         return $this;
     }
 
@@ -119,6 +122,7 @@ class RestClient
     public function setCondense($condense)
     {
         $this->condense = $condense;
+
         return $this;
     }
 
@@ -137,6 +141,7 @@ class RestClient
     public function setEnableProfiling($enableProfiling)
     {
         $this->enableProfiling = $enableProfiling;
+
         return $this;
     }
 
@@ -158,6 +163,7 @@ class RestClient
     {
         $this->host = $host;
         $this->client->setHeaders("Host", $host);
+
         return $this;
     }
 
@@ -176,6 +182,7 @@ class RestClient
     public function setBaseUrl($base)
     {
         $this->baseUrl = $base;
+
         return $this;
     }
 
@@ -202,14 +209,14 @@ class RestClient
 
             if (!$user) {
                 $apikey = md5(time()) . md5($username);
-                $user = User::create(array(
+                $user = User::create([
                     "parentId" => 0,
                     "username" => "rest",
                     "password" => \Pimcore\Tool\Authentication::getPasswordHash($username, $username),
                     "active" => true,
                     "apiKey" => $apikey,
                     "admin" => true
-                ));
+                ]);
             }
             $apikey = $user->getApiKey();
             $this->setApiKey($apikey);
@@ -224,6 +231,7 @@ class RestClient
     public function setTestMode($testMode)
     {
         $this->testMode = $testMode;
+
         return $this;
     }
 
@@ -242,6 +250,7 @@ class RestClient
     public function setApiKey($apikey)
     {
         $this->apikey = $apikey;
+
         return $this;
     }
 
@@ -260,6 +269,7 @@ class RestClient
     public function setClient(\Zend_Http_Client $client)
     {
         $this->client = $client;
+
         return $this;
     }
 
@@ -275,7 +285,7 @@ class RestClient
      * @param array $options
      * @throws \Exception
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         $this->client = Tool::getHttpClient();
         $this->setValues($options);
@@ -295,7 +305,7 @@ class RestClient
 
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $tmp = array();
+                $tmp = [];
 
                 foreach ($value as $subkey => $subvalue) {
                     if (is_array($subvalue)) {
@@ -308,8 +318,8 @@ class RestClient
                 $value = $tmp;
             }
             $wsData->$key = $value;
-
         }
+
         return $wsData;
     }
 
@@ -327,6 +337,7 @@ class RestClient
             throw new Exception("cannot fill web service data " . $class);
         }
         $wsData = new $class();
+
         return $this->map($wsData, $data);
     }
 
@@ -366,7 +377,7 @@ class RestClient
 
         $bodyObj = json_decode($body);
 
-        if($bodyObj === NULL) {
+        if ($bodyObj === null) {
             throw new \Exception("No valid JSON data: '" . $body . "'");
         }
 
@@ -429,6 +440,7 @@ class RestClient
         if ($objectClass) {
             $params .= "&objectClass=" . $objectClass;
         }
+
         return $params;
     }
 
@@ -456,7 +468,7 @@ class RestClient
         if (!is_array($response)) {
             throw new Exception("response is empty");
         }
-        $result = array();
+        $result = [];
         foreach ($response as $item) {
             $wsDocument = $this->fillWebserviceData("\\Pimcore\\Model\\Webservice\\Data\\Object\\Listing\\Item", $item);
             if (!$decode) {
@@ -467,6 +479,7 @@ class RestClient
                 $result[] = $object;
             }
         }
+
         return $result;
     }
 
@@ -492,7 +505,7 @@ class RestClient
             throw new Exception("response is empty");
         }
 
-        $result = array();
+        $result = [];
         foreach ($response as $item) {
             $wsDocument = $this->fillWebserviceData("\\Pimcore\\Model\\Webservice\\Data\\Asset\\Listing\\Item", $item);
             if (!$decode) {
@@ -505,6 +518,7 @@ class RestClient
                 $result[] = $asset;
             }
         }
+
         return $result;
     }
 
@@ -530,7 +544,7 @@ class RestClient
             throw new Exception("response is empty");
         }
 
-        $result = array();
+        $result = [];
         foreach ($response as $item) {
             $wsDocument = $this->fillWebserviceData("\\Pimcore\\Model\\Webservice\\Data\\Document\\Listing\\Item", $item);
             if (!$decode) {
@@ -548,6 +562,7 @@ class RestClient
                 $result[] = $document;
             }
         }
+
         return $result;
     }
 
@@ -588,33 +603,27 @@ class RestClient
         if ($wsDocument->type == "folder") {
             $object = new Object\Folder();
             $wsDocument->reverseMap($object);
+
             return $object;
-        } else if ($wsDocument->type == "object" || $wsDocument->type == "variant") {
-            $classname = "\\Pimcore\\Model\\Object\\" . ucfirst($wsDocument->className);
-            // check for a mapped class
-            $classname = Tool::getModelClassMapping($classname);
+        } elseif ($wsDocument->type == "object" || $wsDocument->type == "variant") {
+            $classname = "Pimcore\\Model\\Object\\" . ucfirst($wsDocument->className);
 
-            if (Tool::classExists($classname)) {
-                $object = new $classname();
+            $object = \Pimcore::getDiContainer()->make($classname);
 
-                if ($object instanceof Object\Concrete) {
-                    $curTime = microtime(true);
-                    $wsDocument->reverseMap($object, $this->getDisableMappingExceptions(), $idMapper);
-                    $timeConsumed = round(microtime(true) - $curTime, 3) * 1000;
+            if ($object instanceof Object\Concrete) {
+                $curTime = microtime(true);
+                $wsDocument->reverseMap($object, $this->getDisableMappingExceptions(), $idMapper);
+                $timeConsumed = round(microtime(true) - $curTime, 3) * 1000;
 
-                    if ($this->profilingInfo) {
-                        $this->profilingInfo->reverse = $timeConsumed;
-                    }
-                    return $object;
-                } else {
-                    throw new Exception("Unable to decode object, could not instantiate Object with given class name [ $classname ]");
+                if ($this->profilingInfo) {
+                    $this->profilingInfo->reverse = $timeConsumed;
                 }
+
+                return $object;
             } else {
-                throw new Exception("Unable to deocode object, class [" . $classname . "] does not exist");
+                throw new Exception("Unable to decode object, could not instantiate Object with given class name [ $classname ]");
             }
-
         }
-
     }
 
     /**
@@ -636,6 +645,7 @@ class RestClient
             }
             $doc = new Document\Folder();
             $wsDocument->reverseMap($doc, $this->getDisableMappingExceptions(), $idMapper);
+
             return $doc;
         } else {
             $type = ucfirst($response->type);
@@ -650,6 +660,7 @@ class RestClient
                 $type = "\\Pimcore\\Model\\Document\\" . ucfirst($wsDocument->type);
                 $document = new $type();
                 $wsDocument->reverseMap($document, $this->getDisableMappingExceptions(), $idMapper);
+
                 return $document;
             }
         }
@@ -666,6 +677,7 @@ class RestClient
         if ($idx >= 0) {
             $filename = substr($filename, 0, $idx) . "." . $extension;
         }
+
         return $filename;
     }
 
@@ -685,6 +697,7 @@ class RestClient
             }
             $asset = new Asset\Folder();
             $wsDocument->reverseMap($asset, $this->getDisableMappingExceptions(), $idMapper);
+
             return $asset;
         } else {
             $wsDocument = $this->fillWebserviceData("\\Pimcore\\Model\\Webservice\\Data\\Asset\\File\\In", $response);
@@ -744,7 +757,7 @@ class RestClient
 
                         }
 
-                        \Logger::debug("mimeType: " . $mimeType);
+                        Logger::debug("mimeType: " . $mimeType);
                         $asset->setFilename($filename);
                     }
 
@@ -781,6 +794,7 @@ class RestClient
         $wsDocument = Webservice\Data\Mapper::map($document, $className, "out");
         $encodedData = json_encode($wsDocument);
         $response = $this->doRequest($this->buildEndpointUrl("document/"), "PUT", $encodedData);
+
         return $response;
     }
 
@@ -799,6 +813,7 @@ class RestClient
         $wsDocument = Webservice\Data\Mapper::map($object, $documentType, "out");
         $encodedData = json_encode($wsDocument);
         $response = $this->doRequest($this->buildEndpointUrl("object/"), "PUT", $encodedData);
+
         return $response;
     }
 
@@ -819,6 +834,7 @@ class RestClient
         $encodedData = json_encode($wsDocument);
         $response = $this->doRequest($this->buildEndpointUrl("asset/"), "PUT", $encodedData);
         $response = $response->data;
+
         return $response;
     }
 
@@ -829,6 +845,7 @@ class RestClient
     public function deleteObject($objectId)
     {
         $response = $this->doRequest($this->buildEndpointUrl("object/id/" . $objectId), "DELETE");
+
         return $response;
     }
 
@@ -839,6 +856,7 @@ class RestClient
     public function deleteAsset($assetId)
     {
         $response = $this->doRequest($this->buildEndpointUrl("asset/id/" . $assetId), "DELETE");
+
         return $response;
     }
 
@@ -849,6 +867,7 @@ class RestClient
     public function deleteDocument($documentId)
     {
         $response = $this->doRequest($this->buildEndpointUrl("document/id/" . $documentId), "DELETE");
+
         return $response;
     }
 
@@ -901,6 +920,7 @@ class RestClient
 
         $class = new Object\ClassDefinition();
         $wsDocument->reverseMap($class);
+
         return $class;
     }
 
@@ -924,6 +944,7 @@ class RestClient
 
         $class = new Object\ClassDefinition();
         $wsDocument->reverseMap($class);
+
         return $class;
     }
 
@@ -953,6 +974,7 @@ class RestClient
         if (!$response || !$response["success"]) {
             throw new Exception("Could not retrieve asset count");
         }
+
         return $response["data"]->totalCount;
     }
 
@@ -970,6 +992,7 @@ class RestClient
         if (!$response || !$response["success"]) {
             throw new Exception("Could not retrieve document count");
         }
+
         return $response["data"]->totalCount;
     }
 
@@ -988,6 +1011,7 @@ class RestClient
         if (!$response || !$response["success"]) {
             throw new Exception("Could not retrieve object count");
         }
+
         return $response["data"]->totalCount;
     }
 
@@ -997,7 +1021,8 @@ class RestClient
     public function getUser()
     {
         $response = $this->doRequest($this->buildEndpointUrl("user"), "GET");
-        $response = array("success" => true, "data" => $response->data);
+        $response = ["success" => true, "data" => $response->data];
+
         return $response;
     }
 
@@ -1040,6 +1065,7 @@ class RestClient
     public function getObjectBricks()
     {
         $response = $this->doRequest($this->buildEndpointUrl("object-bricks"), "GET");
+
         return $response;
     }
 
@@ -1070,6 +1096,7 @@ class RestClient
     public function getImageThumbnails()
     {
         $response = $this->doRequest($this->buildEndpointUrl("image-thumbnails"), "GET");
+
         return $response;
     }
 
@@ -1080,6 +1107,7 @@ class RestClient
     public function getImageThumbnail($id)
     {
         $response = $this->doRequest($this->buildEndpointUrl("image-thumbnail/id/" . $id), "GET");
+
         return $response;
     }
 
@@ -1091,6 +1119,7 @@ class RestClient
     {
         $url = $this->buildEndpointUrl("server-info");
         $response = $this->doRequest($this->buildEndpointUrl("server-info"), "GET");
+
         return $response;
     }
 
@@ -1099,12 +1128,13 @@ class RestClient
      * @param array $params
      * @return string
      */
-    public function buildEndpointUrl($customUrlPath,$params = array())
+    public function buildEndpointUrl($customUrlPath, $params = [])
     {
         $url = $this->getBaseUrl() . $customUrlPath . "?apikey=" . $this->getApiKey();
-        if(!empty($params)){
+        if (!empty($params)) {
             $url .= '&' . http_build_query($params);
         }
+
         return $url;
     }
 }

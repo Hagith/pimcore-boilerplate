@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Tool
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool\Tracking;
 
 use Pimcore\Model;
 
-class Event extends Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Tool\Tracking\Event\Dao getDao()
+ */
+class Event extends Model\AbstractModel
+{
 
     /**
      * @var int
@@ -55,9 +58,10 @@ class Event extends Model\AbstractModel {
      * @param $id
      * @return Event
      */
-    public static function getById($id) {
+    public static function getById($id)
+    {
         $event = new self();
-        $event->getResource()->getById(intval($id));
+        $event->getDao()->getById(intval($id));
 
         return $event;
     }
@@ -71,12 +75,13 @@ class Event extends Model\AbstractModel {
      * @param $year
      * @return Event
      */
-    public static function getByDate($category, $action, $label, $day, $month, $year) {
+    public static function getByDate($category, $action, $label, $day, $month, $year)
+    {
         $event = new self();
         try {
-            $event->getResource()->getByDate($category, $action, $label, $day, $month, $year);
+            $event->getDao()->getByDate($category, $action, $label, $day, $month, $year);
         } catch (\Exception $e) {
-            $event->setTimestamp(mktime(1,0,0,$month, $day, $year));
+            $event->setTimestamp(mktime(1, 0, 0, $month, $day, $year));
             $event->setCategory($category);
             $event->setAction($action);
             $event->setLabel($label);
@@ -92,6 +97,7 @@ class Event extends Model\AbstractModel {
     public function setAction($action)
     {
         $this->action = $action;
+
         return $this;
     }
 
@@ -110,6 +116,7 @@ class Event extends Model\AbstractModel {
     public function setCategory($category)
     {
         $this->category = $category;
+
         return $this;
     }
 
@@ -128,6 +135,7 @@ class Event extends Model\AbstractModel {
     public function setId($id)
     {
         $this->id = $id;
+
         return $this;
     }
 
@@ -146,6 +154,7 @@ class Event extends Model\AbstractModel {
     public function setLabel($label)
     {
         $this->label = $label;
+
         return $this;
     }
 
@@ -164,6 +173,7 @@ class Event extends Model\AbstractModel {
     public function setTimestamp($timestamp)
     {
         $this->timestamp = $timestamp;
+
         return $this;
     }
 
@@ -182,6 +192,7 @@ class Event extends Model\AbstractModel {
     public function setData($data)
     {
         $this->data = $data;
+
         return $this;
     }
 

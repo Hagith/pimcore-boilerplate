@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classificationstore.keySelectionWindow");
@@ -17,11 +16,13 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
 
     acceptEvents: true,
 
-    initialize: function (parent, enableGroups, enableKeys, enableCollections) {
+    initialize: function (parent, enableGroups, enableKeys, enableCollections, storeId) {
         this.parent = parent;
         this.enableGroups = enableGroups;
         this.enableKeys = enableKeys;
         this.enableCollections = enableCollections;
+        this.storeId = storeId;
+
         if (enableGroups && !enableCollections) {
             this.isGroupSearch = true;
         }
@@ -40,7 +41,15 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
         this.searchfield = new Ext.form.TextField({
             width: 300,
             style: "float: left;",
-            fieldLabel: t("search")
+            fieldLabel: t("search"),
+            enableKeyEvents: true,
+            listeners: {
+                keypress: function(searchField, e, eOpts) {
+                    if (e.getKey() == 13) {
+                        this.applySearchFilter();
+                    }
+                }.bind(this)
+            }
         });
 
         var resultPanel = this.getResultPanel();
@@ -61,7 +70,7 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
                 "->",{
                     xtype: "button",
                     text: t("cancel"),
-                    icon: "/pimcore/static6/img/icon/cancel.png",
+                    iconCls: "pimcore_icon_cancel",
                     handler: function () {
                         this.searchWindow.close();
                     }.bind(this)
@@ -70,10 +79,10 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
                     text: t("apply"),
                     iconCls: "pimcore_icon_apply",
                     handler: function () {
-
+                        var selectionModel = this.gridPanel.getSelectionModel();
                         if (this.isCollectionSearch) {
                             var collectionIds = [];
-                            var selected = this.gridPanel.getSelectionModel().getSelections();
+                            var selected = selectionModel.getSelection();
                             for (var i = 0; i < selected.length; i++) {
                                 var collectionId = selected[i].id;
                                 collectionIds.push(collectionId);
@@ -82,7 +91,7 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
 
                         } else if (this.isGroupSearch) {
                             var groupIds = [];
-                            var selected = this.gridPanel.getSelectionModel().getSelections();
+                            var selected = selectionModel.getSelection();
                             for (var i = 0; i < selected.length; i++) {
                                 var groupId = selected[i].id;
                                 groupIds.push(groupId);
@@ -90,7 +99,7 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
                             this.addGroups(groupIds);
                         } else {
                             var keyIds = [];
-                            var selectedKeys = this.gridPanel.getSelectionModel().getSelections();
+                            var selectedKeys = selectionModel.getSelection();
                             for (var ki = 0; ki < selectedKeys.length; ki++) {
                                 var keyId = selectedKeys[ki].id;
                                 keyIds.push(keyId);
@@ -198,11 +207,9 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
             iconCls: "pimcore_icon_classificationstore_icon_cs_collections",
             enableToggle: true,
             pressed: this.isCollectionSearch,
-            disabled: !this.enableCollections
+            hidden: !this.enableCollections
         });
         items.push(this.toolbarbuttons.collection);
-
-        items.push("-");
 
         this.toolbarbuttons.group = new Ext.Button({
             text: t("keyValue_group"),
@@ -210,20 +217,18 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
             iconCls: "pimcore_icon_keys",
             enableToggle: true,
             pressed: this.isGroupSearch,
-            disabled: !this.enableGroups
+            hidden: !this.enableGroups
 
         });
         items.push(this.toolbarbuttons.group);
 
-
-        items.push("-");
         this.toolbarbuttons.key = new Ext.Button({
             text: t("key"),
             handler: this.searchKey.bind(this),
             iconCls: "pimcore_icon_key",
             enableToggle: true,
             pressed: !this.isGroupSearch && !this.isCollectionSearch,
-            disabled: !this.enableKeys
+            hidden: !this.enableKeys
         });
         items.push(this.toolbarbuttons.key);
 
@@ -233,30 +238,8 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
         items.push({
             xtype: "button",
             text: t("search"),
-            icon: "/pimcore/static6/img/icon/magnifier.png",
-            handler: function () {
-                var formValue = this.searchfield.getValue();
-
-                var filter = [{
-                    "field": "description",
-                    "value" :formValue},
-                    {
-                        "field": "name",
-                        "value" :formValue}
-                ];
-
-                this.encodedFilter = Ext.util.JSON.encode(filter);
-                this.store.setBaseParam("filter", this.encodedFilter);
-
-
-                var lastOptions = this.store.lastOptions;
-                Ext.apply(lastOptions.params, {
-                    filter: this.encodedFilter
-                });
-                this.store.reload();
-
-                this.gridPanel.getView().refresh();
-            }.bind(this)
+            iconCls: "pimcore_icon_search",
+            handler: this.applySearchFilter.bind(this)
         });
 
         if(items.length > 1) {
@@ -266,6 +249,21 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
         }
 
         return toolbar;
+    },
+    
+    applySearchFilter: function() {
+        var formValue = this.searchfield.getValue();
+
+        this.store.getProxy().setExtraParam("searchfilter", formValue);
+
+
+        var lastOptions = this.store.lastOptions;
+        Ext.apply(lastOptions.params, {
+            filter: this.encodedFilter
+        });
+        this.store.reload();
+
+        this.gridPanel.getView().refresh();
     },
 
     resetToolbarButtons: function () {
@@ -371,15 +369,16 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
             url: "/admin/classificationstore/" + postFix,
             reader: {
                 type: 'json',
-                rootProperty: 'data'
+                rootProperty: 'data',
+            },
+            extraParams: {
+                storeId: this.storeId
             }
         };
 
         if (this.object) {
-            proxy.extraParams = {
-                "oid": this.object.id,
-                "fieldname": this.fieldname
-            };
+            proxy.extraParams.oid = this.object.id;
+            proxy.extraParams.fieldname = this.fieldname;
         }
 
         this.store = new Ext.data.Store({
@@ -398,14 +397,8 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
             emptyMsg = "classificationstore_no_keys";
         }
 
-        this.pagingtoolbar = new Ext.PagingToolbar({
-            pageSize: 15,
-            store: this.store,
-            displayInfo: true,
-            displayMsg: '{0} - {1} / {2}',
-            emptyMsg: t(emptyMsg)
-        });
-
+        var pageSize = pimcore.helpers.grid.getDefaultPageSize(-1);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, {pageSize: pageSize});
 
         this.gridPanel = new Ext.grid.GridPanel({
             store: this.store,
@@ -413,8 +406,11 @@ pimcore.object.classificationstore.keySelectionWindow = Class.create({
             columns: gridColumns,
             loadMask: true,
             columnLines: true,
+            bodyCls: "pimcore_editable_grid",
             stripeRows: true,
-            selModel: Ext.create('Ext.selection.RowModel', {}),
+            selModel: Ext.create('Ext.selection.RowModel', {
+                mode: 'MULTI'
+            }),
             bbar: this.pagingtoolbar,
             listeners: {
                 rowdblclick: function (grid, record, tr, rowIndex, e, eOpts ) {

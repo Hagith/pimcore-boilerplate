@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Search\Backend;
@@ -19,8 +18,14 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\Document;
 use Pimcore\Model\Object;
 use Pimcore\Model\Element;
+use Pimcore\Logger;
+use ForceUTF8\Encoding;
 
-class Data extends \Pimcore\Model\AbstractModel {
+/**
+ * @method \Pimcore\Model\Search\Backend\Data\Dao getDao()
+ */
+class Data extends \Pimcore\Model\AbstractModel
+{
 
     /**
      * @var Data\Id
@@ -98,30 +103,32 @@ class Data extends \Pimcore\Model\AbstractModel {
     /**
      * @param null $element
      */
-    public function __construct($element = null){
-
-        if($element instanceof Element\ElementInterface){
+    public function __construct($element = null)
+    {
+        if ($element instanceof Element\ElementInterface) {
             $this->setDataFromElement($element);
         }
     }
 
     /**
-     * @return \Pimcore\Model\Resource\AbstractResource
+     * @return \Pimcore\Model\Dao\AbstractDao
      * @throws \Exception
      */
-    public function getResource() {
-
-        if (!$this->resource) {
-            $this->initResource("\\Pimcore\\Model\\Search\\Backend\\Data");
+    public function getDao()
+    {
+        if (!$this->dao) {
+            $this->initDao("\\Pimcore\\Model\\Search\\Backend\\Data");
         }
-        return $this->resource;
+
+        return $this->dao;
     }
 
 
     /**
      * @return Data\Id
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
@@ -129,31 +136,37 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $id
      * @return $this
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = $id;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getFullPath() {
+    public function getFullPath()
+    {
         return $this->fullPath;
     }
 
     /**
      * @param  string $fullpath
-     * @return void
+     * @return $this
      */
-    public function setFullPath($fullpath) {
+    public function setFullPath($fullpath)
+    {
         $this->fullPath = $fullpath;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getType() {
+    public function getType()
+    {
         return $this->type;
     }
 
@@ -161,8 +174,10 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $type
      * @return $this
      */
-    public function setType($type) {
+    public function setType($type)
+    {
         $this->type = $type;
+
         return $this;
     }
 
@@ -170,7 +185,8 @@ class Data extends \Pimcore\Model\AbstractModel {
     /**
      * @return string
      */
-    public function getSubtype() {
+    public function getSubtype()
+    {
         return $this->subtype;
     }
 
@@ -178,15 +194,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $subtype
      * @return $this
      */
-    public function setSubtype($subtype) {
+    public function setSubtype($subtype)
+    {
         $this->subtype = $subtype;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getCreationDate() {
+    public function getCreationDate()
+    {
         return $this->creationDate;
     }
 
@@ -194,15 +213,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $creationDate
      * @return $this
      */
-    public function setCreationDate($creationDate) {
+    public function setCreationDate($creationDate)
+    {
         $this->creationDate = $creationDate;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getModificationDate() {
+    public function getModificationDate()
+    {
         return $this->modificationDate;
     }
 
@@ -210,15 +232,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param integer $modificationDate
      * @return void
      */
-    public function setModificationDate($modificationDate) {
+    public function setModificationDate($modificationDate)
+    {
         $this->modificationDate = $modificationDate;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getUserModification() {
+    public function getUserModification()
+    {
         return $this->userModification;
     }
 
@@ -226,15 +251,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param integer $userModification
      * @return void
      */
-    public function setUserModification($userModification) {
+    public function setUserModification($userModification)
+    {
         $this->userModification = $userModification;
+
         return $this;
     }
 
     /**
      * @return integer
      */
-    public function getUserOwner() {
+    public function getUserOwner()
+    {
         return $this->userOwner;
     }
 
@@ -242,22 +270,26 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param integer $userOwner
      * @return void
      */
-    public function setUserOwner($userOwner) {
+    public function setUserOwner($userOwner)
+    {
         $this->userOwner = $userOwner;
+
         return $this;
     }
 
     /**
      * @return boolean
      */
-    public function isPublished() {
+    public function isPublished()
+    {
         return (bool) $this->getPublished();
     }
 
     /**
      * @return boolean
      */
-    public function getPublished() {
+    public function getPublished()
+    {
         return (bool) $this->published;
     }
 
@@ -265,15 +297,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param integer $published
      * @return void
      */
-    public function setPublished($published) {
+    public function setPublished($published)
+    {
         $this->published = (bool) $published;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getData(){
+    public function getData()
+    {
         return $this->data;
     }
 
@@ -281,15 +316,18 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param  string $data
      * @return void
      */
-    public function setData($data){
+    public function setData($data)
+    {
         $this->data = $data;
+
         return $this;
     }
 
     /**
     * @return string
     */
-    public function getProperties(){
+    public function getProperties()
+    {
         return $this->properties;
     }
 
@@ -297,8 +335,10 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param  string $properties
      * @return void
      */
-    public function setProperties($properties){
+    public function setProperties($properties)
+    {
         $this->properties = $properties;
+
         return $this;
     }
 
@@ -306,19 +346,19 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $element
      * @return $this
      */
-    public function setDataFromElement($element){
-
+    public function setDataFromElement($element)
+    {
         $this->data = null;
 
         $this->id = new Data\Id($element);
-        $this->fullPath = $element->getFullPath();
+        $this->fullPath = $element->getRealFullPath();
         $this->creationDate=$element->getCreationDate();
         $this->modificationDate=$element->getModificationDate();
         $this->userModification = $element->getUserModification();
         $this->userOwner = $element->getUserOwner();
 
         $this->type = $element->getType();
-        if($element instanceof Object\Concrete){
+        if ($element instanceof Object\Concrete) {
             $this->subtype = $element->getClassName();
         } else {
             $this->subtype = $this->type;
@@ -326,10 +366,10 @@ class Data extends \Pimcore\Model\AbstractModel {
 
         $this->properties = "";
         $properties = $element->getProperties();
-        if(is_array($properties)){
-            foreach($properties as $nextProperty){
+        if (is_array($properties)) {
+            foreach ($properties as $nextProperty) {
                 $pData = (string) $nextProperty->getData();
-                if($nextProperty->getName() == "bool") {
+                if ($nextProperty->getName() == "bool") {
                     $pData = $pData ? "true" : "false";
                 }
 
@@ -338,48 +378,75 @@ class Data extends \Pimcore\Model\AbstractModel {
         }
 
         $this->data = "";
-        if($element instanceof Document){
-            if($element instanceof Document\Folder){
+        if ($element instanceof Document) {
+            if ($element instanceof Document\Folder) {
                 $this->data = $element->getKey();
                 $this->published = true;
-            } else if ($element instanceof Document\Link){
+            } elseif ($element instanceof Document\Link) {
                 $this->published = $element->isPublished();
                 $this->data = $element->getTitle()." ".$element->getHref();
-            } else if ($element instanceof Document\PageSnippet){
+            } elseif ($element instanceof Document\PageSnippet) {
                 $this->published = $element->isPublished();
                 $elements = $element->getElements();
-                if(is_array($elements) && !empty($elements)) {
-                    foreach($elements as $tag){
-                        if($tag instanceof Document\Tag\TagInterface){
+                if (is_array($elements) && !empty($elements)) {
+                    foreach ($elements as $tag) {
+                        if ($tag instanceof Document\Tag\TagInterface) {
                             ob_start();
                             $this->data .= strip_tags($tag->frontend())." ";
                             $this->data .= ob_get_clean();
                         }
                     }
                 }
-                if($element instanceof Document\Page){
+                if ($element instanceof Document\Page) {
                     $this->published = $element->isPublished();
-                    $this->data .= " ".$element->getTitle()." ".$element->getDescription()." ".$element->getKeywords() . " " . $element->getPrettyUrl();
+                    $this->data .= " ".$element->getTitle()." ".$element->getDescription()." " . $element->getPrettyUrl();
                 }
             }
-        } else if($element instanceof Asset) {
+        } elseif ($element instanceof Asset) {
             $this->data = $element->getFilename();
 
-            foreach($element->getMetadata() as $md) {
-                $this->data .= " " . $md["name"] . ":" . $md["data"];
+            $elementMetadata = $element->getMetadata();
+            if (is_array($elementMetadata)) {
+                foreach ($elementMetadata as $md) {
+                    if (is_scalar($md['data'])) {
+                        $this->data .= " " . $md["name"] . ":" . $md["data"];
+                    }
+                }
             }
 
-            if($element instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
-                if(\Pimcore\Document::isFileTypeSupported($element->getFilename())) {
-                    $contentText = $element->getText();
-                    $contentText = str_replace(["\r\n","\r","\n","\t","\f"], " ", $contentText);
-                    $contentText = preg_replace("/[ ]+/", " ", $contentText);
+            if ($element instanceof Asset\Document && \Pimcore\Document::isAvailable()) {
+                if (\Pimcore\Document::isFileTypeSupported($element->getFilename())) {
+                    try {
+                        $contentText = $element->getText();
+                        $contentText = Encoding::toUTF8($contentText);
+                        $contentText = str_replace(["\r\n", "\r", "\n", "\t", "\f"], " ", $contentText);
+                        $contentText = preg_replace("/[ ]+/", " ", $contentText);
+                        $this->data .= " " . $contentText;
+                    } catch (\Exception $e) {
+                        Logger::error($e);
+                    }
+                }
+            } elseif ($element instanceof Asset\Text) {
+                try {
+                    $contentText = $element->getData();
+                    $contentText = Encoding::toUTF8($contentText);
                     $this->data .= " " . $contentText;
+                } catch (\Exception $e) {
+                    Logger::error($e);
+                }
+            } elseif ($element instanceof Asset\Image) {
+                try {
+                    $metaData = array_merge($element->getEXIFData(), $element->getIPTCData());
+                    foreach ($metaData as $key => $value) {
+                        $this->data .= " " . $key . " : " . $value;
+                    }
+                } catch (\Exception $e) {
+                    Logger::error($e);
                 }
             }
 
             $this->published = true;
-        } else if ($element instanceof Object\AbstractObject){
+        } elseif ($element instanceof Object\AbstractObject) {
             if ($element instanceof Object\Concrete) {
                 $getInheritedValues = Object\AbstractObject::doGetInheritedValues();
                 Object\AbstractObject::setGetInheritedValues(true);
@@ -390,16 +457,15 @@ class Data extends \Pimcore\Model\AbstractModel {
                 }
 
                 Object\AbstractObject::setGetInheritedValues($getInheritedValues);
-
-            } else if ($element instanceof Object\Folder){
+            } elseif ($element instanceof Object\Folder) {
                 $this->data=$element->getKey();
                 $this->published = true;
             }
         } else {
-            \Logger::crit("Search\\Backend\\Data received an unknown element!");
+            Logger::crit("Search\\Backend\\Data received an unknown element!");
         }
 
-        if($element instanceof Element\ElementInterface) {
+        if ($element instanceof Element\ElementInterface) {
             $this->data = "ID: " . $element->getId() . "  \nPath: " . $this->getFullPath() . "  \n"  . $this->cleanupData($this->data);
         }
 
@@ -410,14 +476,14 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $data
      * @return mixed|string
      */
-    protected function cleanupData ($data) {
-
+    protected function cleanupData($data)
+    {
         $data = strip_tags($data);
         $data = str_replace("\r\n", " ", $data);
         $data = str_replace("\n", " ", $data);
         $data = str_replace("\r", " ", $data);
         $data = str_replace("\t", "", $data);
-        $data = preg_replace ('#[ ]+#', ' ', $data);
+        $data = preg_replace('#[ ]+#', ' ', $data);
 
         return $data;
     }
@@ -426,29 +492,33 @@ class Data extends \Pimcore\Model\AbstractModel {
      * @param $element
      * @return Data
      */
-    public static function getForElement($element){
-
+    public static function getForElement($element)
+    {
         $data = new self();
-		$data->getResource()->getForElement($element);
-		return $data;
+        $data->getDao()->getForElement($element);
 
+        return $data;
     }
 
     /**
      *
      */
-    public function delete(){
-        $this->getResource()->delete();
+    public function delete()
+    {
+        $this->getDao()->delete();
     }
 
     /**
      * @throws \Exception
      */
-	public function save () {
-        if($this->id instanceof Data\Id){
-            $this->getResource()->save();
+    public function save()
+    {
+        if ($this->id instanceof Data\Id) {
+            \Pimcore::getEventManager()->trigger("search.backend.preSave", $this);
+            $this->getDao()->save();
+            \Pimcore::getEventManager()->trigger("search.backend.postSave", $this);
         } else {
             throw new \Exception("Search\\Backend\\Data cannot be saved - no id set!");
         }
-	}
+    }
 }

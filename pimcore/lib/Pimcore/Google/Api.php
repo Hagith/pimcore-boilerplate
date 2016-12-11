@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Google;
@@ -18,7 +17,8 @@ namespace Pimcore\Google;
 use Pimcore\Config;
 use Pimcore\Model\Tool\TmpStore;
 
-class Api {
+class Api
+{
 
     /**
      *
@@ -28,14 +28,18 @@ class Api {
     /**
      * @return string
      */
-    public static function getPrivateKeyPath() {
-        return PIMCORE_CONFIGURATION_DIRECTORY . "/google-api-private-key.p12";
+    public static function getPrivateKeyPath()
+    {
+        $path = \Pimcore\Config::locateConfigFile("google-api-private-key.p12");
+
+        return $path;
     }
 
     /**
      * @return mixed
      */
-    public static function getConfig () {
+    public static function getConfig()
+    {
         return Config::getSystemConfig()->services->google;
     }
 
@@ -43,8 +47,9 @@ class Api {
      * @param string $type
      * @return bool
      */
-    public static function isConfigured($type = "service") {
-        if($type == "simple") {
+    public static function isConfigured($type = "service")
+    {
+        if ($type == "simple") {
             return self::isSimpleConfigured();
         }
 
@@ -54,24 +59,28 @@ class Api {
     /**
      * @return bool
      */
-    public static function isServiceConfigured() {
+    public static function isServiceConfigured()
+    {
         $config = self::getConfig();
 
-        if($config->client_id && $config->email && file_exists(self::getPrivateKeyPath())) {
+        if ($config->client_id && $config->email && file_exists(self::getPrivateKeyPath())) {
             return true;
         }
+
         return false;
     }
 
     /**
      * @return bool
      */
-    public static function isSimpleConfigured() {
+    public static function isSimpleConfigured()
+    {
         $config = self::getConfig();
 
-        if($config->simpleapikey) {
+        if ($config->simpleapikey) {
             return true;
         }
+
         return false;
     }
 
@@ -79,8 +88,9 @@ class Api {
      * @param string $type
      * @return \Google_Client
      */
-    public static function getClient($type = "service") {
-        if($type == "simple") {
+    public static function getClient($type = "service")
+    {
+        if ($type == "simple") {
             return self::getSimpleClient();
         }
 
@@ -92,15 +102,15 @@ class Api {
      * @return bool|\Google_Client
      * @throws \Zend_Json_Exception
      */
-    public static function getServiceClient ($scope = null) {
-
-        if(!self::isServiceConfigured()) {
+    public static function getServiceClient($scope = null)
+    {
+        if (!self::isServiceConfigured()) {
             return false;
         }
 
         $config = self::getConfig();
 
-        if(!$scope) {
+        if (!$scope) {
             // default scope
             $scope = ['https://www.googleapis.com/auth/analytics.readonly'];
         }
@@ -123,14 +133,14 @@ class Api {
         // token cache
         $hash = crc32(serialize([$scope]));
         $tokenId =  "google-api.token." . $hash;
-        if($tokenData = TmpStore::get($tokenId)) {
+        if ($tokenData = TmpStore::get($tokenId)) {
             $tokenInfo = \Zend_Json::decode($tokenData->getData());
-            if( ($tokenInfo["created"] + $tokenInfo["expires_in"]) > (time()-900) )  {
+            if (($tokenInfo["created"] + $tokenInfo["expires_in"]) > (time()-900)) {
                 $token = $tokenData->getData();
             }
         }
 
-        if(!$token) {
+        if (!$token) {
             $client->getAuth()->refreshTokenWithAssertion();
             $token = $client->getAuth()->getAccessToken();
 
@@ -139,15 +149,16 @@ class Api {
         }
 
         $client->setAccessToken($token);
+
         return $client;
     }
 
     /**
      * @return \Google_Client
      */
-    public static function getSimpleClient() {
-
-        if(!self::isSimpleConfigured()) {
+    public static function getSimpleClient()
+    {
+        if (!self::isSimpleConfigured()) {
             return false;
         }
 
@@ -164,14 +175,16 @@ class Api {
     /**
      * @return array
      */
-    public static function getAnalyticsDimensions() {
+    public static function getAnalyticsDimensions()
+    {
         return self::getAnalyticsMetadataByType('DIMENSION');
     }
 
     /**
      * @return array
      */
-    public static function getAnalyticsMetrics() {
+    public static function getAnalyticsMetrics()
+    {
         return self::getAnalyticsMetadataByType('METRIC');
     }
 
@@ -181,11 +194,13 @@ class Api {
      * @throws \Zend_Http_Client_Exception
      * @throws \Zend_Json_Exception
      */
-    public static function getAnalyticsMetadata() {
+    public static function getAnalyticsMetadata()
+    {
         $client = \Pimcore\Tool::getHttpClient();
         $client->setUri(self::ANALYTICS_API_URL.'metadata/ga/columns');
 
         $result = $client->request();
+
         return \Zend_Json::decode($result->getBody());
     }
 
@@ -194,31 +209,31 @@ class Api {
      * @return array
      * @throws \Zend_Exception
      */
-    protected static function getAnalyticsMetadataByType($type) {
+    protected static function getAnalyticsMetadataByType($type)
+    {
         $data = self::getAnalyticsMetadata();
         $t = \Zend_Registry::get("Zend_Translate");
 
-        $result = array();
-        foreach($data['items'] as $item) {
-            if($item['attributes']['type'] == $type) {
-
-                if(strpos($item['id'], 'XX') !== false) {
-                    for($i = 1; $i<=5; $i++) {
+        $result = [];
+        foreach ($data['items'] as $item) {
+            if ($item['attributes']['type'] == $type) {
+                if (strpos($item['id'], 'XX') !== false) {
+                    for ($i = 1; $i<=5; $i++) {
                         $name = str_replace('1', $i, str_replace('01', $i, $t->translate($item['attributes']['uiName'])));
 
-                        if(in_array($item['id'], array('ga:dimensionXX', 'ga:metricXX'))) {
+                        if (in_array($item['id'], ['ga:dimensionXX', 'ga:metricXX'])) {
                             $name .= ' '.$i;
                         }
-                        $result[] = array(
+                        $result[] = [
                             'id'=>str_replace('XX', $i, $item['id']),
                             'name'=>$name
-                        );
+                        ];
                     }
                 } else {
-                    $result[] = array(
+                    $result[] = [
                         'id'=>$item['id'],
                         'name'=>$t->translate($item['attributes']['uiName'])
-                    );
+                    ];
                 }
             }
         }

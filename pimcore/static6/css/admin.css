@@ -1,28 +1,27 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 @import 'ext-modifications.css';
 
 #pimcore_body {
-    padding: 10px 10px 5px 70px !important;
+    padding: 4px 10px 0 60px !important;
     background: #222;
 }
 
 #pimcore_navigation {
     position: absolute;
-    left: 11px;
-    top: -3px;
+    left: 8px;
+    top: -10px;
 }
 
 #pimcore_navigation ul {
@@ -32,67 +31,190 @@
 }
 
 #pimcore_navigation li {
-    display:block;
+    display: block;
     list-style: none;
-    width: 46px;
-    height: 50px;
-    margin-bottom: 10px;
+    width: 44px;
+    height:44px;
     cursor: pointer;
     color: #d7d7d7;
-    font-size: 10px;
+    text-indent: -9999px; /* hide text contents */
+    filter: grayscale(100%) brightness(200%);
+    -webkit-filter: grayscale(100%) brightness(200%);
+
+    background-position: center center;
+    background-size: 20px;
+    background-repeat: no-repeat;
+    background-image: url(/pimcore/static6/img/flat-color-icons/puzzle.svg);
+}
+
+#pimcore_navigation li:hover, #pimcore_logout:hover {
+    filter: grayscale(0%) brightness(100%);
+    -webkit-filter: grayscale(0%) brightness(100%);
+}
+
+#pimcore_menu_file {
+    background-image: url(/pimcore/static6/img/flat-color-icons/four-squares.svg) !important;
+}
+
+#pimcore_menu_extras {
+    background-image: url(/pimcore/static6/img/flat-color-icons/tools.svg) !important;
+}
+
+#pimcore_menu_marketing {
+    background-image: url(/pimcore/static6/img/flat-color-icons/bullish.svg) !important;
+}
+
+#pimcore_menu_settings {
+    background-image: url(/pimcore/static6/img/flat-color-icons/settings.svg) !important;
+}
+
+#pimcore_menu_maintenance {
+    background-image: url(/pimcore/static6/img/flat-color-icons/automotive.svg) !important;
+    filter: grayscale(0%) !important;
+    -webkit-filter: grayscale(0%) !important;
+}
+
+#pimcore_menu_search {
+    background-image: url(/pimcore/static6/img/flat-color-icons/search.svg) !important;
+}
+
+
+#pimcore_status {
+    position: absolute;
+    z-index: 10;
+    left: 8px;
+    bottom: 115px;
+    width: 44px;
+}
+
+#pimcore_status > * {
+    height:30px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    display: block;
+}
+
+#pimcore_status_debug {
+    background-image: url(/pimcore/static6/img/flat-color-icons/medium_priority.svg);
+}
+
+#pimcore_status_dev {
+    background-image: url(/pimcore/static6/img/flat-color-icons/high_priority.svg);
+}
+
+#pimcore_status_email {
+    background-image: url(/pimcore/static6/img/flat-color-icons/email.svg);
+}
+
+#pimcore_status_update {
+    cursor: pointer;
+    background-image: url(/pimcore/static6/img/flat-color-icons/process.svg);
+}
+
+#pimcore_status_maintenance {
+    background-image: url(/pimcore/static6/img/flat-color-icons/factory.svg);
+}
+
+#pimcore_logout {
+    position: absolute;
+    z-index: 2;
+    bottom: 1px;
+    left: 8px;
+    width: 44px;
+    height:38px;
+    background: url(/pimcore/static6/img/flat-color-icons/logout.svg) center center/20px no-repeat;
+
+    filter: grayscale(100%) brightness(200%);
+    -webkit-filter: grayscale(100%) brightness(200%);
+}
+
+
+#pimcore_avatar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 60px;
+    height: 80px;
     text-align: center;
-    font-family: Arial;
-    overflow: hidden;
-    word-wrap: break-word;
+    background: #3c3f41;
 }
 
-#pimcore_navigation li:hover {
-    color: #fff;
-    text-shadow: 0 0 4px #000;
+#pimcore_avatar img {
+    position: absolute;
+    left: 12px;
+    bottom: 34px;
+    width:36px;
+    border-radius: 18px;
 }
 
-#pimcore_navigation li.pimcore_menu_avatar {
-    height: 46px;
-    overflow: hidden;
-    background: #ccc;
-    border:1px solid #e5e5e5;
-    border-radius: 5px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    background: #f5f5f5;
-    margin-bottom: 20px;
-    cursor:default;
+#pimcore_loading.loaded {
+    position: absolute;
+    z-index: 10;
+    left: 8px;
+    bottom: 90px;
+    width:44px;
+    padding:0;
 }
 
-#pimcore_navigation li.pimcore_menu_avatar img  {
-    width: 46px;
+#pimcore_loading.loaded .spinner {
+    width: 44px;
+    margin:0;
 }
 
-[class^="icon-"]:before, [class*=" icon-"]:before {
-    font-size: 22px;
-    padding-bottom: 2px;
+#pimcore_loading.loaded .spinner > div {
+    background-color: #fff;
+    width: 10px;
+    height: 10px;
 }
 
-#pimcore_logo {
-    position:absolute;
-    bottom: 20px;
-    left: 18px;
+#pimcore_menu_tooltip {
+    position: absolute;
+    color: #FFFFFF;
+    background: #000000;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    border-radius: 6px;
+
+    padding: 0 10px;
+
+    opacity: 0.8;
+    left: 60px;
+    top: 50%;
+    margin-top: -15px;
+    margin-left: 15px;
+    z-index: 999;
 }
 
-#pimcore_logo img {
-    width:50%;
-    padding-left: 2px;
+#pimcore_menu_tooltip:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -8px;
+    width: 0; height: 0;
+    border-right: 8px solid #000000;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
 }
 
-#pimcore_logo img.activity {
-    width: 31px;
-    height: 31px;
-    padding-left: 0;
-}
 
 .pimcore_hidden {
     display:none !important;
 }
+
+
+.pimcore_about_window {
+    text-align: center;
+}
+
+.pimcore_about_window a, .pimcore_about_window a:visited, .pimcore_about_window a:active, .pimcore_about_window a:hover {
+    color:#000;
+    text-decoration: underline;
+}
+
 
 /* TODO to be removed */
 .pimcore_unpublished .x-tree-node-anchor span {
@@ -127,119 +249,14 @@
     color: #6dc1fd!important;
 }
 
-
-/* objects */
-
-.object_field {
-    /*padding: 10px 0 10px 0 !important;*/
+.pimcore_overflow_scrolling {
+    -webkit-overflow-scrolling:touch;
+    overflow: auto;
 }
 
-.object_field_panel {
-    padding: 0;
+.pimcore_preview_body {
+    overflow: hidden !important;
 }
-
-.object_field_wrapper {
-    width: 95% !important;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #D0D0D0;
-}
-
-.object_field_wrapper_floating{
-    width: auto !important;
-    float:left;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    margin-right: 5px;
-    border-bottom: 1px solid #D0D0D0;
-}
-
-.object_field_setting_warning{
-    background:url("/pimcore/static6/img/icon/error.png") no-repeat scroll 0 0 transparent;
-    padding:2px 5px 2px 20px;
-    color: #999;
-
-}
-
-.pimcore_tag_wysiwyg {
-    position:relative;
-    padding: 10px;
-    min-height: 80px;
-    font: normal 12px tahoma, arial, helvetica, sans-serif;
-}
-
-.pimcore_tag_wysiwyg strong {
-    font-weight: bold !important;
-    font-style: inherit;
-}
-
-.pimcore_tag_wysiwyg em {
-    font-style: italic !important;
-    font-weight: inherit;
-}
-
-.pimcore_tag_wysiwyg ul, .pimcore_tag_wysiwyg ol {
-    list-style: inherit;
-    margin:inherit;
-    padding-left: 30px;
-}
-
-.pimcore_tag_wysiwyg ol {
-    list-style: decimal;
-}
-
-.pimcore_tag_wysiwyg ul {
-    list-style: disc;
-}
-
-.pimcore_tag_wysiwyg blockquote {
-    padding-left: 20px;
-    border-left: 3px solid #666666;
-}
-
-.pimcore_tag_wysiwyg h1 {
-    font-size: 28px;
-    font-weight: normal;
-}
-
-.pimcore_tag_wysiwyg h2 {
-    font-size: 24px;
-    font-weight: normal;
-}
-
-.pimcore_tag_wysiwyg h3 {
-    font-size: 20px;
-    font-weight: normal;
-}
-
-.pimcore_tag_wysiwyg h4 {
-    font-size: 18px;
-    font-weight: normal;
-}
-
-.pimcore_tag_wysiwyg h5 {
-    font-size: 14px;
-    font-weight: normal;
-}
-
-.pimcore_tag_wysiwyg table {
-    border-collapse: collapse;
-    border-top:1px solid #333333;
-    border-right:1px solid #333333;
-}
-
-.pimcore_tag_wysiwyg table td, .pimcore_tag_wysiwyg table th{
-    border-left:1px solid #333333;
-    border-bottom:1px solid #333333;
-    padding: 3px;
-}
-
-/* this is a hack, actually don't know why?
-.x-tab-panel {
-	position: absolute;
-}
-*/
-
 
 .pimcore_iframe_mask {
     position: absolute;
@@ -262,12 +279,12 @@
 }
 
 .pimcore_error_input input {
-    background: url(/pimcore/static6/img/icon/exclamation.png) right center no-repeat #fff !important;
+    background: url(/pimcore/static6/img/flat-color-icons/high_priority.svg) right center/16px no-repeat #fff !important;
     cursor: default;
 }
 
 .pimcore_droptarget_image  {
-    background: url(/pimcore/static6/img/icon/drop-40.png) center center no-repeat #fff;
+    background: url(/pimcore/static6/img/flat-color-icons/target.svg) center center/45px no-repeat #fff;
 }
 
 
@@ -301,8 +318,8 @@
 
 
 .pimcore_property_droptarget {
-    height: 16px;
-    background: url(/pimcore/static6/img/icon/drop-16.png) right top no-repeat !important;
+    min-height: 18px;
+    background: url(/pimcore/static6/img/flat-color-icons/target.svg) right 5px center/17px no-repeat !important;
 }
 
 .pimcore_property_inherited {
@@ -411,7 +428,7 @@
     color: #606060 !important;
     filter: Alpha(opacity=60) !important;
     opacity: 0.6 !important;
-    background: #dad9d9 url(/pimcore/static6/img/inheritance-indicator.png)  top left no-repeat !important;
+    background: #dad9d9 url(/pimcore/static6/img/inheritance-indicator.png) top left no-repeat !important;
 }
 
 .grid_value_noview {
@@ -419,7 +436,7 @@
     filter: Alpha(opacity=60) !important;
     opacity: 0.6 !important;
     pointer-events: none;
-    background: #dad9d9 url(/pimcore/static6/img/icon/lock.png)  center center no-repeat !important;
+    background: #dad9d9 url(/pimcore/static6/img/flat-color-icons/lock.svg) center center/16px no-repeat !important;
 }
 
 .grid_value_noedit {
@@ -427,8 +444,9 @@
     /*filter: Alpha(opacity=60) !important;*/
     /*opacity: 0.6 !important;*/
     pointer-events: none;
-    background: #dad9FF url(/pimcore/static6/img/icon/lock_edit.png)  center left no-repeat !important;
+    background: #dad9FF url(/pimcore/static6/img/flat-color-icons/unlock.svg) center left/16px no-repeat !important;
 }
+
 .grid_value_noedit > *{
     padding-left: 20px !important;
     opacity: 0.6 !important;
@@ -441,7 +459,7 @@
     color: #606060 !important;
     filter: Alpha(opacity=60) !important;
     opacity: 0.6 !important;
-    background: #dad9d9 url(/pimcore/static6/img/locked.png)  top left no-repeat !important;
+    background: #dad9d9 url(/pimcore/static6/img/locked.png) top left no-repeat !important;
 }
 
 
@@ -449,7 +467,7 @@
     color: #606060 !important;
     filter: Alpha(opacity=60) !important;
     opacity: 0.6 !important;
-    background: #dad9d9 url(/pimcore/static6/img/inheritance-indicator-locked.png)  top left no-repeat !important;
+    background: #dad9d9 url(/pimcore/static6/img/inheritance-indicator-locked.png) top left no-repeat !important;
     opacity: 0.6 !important;
 }
 
@@ -469,6 +487,7 @@
     z-index:1000;
     cursor:pointer;
     background:url(/pimcore/static6/img/inheritance-indicator.png) top left no-repeat;
+    pointer-events: all !important;
 }
 
 .asset_folder_preview {
@@ -504,12 +523,12 @@
 
 .asset_folder_preview .x-view-over{
     border:1px solid #dddddd;
-    background: #efefef url(../../resources/images/default/grid/row-over.gif) repeat-x left top;
+    background: #efefef;
     padding: 4px;
 }
 
 .asset_folder_preview .x-view-selected{
-    background: #eff5fb url(images/selected.gif) no-repeat right bottom;
+    background: #eff5fb;
     border:1px solid #99bbe8;
     padding: 4px;
 }
@@ -520,16 +539,12 @@
 
 .asset_folder_preview .loading-indicator {
     font-size:11px;
-    background-image:url('../../resources/images/default/grid/loading.gif');
-    background-repeat: no-repeat;
-    background-position: left;
     padding-left:20px;
     margin:10px;
 }
 
 
 .pimcore_analytics_filter_form_item {
-    float: left;
     margin: 0 30px 0 0;
 }
 
@@ -818,7 +833,7 @@ span.warning {
 }
 
 .pimcore_document_seo_warning {
-    background: url(/pimcore/static6/img/icon/exclamation.png) 2px 2px no-repeat #ffdbdb;
+    background: url(/pimcore/static6/img/flat-color-icons/high_priority.svg) 2px 2px/16px no-repeat #ffdbdb;
 }
 
 .pimcore_targeting_bracket {
@@ -851,7 +866,7 @@ span.warning {
     position:fixed;
     top:0;
     background: #222;
-    width: 400px;
+    width: 420px;
     padding:10px;
     height: 2500px;
     z-index: 10000;
@@ -867,15 +882,11 @@ span.warning {
     margin:0;
 }
 
-#pimcore_menu_maintenance {
-    color:#dc2626 !important;
-}
-
-.password_valid .x-form-text-wrap {
+.password_valid .x-form-trigger-wrap {
     border-color: #9ecb2d !important;
 }
 
-.password_invalid .x-form-text-wrap  {
+.password_invalid .x-form-trigger-wrap  {
     border-color: #e9322d !important;
 }
 
@@ -933,6 +944,7 @@ span.warning {
 .pimcore_document_property_language_label {
     background-position: 85px 9px !important;
     position: relative;
+    background-size: 16px 16px;
 }
 
 .pimcore_document_property_language_label:after {
@@ -954,63 +966,6 @@ span.warning {
     -moz-border-radius: 4px;
     margin-bottom: 10px;
 }
-
-.pimcore_pagingtoolbar_container {
-    vertical-align: middle;
-}
-.pimcore_pagingtoolbar_container .x-toolbar {
-    margin: 0px 0px 0px 5px !important;
-    padding: 0px 0px 0px 0px !important;
-}
-
-.pimcore_pagingtoolbar_container .x-toolbar-item {
-    padding: 0px 0px 0px 0px !important;
-    top: 0px !important;
-}
-
-
-
-.pimcore_pagingtoolbar_container  .x-btn {
-    top: 0px !important;
-}
-
-.x-accordion-item .x-tree-icon-parent {
-    vertical-align: middle;
-}
-
-.pimcore_pagingtoolbar_container .x-form-text-default {
-    min-height: 18px !important;
-}
-
-.pimcore_pagingtoolbar_container .x-form-text {
-    font-size: 11px;
-    line-height: 14px;
-}
-
-.x-column-header-text-container {
-    display: inline  !important;
-}
-
-.x-column-header-text-wrapper {
-    display: inline  !important;
-}
-
-.x-column-header-text {
-    display: inline !important;
-}
-
-.x-grid-cell-inner {
-    cursor: pointer !important;
-}
-
-.x-grid-cell-inner, .x-grid-cell-inner-checkcolumn, .x-grid-cell-inner-action-col {
-    padding: 2px 10px 2px;
-}
-
-.x-column-header-checkbox .x-column-header-inner, .x-grid-cell-row-checker .x-grid-cell-inner {
-    padding: 3px 4px 0px 7px;
-}
-
 
 /* highlight error logs */
 .log-type-CRIT .x-grid-cell,
@@ -1037,6 +992,14 @@ span.warning {
     color: #606060;
 }
 
+.pimcore_object_panel_edit .x-toolbar-default {
+    padding: 2px 0 2px 8px;
+}
+
+.pimcore_object_panel_edit .x-panel-default-outer-border-trbl {
+    border-color: #d0d0d0 !important;
+}
+
 .objectlayout_element_accordion .x-accordion-item, .objectlayout_element_text  {
     border: 1px solid #d0d0d0;
 }
@@ -1049,23 +1012,137 @@ span.warning {
     border-right: none;
 }
 
-.object_geo_field .x-panel-default-outer-border-rl, .object_keyvalue_panel .x-panel-default-outer-border-rl, .pimcore_object_panel_edit .x-grid-header-ct {
+.object_geo_field .x-panel-default-outer-border-rl, .object_keyvalue_panel .x-panel-default-outer-border-rl,
+.pimcore_object_panel_edit .x-grid-header-ct, .pimcore_object_grid_panel .x-grid-header-ct  {
     border-right-color: #d0d0d0 !important;
     border-left-color: #d0d0d0 !important;
 }
 
-.object_localizedfields_panel .x-panel-default-outer-border-trbl {
+.pimcore_object_panel_edit .x-panel-default-outer-border-trbl {
     border-color: #d0d0d0 !important;
 }
 
+
+.object_field {
+    /*padding: 10px 0 10px 0 !important;*/
+}
+
+.object_field.x-hbox-form-item {
+    /* right margin for items withing a fieldcontainer with layout "hbox" */
+    margin-right: 10px;
+}
+
+.object_field_panel {
+    padding: 0;
+}
+
+.object_field_wrapper {
+    width: 95% !important;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #D0D0D0;
+}
+
+.object_field_wrapper_floating{
+    width: auto !important;
+    float:left;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    margin-right: 5px;
+    border-bottom: 1px solid #D0D0D0;
+}
+
+.object_field_setting_warning{
+    background:url("/pimcore/static6/img/icon/error.png") no-repeat scroll 0 0 transparent;
+    padding:2px 5px 2px 20px;
+    color: #999;
+
+}
+
+.pimcore_tag_wysiwyg {
+    position:relative;
+    padding: 10px;
+    min-height: 80px;
+    font: normal 12px tahoma, arial, helvetica, sans-serif;
+}
+
+.pimcore_tag_wysiwyg strong {
+    font-weight: bold !important;
+    font-style: inherit;
+}
+
+.pimcore_tag_wysiwyg em {
+    font-style: italic !important;
+    font-weight: inherit;
+}
+
+.pimcore_tag_wysiwyg ul, .pimcore_tag_wysiwyg ol {
+    list-style: inherit;
+    margin:inherit;
+    padding-left: 30px;
+}
+
+.pimcore_tag_wysiwyg ol {
+    list-style: decimal;
+}
+
+.pimcore_tag_wysiwyg ul {
+    list-style: disc;
+}
+
+.pimcore_tag_wysiwyg blockquote {
+    padding-left: 20px;
+    border-left: 3px solid #666666;
+}
+
+.pimcore_tag_wysiwyg h1 {
+    font-size: 28px;
+    font-weight: normal;
+}
+
+.pimcore_tag_wysiwyg h2 {
+    font-size: 24px;
+    font-weight: normal;
+}
+
+.pimcore_tag_wysiwyg h3 {
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.pimcore_tag_wysiwyg h4 {
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.pimcore_tag_wysiwyg h5 {
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.pimcore_tag_wysiwyg table {
+    border-collapse: collapse;
+    border-top:1px solid #333333;
+    border-right:1px solid #333333;
+}
+
+.pimcore_tag_wysiwyg table td, .pimcore_tag_wysiwyg table th{
+    border-left:1px solid #333333;
+    border-bottom:1px solid #333333;
+    padding: 3px;
+}
 
 
 /* ------------------------------------------------------------------------------------------------------------- */
 
 /* custom styles */
 
+.x-tree-view .x-tree-icon.pimcore_tree_node_loading_indicator {
+    background: url(/pimcore/static6/img/panel-loader.gif) center center no-repeat !important;;
+}
+
 .pimcore_droptarget_input, .input_drop_target, .input_drop_target input  {
-    background: url(/pimcore/static6/img/icon/drop-16.png) right center no-repeat transparent !important;
+    background: url(/pimcore/static6/img/flat-color-icons/target.svg) right 5px center/20px no-repeat transparent !important;
     cursor: default;
 }
 
@@ -1074,23 +1151,10 @@ span.warning {
     padding: 0 5px;
 }
 
-.pimcore_statusbar {
-    background-color: #222;
-    padding: 5px 0 0 0;
+.pimcore_panel_body_centered .x-autocontainer-innerCt {
+    text-align: center;
+    vertical-align: middle;
 }
-
-.pimcore_statusbar .x-toolbar-text-default {
-    color: #fff;
-}
-
-.pimcore_statusbar .fa {
-    padding-right: 5px;
-}
-
-.pimcore_statusbar a {
-    color: #fff;
-}
-
 
 .pimcore_navigation_flyout.x-menu-default {
     border-color: #000;
@@ -1121,17 +1185,116 @@ span.warning {
     color: #919191;
 }
 
+.pimcore_pagingtoolbar_container {
+    display: inline-block;
+    white-space: nowrap;
+    vertical-align: top;
+    margin-left: 5px;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar {
+    height: 20px;
+    padding: 0;
+    background-color: transparent;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar .x-box-target {
+    position: relative !important;
+    height: auto;
+    left: auto;
+    top: auto;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar .x-box-item {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    display: table-cell;
+    white-space: nowrap;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar .x-btn {
+    padding: 2px;
+    border: 0;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar .x-btn .x-btn-icon-el {
+    font-size: 21px;
+}
+
+
+.pimcore_pagingtoolbar_container .x-form-text-default {
+    min-height: 18px;
+    height: 18px;
+    text-align: center;
+    padding: 0;
+    width: 38px;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar-text-default {
+    padding: 0;
+    line-height: 20px;
+}
+
+.pimcore_pagingtoolbar_container .x-form-text-field-body-default {
+    min-width: 1px;
+    display: block;
+}
+
+.pimcore_pagingtoolbar_container .x-form-trigger-wrap-default {
+    border-color: #f6f6f6 !important;
+    display: block;
+    height: auto;
+}
+
+.pimcore_pagingtoolbar_container .x-form-text-wrap {
+    display: block;
+}
+
+.pimcore_pagingtoolbar_container .x-toolbar-spacer {
+    background-color: #f6f6f6;
+}
+
+.pimcore_editable_grid input.x-form-text-default {
+    min-height: 21px;
+    padding: 0 10px;
+}
+
+.pimcore_editable_grid .x-form-trigger-default {
+    height: 21px;
+    line-height: 21px;
+    width: 25px;
+}
+
+.pimcore_editable_grid .x-form-spinner-default {
+    height: 8px;
+    line-height: 12px;
+}
+
+.cke * {
+    box-sizing: content-box !important;
+    -moz-box-sizing: content-box !important;
+    -ms-box-sizing: content-box !important;
+    -webkit-box-sizing: content-box !important;
+}
+
 
 /* ExtJS 6.0 specific styles */
 
 #pimcore_panel_tabs-body {
-    background-image: url(/pimcore/static6/img/logo-gray.png);
+    background-image: url(/pimcore/static6/img/logo-gray.svg);
     background-repeat: no-repeat;
     background-position: center center;
+    background-size: 300px auto;
 }
 
 #pimcore_panel_tabs > .x-tab-bar {
     background: #222222;
+
+    background-image: url(/pimcore/static6/img/logo-gray.svg);
+    background-repeat: no-repeat;
+    background-position: right 22px top 4px;
+    background-size: 80px;
 }
 
 #pimcore_panel_tabs > .x-tab-bar > .x-tab-bar-body {
@@ -1179,10 +1342,6 @@ span.warning {
     border:0;
 }
 
-.x-btn-icon .x-btn-icon-el {
-    background-size: contain !important;
-}
-
 .main-toolbar.x-toolbar-default {
     background: #ececec;
     border-bottom: 1px solid #e4e4e4 !important;
@@ -1199,9 +1358,55 @@ span.warning {
     color: white;
 }
 
-/* ExtJS 6.0 bugfixes */
-
-.x-accordion-hd .x-tool-right, .x-accordion-hd .x-tool-left {
-    background-image: none;
+.tag-tree-topbar .x-form-field, .tag-tree-topbar .x-form-cb-label {
+    margin-top: 0;
 }
 
+.tag-tree-topbar .x-form-item-body {
+    height: 20px;
+}
+
+.tag-tree-toolbar-collapsed {
+    border: none;
+}
+
+.x-portlet .x-title {
+    font-size: 13px !important;
+}
+
+.x-portlet .x-panel-header-default-framed-top {
+    padding: 5px 14px 5px 14px !important;
+}
+
+.pimcore-panel-header-no-border > .x-panel-header-default {
+    border: none !important;
+}
+
+/* fixes combobox line-height - see issue #531  */
+.x-boundlist-item {
+    padding: 5px 10px;
+    line-height: 23px;
+}
+
+.action_error,
+.action_reason {
+    background-color: #BF302B;
+    padding: 3px 10px;
+    color: white;
+    border-radius: 0px;
+}
+
+.wf-status-outer {
+    top: 0;
+    margin: 0px;
+    background-color: #f6f6f6;
+    padding: 10px 7px 9px 7px;
+    border-width: 1px;
+    border-style: solid;
+    display: inline-block;
+    outline: 0;
+}
+
+.grid_nicepath_requested {
+    background-color: lightblue;
+}

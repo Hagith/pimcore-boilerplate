@@ -2,31 +2,34 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Translation
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Translation\AbstractTranslation;
 
 use Pimcore\Model;
 
-class Listing extends Model\Listing\AbstractListing {
+/**
+ * @method \Pimcore\Model\Translation\AbstractTranslation\Listing\Dao getDao()
+ */
+class Listing extends Model\Listing\AbstractListing
+{
 
     /**
      * Contains the results of the list. They are all an instance of Staticroute
      *
      * @var array
      */
-    public $translations = array();
+    public $translations = [];
 
     /**
      * Tests if the given key is an valid order key to sort the results
@@ -34,23 +37,27 @@ class Listing extends Model\Listing\AbstractListing {
      * @todo remove the dummy-always-true rule
      * @return boolean
      */
-    public function isValidOrderKey($key) {
+    public function isValidOrderKey($key)
+    {
         return true;
     }
 
     /**
      * @return array
      */
-    public function getTranslations() {
+    public function getTranslations()
+    {
         return $this->translations;
     }
 
     /**
      * @param array $translations
-     * @return void
+     * @return $this
      */
-    public function setTranslations($translations) {
+    public function setTranslations($translations)
+    {
         $this->translations = $translations;
+
         return $this;
     }
 }

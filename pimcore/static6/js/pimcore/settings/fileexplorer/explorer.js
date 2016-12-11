@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.fileexplorer.explorer");
@@ -22,7 +21,7 @@ pimcore.settings.fileexplorer.explorer = Class.create({
         this.panel = new Ext.Panel({
             id: "pimcore_fileexplorer",
             title: t("server_fileexplorer"),
-            iconCls: "pimcore_icon_fileexplorer",
+            iconCls: "pimcore_icon_folder pimcore_icon_overlay_search",
             border: false,
             layout: "border",
             closable:true,
@@ -53,9 +52,7 @@ pimcore.settings.fileexplorer.explorer = Class.create({
                     property: 'text',
                     direction: 'ASC'
                 }]
-
             });
-
 
             this.treePanel = Ext.create('Ext.tree.Panel', {
                 store: store,
@@ -63,16 +60,16 @@ pimcore.settings.fileexplorer.explorer = Class.create({
                 width: 300,
                 rootVisible: true,
                 enableDD: false,
-                useArrows: true,
-                autoScroll: true,
+                scrollable: true,
                 folderSort:true,
+                split: true,
                 root: {
                     iconCls: "pimcore_icon_home",
                     type: "folder",
                     expanded: true,
                     id: '/fileexplorer/',
-                    text: t("document_root")
-
+                    text: t("document_root"),
+                    writeable: true
                 },
                 listeners: {
                     itemclick: function (tree, record, item, index, e, eOpts ) {
@@ -85,29 +82,26 @@ pimcore.settings.fileexplorer.explorer = Class.create({
                     itemcontextmenu: this.onTreeNodeContextmenu.bind(this)
                 }
             });
-
         }
 
         return this.treePanel;
     },
 
     onTreeNodeContextmenu: function (tree, record, item, index, e, eOpts ) {
-        //record.select();
-
         e.stopEvent();
         var menu = new Ext.menu.Menu();
 
         if (record.data.type == "folder") {
             menu.add(new Ext.menu.Item({
                 text: t('new_file'),
-                iconCls: "pimcore_icon_newfile",
+                iconCls: "pimcore_icon_file pimcore_icon_overlay_add",
                 handler: this.addNewFile.bind(this, record),
                 disabled: !record.data.writeable
             }));
 
             menu.add(new Ext.menu.Item({
                 text: t('new_folder'),
-                iconCls: "pimcore_icon_newfolder",
+                iconCls: "pimcore_icon_folder pimcore_icon_overlay_add",
                 handler: this.addNewFolder.bind(this, record),
                 disabled: !record.data.writeable
             }));
@@ -141,8 +135,13 @@ pimcore.settings.fileexplorer.explorer = Class.create({
                                 Ext.Ajax.request({
                                     url: "/admin/misc/fileexplorer-add",
                                     success: function (node, response) {
+                                        node.data.loaded = false;
+
                                         this.treePanel.getStore().load({
-                                            node: node
+                                            node: node,
+                                            callback: function() {
+                                                node.expand();
+                                            }
                                         });
                                     }.bind(this, node),
                                     params: {
@@ -160,9 +159,15 @@ pimcore.settings.fileexplorer.explorer = Class.create({
                                 Ext.Ajax.request({
                                     url: "/admin/misc/fileexplorer-add-folder",
                                     success: function (node, response) {
+                                        node.data.loaded = false;
+
                                         this.treePanel.getStore().load({
-                                            node: node
+                                            node: node,
+                                            callback: function() {
+                                                node.expand();
+                                            }
                                         });
+
                                     }.bind(this, node),
                                     params: {
                                         path: node.id,

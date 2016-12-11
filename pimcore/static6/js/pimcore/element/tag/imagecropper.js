@@ -1,17 +1,15 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
-
 pimcore.registerNS("pimcore.element.tag.imagecropper");
 pimcore.element.tag.imagecropper = Class.create({
 
@@ -32,19 +30,17 @@ pimcore.element.tag.imagecropper = Class.create({
     },
 
     open: function (modal) {
-        var imageUrl = '/admin/asset/get-image-thumbnail/id/' + this.imageId + '/width/500/height/400/contain/true';
+        var validImage = this.imageId !== null,
+            imageUrl = '/admin/asset/get-image-thumbnail/id/' + this.imageId + '/width/500/height/400/contain/true',
+            button = {};
 
         if(typeof modal != "undefined") {
             this.modal = modal;
         }
 
-        this.editWindow = new Ext.Window({
-            width: 500,
-            height: 400,
-            modal: this.modal,
-            resizable: false,
-            bodyStyle: "background: url(" + imageUrl + ") center center no-repeat;position:relative;",
-            bbar: ["->", {
+        if( validImage )
+        {
+            button = {
                 xtype: "button",
                 iconCls: "pimcore_icon_apply",
                 text: t("save"),
@@ -74,8 +70,16 @@ pimcore.element.tag.imagecropper = Class.create({
 
                     this.editWindow.close();
                 }.bind(this)
-            }],
-            html: '<img id="selectorImage" src="' + imageUrl + '" />'
+            }
+        }
+        this.editWindow = new Ext.Window({
+            width: 500,
+            height: 400,
+            modal: this.modal,
+            resizable: false,
+            bodyStyle: validImage ? "background: url(" + imageUrl + ") center center no-repeat;position:relative;" : "",
+            bbar: ["->", button],
+            html: validImage ? '<img id="selectorImage" src="' + imageUrl + '" />' : '<span style="padding:10px;">' + t("no_image_assigned") + '</span>'
         });
 
         var checkSize = function () {
@@ -131,39 +135,45 @@ pimcore.element.tag.imagecropper = Class.create({
             }
         };
 
-        this.editWindow.add({
-            xtype: 'component',
-            id: "selector",
-            resizable: {
-                target: "selector",
-                pinned: true,
-                width: 100,
-                height: 100,
-                preserveRatio: false,
-                dynamic: true,
-                handles: 'all',
-                listeners: {
-                    resize: checkSize.bind(this)
-                }
-            },
-            style: "cursor:move; position: absolute; top: 10px; left: 10px;z-index:9000;",
-            draggable: true,
-            listeners: {
-                afterrender: function (el) {
+        if( validImage ) {
 
+            this.editWindow.add({
+                xtype: 'component',
+                id: "selector",
+                resizable: {
+                    target: "selector",
+                    pinned: true,
+                    width: 100,
+                    height: 100,
+                    preserveRatio: false,
+                    dynamic: true,
+                    handles: 'all',
+                    listeners: {
+                        resize: checkSize.bind(this)
+                    }
+                },
+                style: "cursor:move; position: absolute; top: 10px; left: 10px;z-index:9000;",
+                draggable: true,
+                listeners: {
+                    afterrender: function (el) {
+
+                    }
                 }
-            }
-        });
+            });
+
+        }
 
         this.editWindowInitCount = 0;
 
         this.editWindow.on("afterrender", function ( ){
             this.editWindowInterval = window.setInterval(function () {
                 var el = Ext.get("selectorImage");
-                var imageWidth = el.getWidth();
-                var imageHeight = el.getHeight();
 
                 if(el) {
+
+                    var imageWidth = el.getWidth();
+                    var imageHeight = el.getHeight();
+
                     if(el.getWidth() > 30) {
                         clearInterval(this.editWindowInterval);
                         this.editWindowInitCount = 0;
@@ -194,6 +204,8 @@ pimcore.element.tag.imagecropper = Class.create({
                     }
 
                     this.editWindowInitCount++;
+                } else {
+                    clearInterval(this.editWindowInterval);
                 }
             }.bind(this), 500);
 

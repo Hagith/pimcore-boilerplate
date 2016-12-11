@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.tool.genericiframewindow");
@@ -32,15 +31,19 @@ pimcore.tool.genericiframewindow = Class.create({
 
     getTabPanel: function () {
 
-        this.reloadButton = new Ext.Button({
-            text: t("reload"),
-            iconCls: "pimcore_icon_reload",
-            handler: this.reload.bind(this)
-        });
-
         var toolbar = Ext.create('Ext.Toolbar', {
             cls: 'main-toolbar',
-            items: [this.reloadButton]
+            items: [{
+                text: t("reload"),
+                iconCls: "pimcore_icon_reload",
+                handler: this.reload.bind(this)
+            }, {
+                text: t("open"),
+                iconCls: "pimcore_icon_cursor",
+                handler: function () {
+                    window.open(Ext.get("pimcore_iframe_frame_" + this.id).dom.getAttribute("src"));
+                }.bind(this)
+            }]
         });
 
         if (!this.panel) {
@@ -51,13 +54,13 @@ pimcore.tool.genericiframewindow = Class.create({
                 border: false,
                 layout: "fit",
                 closable:true,
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
-                html: '<iframe src="about:blank" frameborder="0" width="100%" id="pimcore_iframe_frame_'
+                bodyCls: "pimcore_overflow_scrolling",
+                html: '<iframe src="about:blank" frameborder="0" style="width:100%;" id="pimcore_iframe_frame_'
                                     + this.id + '"></iframe>',
                 tbar: toolbar
             });
 
-            this.panel.on("resize", this.onLayoutResize.bind(this));
+            this.panel.on("resize", this.setLayoutFrameDimensions.bind(this));
             this.panel.on("afterrender", this.reload.bind(this));
 
             var tabPanel = Ext.getCmp("pimcore_panel_tabs");
@@ -74,13 +77,9 @@ pimcore.tool.genericiframewindow = Class.create({
         return this.panel;
     },
 
-    onLayoutResize: function (el, width, height, rWidth, rHeight) {
-        this.setLayoutFrameDimensions(width, height);
-    },
-
-    setLayoutFrameDimensions: function (width, height) {
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
         Ext.get("pimcore_iframe_frame_" + this.id).setStyle({
-            height: (height - 50) + "px"
+            height: (height - 55) + "px"
         });
     },
 

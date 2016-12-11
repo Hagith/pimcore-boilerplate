@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 /*global localStorage */
@@ -367,24 +366,25 @@ pimcore.helpers.isValidFilename = function (value) {
 
 pimcore.helpers.getValidFilenameCache = {};
 
-pimcore.helpers.getValidFilename = function (value) {
+pimcore.helpers.getValidFilename = function (value, type) {
 
-    if(pimcore.helpers.getValidFilenameCache[value]) {
-        return pimcore.helpers.getValidFilenameCache[value];
+    if(pimcore.helpers.getValidFilenameCache[value + type]) {
+        return pimcore.helpers.getValidFilenameCache[value + type];
     }
 
     // we use jQuery for the synchronous xhr request, because ExtJS doesn't provide this
     var response = jQuery.ajax({
         url: "/admin/misc/get-valid-filename",
         data: {
-            value: value
+            value: value,
+            type: type
         },
         async: false
     });
 
     var res = Ext.decode(response.responseText);
 
-    pimcore.helpers.getValidFilenameCache[value] = res["filename"];
+    pimcore.helpers.getValidFilenameCache[value + type] = res["filename"];
 
     return res["filename"];
 
@@ -2007,6 +2007,8 @@ pimcore.helpers.editmode.openVideoEditPanel = function (data, callback) {
                     form.getComponent("type").setValue("youtube");
                 } else if (el.getValue().indexOf("vim") >= 0 && el.getValue().indexOf("http") >= 0) {
                     form.getComponent("type").setValue("vimeo");
+                } else if (el.getValue().indexOf("dai") >= 0 && el.getValue().indexOf("http") >= 0) {
+                    form.getComponent("type").setValue("dailymotion");
                 }
             }.bind(this)
         }
@@ -2104,11 +2106,15 @@ pimcore.helpers.editmode.openVideoEditPanel = function (data, callback) {
         }
 
         if(type == "youtube") {
-            labelEl.update("URL / ID");
+            labelEl.update("ID");
         }
 
         if(type == "vimeo") {
-            labelEl.update("URL");
+            labelEl.update("ID");
+        }
+        
+        if(type == "dailymotion") {
+            labelEl.update("ID");
         }
     };
 
@@ -2123,7 +2129,7 @@ pimcore.helpers.editmode.openVideoEditPanel = function (data, callback) {
             triggerAction: 'all',
             editable: true,
             mode: "local",
-            store: ["asset","youtube","vimeo"],
+            store: ["asset","youtube","vimeo","dailymotion"],
             value: data.type,
             listeners: {
                 select: function (combo) {
@@ -2806,4 +2812,3 @@ pimcore.helpers.editmode.openPdfEditPanel = function () {
 
     this.metaDataWindow.show();
 };
-

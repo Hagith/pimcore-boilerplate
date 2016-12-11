@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.custom.definition.sql");
@@ -46,14 +45,12 @@ pimcore.report.custom.definition.sql = Class.create({
                     fieldLabel: "SELECT <br /><small>(eg. a,b,c)</small>",
                     value: (sourceDefinitionData ? sourceDefinitionData.sql : ""),
                     width: 500,
-                    height: 50,
+                    height: 150,
                     grow: true,
                     growMax: 200,
                     enableKeyEvents: true,
                     listeners: {
-                        keyup: function() {
-                            this.updateGroupByMultiSelectStore(false);
-                        }.bind(this)
+                        keyup: this.onSqlEditorKeyup.bind(this)
                     }
                 },
                 {
@@ -62,14 +59,12 @@ pimcore.report.custom.definition.sql = Class.create({
                     fieldLabel: "FROM <br /><small>(eg. d INNER JOIN e ON c.a = e.b)</small>",
                     value: (sourceDefinitionData ? sourceDefinitionData.from : ""),
                     width: 500,
-                    height: 50,
+                    height: 150,
                     grow: true,
                     growMax: 200,
                     enableKeyEvents: true,
                     listeners: {
-                        keyup: function() {
-                            this.updateGroupByMultiSelectStore(false);
-                        }.bind(this)
+                        keyup: this.onSqlEditorKeyup.bind(this)
                     }
                 },
                 {
@@ -78,14 +73,12 @@ pimcore.report.custom.definition.sql = Class.create({
                     fieldLabel: "WHERE <br /><small>(eg. c = 'some_value')</small>",
                     value: (sourceDefinitionData ? sourceDefinitionData.where : ""),
                     width: 500,
-                    height: 50,
+                    height: 150,
                     grow: true,
                     growMax: 200,
                     enableKeyEvents: true,
                     listeners: {
-                        keyup: function() {
-                            this.updateGroupByMultiSelectStore(false);
-                        }.bind(this)
+                        keyup: this.onSqlEditorKeyup.bind(this)
                     }
                 },
                 {
@@ -94,14 +87,12 @@ pimcore.report.custom.definition.sql = Class.create({
                     fieldLabel: "GROUP BY <br /><small>(eg. b, c )</small>",
                     value: (sourceDefinitionData ? sourceDefinitionData.groupby : ""),
                     width: 500,
-                    height: 50,
+                    height: 150,
                     grow: true,
                     growMax: 200,
                     enableKeyEvents: true,
                     listeners: {
-                        keyup: function() {
-                            this.updateGroupByMultiSelectStore(false);
-                        }.bind(this)
+                        keyup: this.onSqlEditorKeyup.bind(this)
                     }
                 }
             ]
@@ -123,6 +114,15 @@ pimcore.report.custom.definition.sql = Class.create({
         var values = this.element.getForm().getFieldValues();
         values.type = "sql";
         return values;
+    },
+
+    onSqlEditorKeyup: function() {
+        clearTimeout(this._keyupTimout);
+
+        var self = this;
+        this._keyupTimout = setTimeout(function() {
+            self.updateGroupByMultiSelectStore(false);
+        }, 500);
     },
 
     updateGroupByMultiSelectStore: function(addItem) {

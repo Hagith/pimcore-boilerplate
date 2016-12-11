@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.analytics.overview");
@@ -34,7 +33,7 @@ pimcore.report.analytics.overview = Class.create(pimcore.report.abstract, {
     },
 
     getIconCls: function () {
-        return "pimcore_icon_analytics_overview";
+        return "pimcore_icon_analytics";
     },
 
 
@@ -92,8 +91,8 @@ pimcore.report.analytics.overview = Class.create(pimcore.report.abstract, {
                 listeners: {
                     "resize": this.framePanelResize.bind(this)
                 },
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
-                html: '<iframe src="about:blank" frameborder="0" id="' + this.iframeId + '" width="100%"></iframe>',
+                bodyCls: "pimcore_overflow_scrolling",
+                html: '<iframe src="about:blank" frameborder="0" id="' + this.iframeId + '" style="width: 100%;"></iframe>',
                 region: "center"
             });
 
@@ -129,19 +128,19 @@ pimcore.report.analytics.overview = Class.create(pimcore.report.abstract, {
                         fieldLabel: t('from'),
                         name: 'datefrom',
                         value: fromDate,
-                        itemCls: "pimcore_analytics_filter_form_item"
+                        cls: "pimcore_analytics_filter_form_item"
                     },
                     {
                         xtype: "datefield",
                         fieldLabel: t('to'),
                         name: 'dateto',
                         value: today,
-                        itemCls: "pimcore_analytics_filter_form_item"
+                        cls: "pimcore_analytics_filter_form_item"
                     },
                     {
                         xtype: "button",
-                        text: "apply",
-                        itemCls: "pimcore_analytics_filter_form_item",
+                        text: t("apply"),
+                        cls: "pimcore_analytics_filter_form_item",
                         handler: this.setFrameUrl.bind(this)
                     }
                 ]
@@ -165,5 +164,5 @@ pimcore.report.analytics.overview = Class.create(pimcore.report.abstract, {
 });
 
 // add to report broker
-pimcore.report.broker.addGroup("analytics", "google_analytics", "pimcore_icon_report_analytics_group");
+pimcore.report.broker.addGroup("analytics", "google_analytics", "pimcore_icon_analytics");
 pimcore.report.broker.addReport(pimcore.report.analytics.overview, "analytics");

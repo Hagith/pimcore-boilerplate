@@ -1,3 +1,16 @@
+/**
+ * Pimcore
+ *
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
+ *
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
+ */
+
 pimcore.registerNS("pimcore.settings.translation.translationmerger");
 pimcore.settings.translation.translationmerger = Class.create({
 
@@ -40,14 +53,31 @@ pimcore.settings.translation.translationmerger = Class.create({
         if (!this.panel) {
 
 
+            var toolbar = Ext.create('Ext.Toolbar', {
+                cls: 'main-toolbar',
+                items: [
+                    {
+                        text: t('apply_all'),
+                        handler: this.applyAll.bind(this),
+                        iconCls: "pimcore_icon_arrow_right"
+                    },
+                    {
+                        text: t('revert_all'),
+                        handler: this.revertAll.bind(this),
+                        iconCls: "pimcore_icon_revert"
+                    }
+                ]
+            });
+
+
             this.layout = new Ext.grid.GridPanel({
             store: this.store,
             plugins: ['gridfilters'],
             columns: [
                 {header: t("language"), sortable: true, dataIndex: 'lgname', editable: false},
-                {header: "&nbsp;", sortable: true, dataIndex: 'icon', editable: false, width: 20,
+                {header: "&nbsp;", sortable: true, dataIndex: 'icon', editable: false, width: 40,
                                 renderer: function(data){
-                                    return '<img src="'+data+'" alt="" />';
+                                    return '<img src="'+data+'" width="100%" height="auto" alt="" />';
                                 }
                 },
                 {header: t("key"), sortable: true, dataIndex: 'key', editable: false, flex: 150, filter: 'string'},
@@ -55,7 +85,7 @@ pimcore.settings.translation.translationmerger = Class.create({
                 {
                     header: t("action"),
                     xtype: 'actioncolumn',
-                    width: 30,
+                    width: 80,
                     tooltip: t('action'),
                     items: [
                         {
@@ -72,6 +102,7 @@ pimcore.settings.translation.translationmerger = Class.create({
                                 var rec = this.store.getAt(rowIndex);
                                 var state =  rec.get("dirty");
                                 var current = rec.get("current");
+                                var newState;
 
                                 if (state == 1) {
                                     newState = 0;
@@ -88,11 +119,12 @@ pimcore.settings.translation.translationmerger = Class.create({
 
 
                                 if (rec.get("dirty") == -1) {
+                                    var newData = Ext.encode([rec.data]);
                                     Ext.Ajax.request({
                                         url: "/admin/translation/merge-item/",
                                         method: "post",
                                         params: {
-                                            data: Ext.encode(rec.data),
+                                            data: newData,
                                             translationType: this.translationType
                                         },
                                         success: function (response) {
@@ -128,7 +160,8 @@ pimcore.settings.translation.translationmerger = Class.create({
                 iconCls: "pimcore_icon_translations",
                 border: false,
                 layout: "fit",
-                closable:true
+                closable:true,
+                tbar: toolbar
 
             });
 
@@ -150,5 +183,60 @@ pimcore.settings.translation.translationmerger = Class.create({
     activate: function () {
         var tabPanel = Ext.getCmp("pimcore_panel_tabs");
         tabPanel.setActiveItem(this.panel.getId());
+    },
+
+    batchUpdate: function (newState) {
+        var count = this.store.count();
+        var newData = [];
+        var newText = newState == 1 ? "csv" : "text";        // "csv" or "text"
+
+        for (i = 0; i < count; i++) {
+            var rec = this.store.getAt(i);
+            var dirty = rec.get("dirty");
+            if (rec.get("dirty") == -1) {
+                continue;
+            }
+
+            if (typeof dirty == "undefined") {
+                dirty = 0;
+            }
+            if (dirty != newState) {
+                rec.set("dirty", -1);
+                rec.set("current", rec.get(newText));
+                newData.push(rec.getData());
+            }
+        }
+
+        if (newData.length > 0) {
+            var encodedData = Ext.encode(newData);
+            Ext.Ajax.request({
+                url: "/admin/translation/merge-item/",
+                method: "post",
+                params: {
+                    data: encodedData,
+                    translationType: this.translationType
+                },
+                success: function (response) {
+                    var result = Ext.decode(response.responseText);
+                    if (result.success) {
+                        for (i = 0; i < newData.length; i++) {
+                            var recordData = newData[i];
+                            var rec = this.store.getById(recordData.id);
+                            rec.set("dirty", newState);
+                        }
+
+                        pimcore.helpers.showNotification(t("success"), t("batch_applied"), "success");
+                    }
+                }.bind(this)
+            });
+        }
+    },
+
+    applyAll: function() {
+        this.batchUpdate(1);
+    },
+
+    revertAll: function() {
+        this.batchUpdate(0);
     }
 });

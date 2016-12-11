@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.bouncemailinbox");
@@ -30,7 +29,7 @@ pimcore.settings.bouncemailinbox = Class.create({
             this.panel = new Ext.Panel({
                 id: "pimcore_bouncemailinbox",
                 title: t("bounce_mail_inbox"),
-                iconCls: "pimcore_icon_bouncemail",
+                iconCls: "pimcore_icon_email pimcore_icon_overlay_error",
                 border: false,
                 layout: "fit",
                 closable:true,
@@ -55,7 +54,7 @@ pimcore.settings.bouncemailinbox = Class.create({
 
     getGrid: function () {
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize();
         this.store = pimcore.helpers.grid.buildDefaultStore(
             '/admin/email/bounce-mail-inbox-list?',
             ["id","subject", "to", "from","date"],
@@ -73,7 +72,7 @@ pimcore.settings.bouncemailinbox = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('open'),
-                    icon: "/pimcore/static6/img/icon/arrow_right.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/right.svg",
                     handler: function (grid, rowIndex) {
                         this.showMessage(grid.getStore().getAt(rowIndex).get("id"));
                     }.bind(this)
@@ -81,7 +80,7 @@ pimcore.settings.bouncemailinbox = Class.create({
             }
         ];
 
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
 
         var toolbar = Ext.create('Ext.Toolbar', {
             cls: 'main-toolbar',

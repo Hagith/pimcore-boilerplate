@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -18,7 +17,6 @@ pimcore.settings.user.user.settings = Class.create({
 
     initialize:function (userPanel) {
         this.userPanel = userPanel;
-
 
         this.data = this.userPanel.data;
         this.currentUser = this.data.user;
@@ -31,6 +29,13 @@ pimcore.settings.user.user.settings = Class.create({
         this.forceReloadOnSave = false;
 
         var generalItems = [];
+
+        generalItems.push({
+            xtype:"displayfield",
+            fieldLabel:t("id"),
+            value: this.currentUser.id
+        });
+
 
         generalItems.push({
             xtype:"checkbox",
@@ -57,15 +62,36 @@ pimcore.settings.user.user.settings = Class.create({
             enableKeyEvents: true,
             listeners: {
                 keyup: function (el) {
-                    if(/^(?=.*\d)(?=.*[a-zA-Z]).{6,100}$/.test(el.getValue())) {
-                        el.getEl().addCls("password_valid");
-                        el.getEl().removeCls("password_invalid");
+                    var theEl = el.getEl();
+                    var hintItem = this.generalSet.getComponent("password_hint");
+
+                    if(pimcore.helpers.isValidPassword(el.getValue())) {
+                        theEl.addCls("password_valid");
+                        theEl.removeCls("password_invalid");
+                        hintItem.hide();
                     } else {
-                        el.getEl().addCls("password_invalid");
-                        el.getEl().removeCls("password_valid");
+                        theEl.addCls("password_invalid");
+                        theEl.removeCls("password_valid");
+                        hintItem.show();
                     }
-                }
+
+                    if(el.getValue().length < 1) {
+                        theEl.removeCls("password_valid");
+                        theEl.removeCls("password_invalid");
+                        hintItem.hide();
+                    }
+
+                    this.generalSet.updateLayout();
+                }.bind(this)
             }
+        });
+
+        generalItems.push({
+            xtype:"container",
+            itemId: "password_hint",
+            html: t("password_hint"),
+            style: "color: red;",
+            hidden: true
         });
 
         var date = new Date();
@@ -90,7 +116,7 @@ pimcore.settings.user.user.settings = Class.create({
                             var cont = Ext.getCmp("pimcore_user_image_" + this.currentUser.id);
                             var date = new Date();
                             cont.update('<img src="/admin/user/get-image?id='
-                                                    + this.currentUser.id + '&_dc=' + date.getTime() + '" />');
+                                + this.currentUser.id + '&_dc=' + date.getTime() + '" />');
                         }.bind(this));
                 }.bind(this)
             }]
@@ -156,10 +182,22 @@ pimcore.settings.user.user.settings = Class.create({
         });
 
         generalItems.push({
+            xtype: "checkbox",
+            fieldLabel: t("allow_dirty_close"),
+            name: "allowDirtyClose",
+            checked: this.currentUser.allowDirtyClose
+        });
+
+        generalItems.push({
             xtype:"checkbox",
             fieldLabel:t("show_close_warning"),
             name:"closeWarning",
             checked:this.currentUser.closeWarning
+        });
+
+        var rolesStore = Ext.create('Ext.data.ArrayStore', {
+            fields: ["id","name"],
+            data: this.data.roles
         });
 
         this.roleField = Ext.create('Ext.ux.form.MultiSelect', {
@@ -169,12 +207,35 @@ pimcore.settings.user.user.settings = Class.create({
             fieldLabel:t("roles"),
             width:400,
             minHeight: 100,
-            store:this.data.roles,
+            store: rolesStore,
+            displayField: "name",
+            valueField: "id",
             value:this.currentUser.roles.join(","),
             hidden: this.currentUser.admin
         });
 
         generalItems.push(this.roleField);
+
+        var perspectivesStore = Ext.create('Ext.data.JsonStore', {
+            data: this.data.availablePerspectives
+        });
+
+        this.perspectivesField = Ext.create('Ext.ux.form.MultiSelect', {
+            name:"perspectives",
+            triggerAction:"all",
+            editable:false,
+            fieldLabel:t("perspectives"),
+            width:400,
+            minHeight: 100,
+            store: perspectivesStore,
+            displayField: "name",
+            valueField: "name",
+            value:this.currentUser.perspectives ? this.currentUser.perspectives.join(",") : null,
+            hidden: this.currentUser.admin
+        });
+
+        generalItems.push(this.perspectivesField);
+
 
         this.generalSet = new Ext.form.FieldSet({
             collapsible: true,
@@ -228,18 +289,16 @@ pimcore.settings.user.user.settings = Class.create({
             this.apiKeyFieldContainer = new Ext.form.FieldSet({
                 border: false,
                 layout: 'hbox',
-                style: {
-                    padding: 0
-                },
+                style: "padding:10px 0 0 0; ",
                 items: [this.apiKeyField,
                     {
-                    xtype: "button",
-                    test: t("Generate"),
-                    iconCls: "pimcore_icon_menu_clear_cache",
-                    handler: function (e) {
-                        this.apiKeyField.setValue(md5(uniqid()) + md5(uniqid()));
-                    }.bind(this)
-                }],
+                        xtype: "button",
+                        test: t("Generate"),
+                        iconCls: "pimcore_icon_clear_cache",
+                        handler: function (e) {
+                            this.apiKeyField.setValue(md5(uniqid()) + md5(uniqid()));
+                        }.bind(this)
+                    }],
                 hidden: !this.wsenabled
             });
 
@@ -270,7 +329,7 @@ pimcore.settings.user.user.settings = Class.create({
                         var res = Ext.decode(response.responseText);
                         if(res["link"]) {
                             Ext.MessageBox.alert("", t("login_as_this_user_description")
-                                            + ' <br /><br /><textarea style="width:100%;height:70px;">' + res["link"] + "</textarea>");
+                                + ' <br /><br /><textarea style="width:100%;height:70px;">' + res["link"] + "</textarea>");
                         }
                     }
                 });
@@ -309,33 +368,35 @@ pimcore.settings.user.user.settings = Class.create({
             title:t("allowed_types_to_create") + " (" + t("defaults_to_all") + ")",
             items:[
                 Ext.create('Ext.ux.form.MultiSelect', {
-                name: "docTypes",
-                triggerAction:"all",
-                editable:false,
-                fieldLabel:t("document_types"),
-                width:400,
-                displayField: "name",
-                valueField: "id",
-                store: pimcore.globalmanager.get("document_types_store"),
-                value: this.currentUser.docTypes
-            }),
+                    name: "docTypes",
+                    triggerAction:"all",
+                    editable:false,
+                    fieldLabel:t("document_types"),
+                    width:400,
+                    displayField: "name",
+                    valueField: "id",
+                    store: pimcore.globalmanager.get("document_types_store"),
+                    value: this.currentUser.docTypes
+                }),
                 Ext.create('Ext.ux.form.MultiSelect', {
-                name: "classes",
-                triggerAction:"all",
-                editable:false,
-                fieldLabel:t("classes"),
-                width:400,
-                displayField: "text",
-                valueField: "id",
-                store: pimcore.globalmanager.get("object_types_store"),
-                value: this.currentUser.classes
-            })],
+                    name: "classes",
+                    triggerAction:"all",
+                    editable:false,
+                    fieldLabel:t("classes"),
+                    width:400,
+                    displayField: "text",
+                    valueField: "id",
+                    store: pimcore.globalmanager.get("object_types_store"),
+                    value: this.currentUser.classes
+                })],
             hidden:this.currentUser.admin
         });
 
+        this.editorSettings = new pimcore.settings.user.editorSettings(this, this.data.user.contentLanguages);
+
         this.panel = new Ext.form.FormPanel({
             title:t("settings"),
-            items:[this.generalSet, this.adminSet, this.permissionsSet , this.typesSet],
+            items:[this.generalSet, this.adminSet, this.permissionsSet , this.typesSet, this.editorSettings.getPanel()],
             bodyStyle:"padding:10px;",
             autoScroll:true
         });
@@ -347,11 +408,13 @@ pimcore.settings.user.user.settings = Class.create({
 
         var values = this.panel.getForm().getFieldValues();
         if(values["password"]) {
-            if(!/^(?=.*\d)(?=.*[a-zA-Z]).{6,100}$/.test(values["password"])) {
+            if(!pimcore.helpers.isValidPassword(values["password"])) {
                 delete values["password"];
                 Ext.MessageBox.alert(t('error'), t("password_was_not_changed"));
             }
         }
+
+        values.contentLanguages = this.editorSettings.getContentLanguages();
 
         return values;
     }

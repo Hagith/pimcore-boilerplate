@@ -2,24 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\Data\KeyValue;
 
 use Pimcore\Model;
 
-class Entry {
+class Entry
+{
     /**
      * @var
      */
@@ -40,7 +40,8 @@ class Entry {
      * @param $translated
      * @param $metadata
      */
-    public function __construct($value, $translated, $metadata) {
+    public function __construct($value, $translated, $metadata)
+    {
         $this->value = $value;
         $this->translated = $translated;
         $this->metadata = $metadata;
@@ -49,14 +50,16 @@ class Entry {
     /**
      * @return mixed
      */
-    public function getValue() {
+    public function getValue()
+    {
         return $this->value;
     }
 
     /**
      * @return mixed
      */
-    public function getTranslated() {
+    public function getTranslated()
+    {
         return $this->translated;
     }
 
@@ -71,7 +74,8 @@ class Entry {
     /**
      * @return mixed
      */
-    public function __toString() {
+    public function __toString()
+    {
         return $this->translated !== null ? $this->translated : $this->value;
     }
 }

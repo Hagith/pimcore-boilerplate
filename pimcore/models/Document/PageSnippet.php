@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document;
@@ -20,8 +19,13 @@ namespace Pimcore\Model\Document;
 use Pimcore\Model;
 use Pimcore\Config;
 use Pimcore\Model\Document;
+use Pimcore\Logger;
 
-abstract class PageSnippet extends Model\Document {
+/**
+ * @method \Pimcore\Model\Document\PageSnippet\Dao getDao()
+ */
+abstract class PageSnippet extends Model\Document
+{
 
     /**
      * @var string
@@ -72,22 +76,23 @@ abstract class PageSnippet extends Model\Document {
     /**
      * @var array
      */
-    protected $inheritedElements = array();
+    protected $inheritedElements = [];
 
     /**
      * @see Document::update
      * @return void
      */
-    protected function update() {
+    protected function update()
+    {
 
         // update elements
         $this->getElements();
-        $this->getResource()->deleteAllElements();
+        $this->getDao()->deleteAllElements();
 
         if (is_array($this->getElements()) and count($this->getElements()) > 0) {
             foreach ($this->getElements() as $name => $element) {
-                if(!$element->getInherited()) {
-                    $element->setResource(null);
+                if (!$element->getInherited()) {
+                    $element->setDao(null);
                     $element->setDocumentId($this->getId());
                     $element->save();
                 }
@@ -110,14 +115,14 @@ abstract class PageSnippet extends Model\Document {
     /**
      * @param bool $setModificationDate
      * @param bool $callPluginHook
-     * @param bool $force
      * @return null|Model\Version
      * @throws \Exception
      */
-    public function saveVersion($setModificationDate = true, $callPluginHook = true, $force = false) {
+    public function saveVersion($setModificationDate = true, $callPluginHook = true)
+    {
 
         // hook should be also called if "save only new version" is selected
-        if($callPluginHook) {
+        if ($callPluginHook) {
             \Pimcore::getEventManager()->trigger("document.preUpdate", $this, [
                 "saveVersionOnly" => true
             ]);
@@ -135,8 +140,10 @@ abstract class PageSnippet extends Model\Document {
         $version = null;
 
         // only create a new version if there is at least 1 allowed
-        if(Config::getSystemConfig()->documents->versions->steps
-            || Config::getSystemConfig()->documents->versions->days || $force) {
+        // or if saveVersion() was called directly (it's a newer version of the object)
+        if (Config::getSystemConfig()->documents->versions->steps
+            || Config::getSystemConfig()->documents->versions->days
+            || $setModificationDate) {
             $version = new Model\Version();
             $version->setCid($this->getId());
             $version->setCtype("document");
@@ -147,7 +154,7 @@ abstract class PageSnippet extends Model\Document {
         }
 
         // hook should be also called if "save only new version" is selected
-        if($callPluginHook) {
+        if ($callPluginHook) {
             \Pimcore::getEventManager()->trigger("document.postUpdate", $this, [
                 "saveVersionOnly" => true
             ]);
@@ -160,14 +167,15 @@ abstract class PageSnippet extends Model\Document {
      * @see Document::delete
      * @return void
      */
-    public function delete() {
+    public function delete()
+    {
         $versions = $this->getVersions();
         foreach ($versions as $version) {
             $version->delete();
         }
 
         // remove all tasks
-        $this->getResource()->deleteAllTasks();
+        $this->getDao()->deleteAllTasks();
 
         parent::delete();
     }
@@ -177,9 +185,9 @@ abstract class PageSnippet extends Model\Document {
      *
      * @return array
      */
-    public function getCacheTags($tags = array()) {
-
-        $tags = is_array($tags) ? $tags : array();
+    public function getCacheTags($tags = [])
+    {
+        $tags = is_array($tags) ? $tags : [];
 
         $tags = parent::getCacheTags($tags);
 
@@ -194,20 +202,20 @@ abstract class PageSnippet extends Model\Document {
      * @see Document::resolveDependencies
      * @return array
      */
-    public function resolveDependencies() {
-
+    public function resolveDependencies()
+    {
         $dependencies = parent::resolveDependencies();
 
         foreach ($this->getElements() as $element) {
             $dependencies = array_merge($dependencies, $element->resolveDependencies());
         }
 
-        if($this->getContentMasterDocument() instanceof Document) {
+        if ($this->getContentMasterDocument() instanceof Document) {
             $key = "document_" . $this->getContentMasterDocument()->getId();
-            $dependencies[$key] = array(
+            $dependencies[$key] = [
                 "id" => $this->getContentMasterDocument()->getId(),
                 "type" => "document"
-            );
+            ];
         }
 
         return $dependencies;
@@ -216,54 +224,65 @@ abstract class PageSnippet extends Model\Document {
     /**
      * @return string
      */
-    public function getAction() {
+    public function getAction()
+    {
         if (empty($this->action)) {
             return "default";
         }
+
         return $this->action;
     }
 
     /**
      * @return string
      */
-    public function getController() {
+    public function getController()
+    {
         if (empty($this->controller)) {
             return "default";
         }
+
         return $this->controller;
     }
 
     /**
      * @return string
      */
-    public function getTemplate() {
+    public function getTemplate()
+    {
         return $this->template;
     }
 
     /**
      * @param string $action
-     * @return void
+     * @return $this
      */
-    public function setAction($action) {
+    public function setAction($action)
+    {
         $this->action = $action;
+
         return $this;
     }
 
     /**
      * @param string $controller
-     * @return void
+     * @return $this
      */
-    public function setController($controller) {
+    public function setController($controller)
+    {
         $this->controller = $controller;
+
         return $this;
     }
 
     /**
      * @param string $template
-     * @return void
+     * @return $this
      */
-    public function setTemplate($template) {
+    public function setTemplate($template)
+    {
         $this->template = $template;
+
         return $this;
     }
 
@@ -274,6 +293,7 @@ abstract class PageSnippet extends Model\Document {
     public function setModule($module)
     {
         $this->module = $module;
+
         return $this;
     }
 
@@ -291,18 +311,19 @@ abstract class PageSnippet extends Model\Document {
      * @param string $name
      * @param string $type
      * @param string $data
-     * @return void
+     * @return $this
      */
-    public function setRawElement($name, $type, $data) {
+    public function setRawElement($name, $type, $data)
+    {
         try {
             if ($type) {
                 $class = "\\Pimcore\\Model\\Document\\Tag\\" . ucfirst($type);
 
                 // this is the fallback for custom document tags using prefixes
                 // so we need to check if the class exists first
-                if(!\Pimcore\Tool::classExists($class)) {
+                if (!\Pimcore\Tool::classExists($class)) {
                     $oldStyleClass = "\\Document_Tag_" . ucfirst($type);
-                    if(\Pimcore\Tool::classExists($oldStyleClass)) {
+                    if (\Pimcore\Tool::classExists($oldStyleClass)) {
                         $class = $oldStyleClass;
                     }
                 }
@@ -312,10 +333,10 @@ abstract class PageSnippet extends Model\Document {
                 $this->elements[$name]->setName($name);
                 $this->elements[$name]->setDocumentId($this->getId());
             }
+        } catch (\Exception $e) {
+            Logger::warning("can't set element " . $name . " with the type " . $type . " to the document: " . $this->getRealFullPath());
         }
-        catch (\Exception $e) {
-            \Logger::warning("can't set element " . $name . " with the type " . $type . " to the document: " . $this->getRealFullPath());
-        }
+
         return $this;
     }
 
@@ -324,10 +345,12 @@ abstract class PageSnippet extends Model\Document {
      *
      * @param string $name
      * @param string $data
-     * @return void
+     * @return $this
      */
-    public function setElement($name, $data) {
+    public function setElement($name, $data)
+    {
         $this->elements[$name] = $data;
+
         return $this;
     }
 
@@ -336,9 +359,9 @@ abstract class PageSnippet extends Model\Document {
      * @param $name
      * @return $this
      */
-    public function removeElement($name) {
-
-        if($this->hasElement($name)) {
+    public function removeElement($name)
+    {
+        if ($this->hasElement($name)) {
             unset($this->elements[$name]);
         }
 
@@ -351,29 +374,31 @@ abstract class PageSnippet extends Model\Document {
      * @param string $name
      * @return Document\Tag
      */
-    public function getElement($name) {
+    public function getElement($name)
+    {
         $elements = $this->getElements();
-        if($this->hasElement($name)) {
+        if ($this->hasElement($name)) {
             return $elements[$name];
         } else {
-
-            if(array_key_exists($name, $this->inheritedElements)) {
-               return $this->inheritedElements[$name];
+            if (array_key_exists($name, $this->inheritedElements)) {
+                return $this->inheritedElements[$name];
             }
 
             // check for content master document (inherit data)
-            if($contentMasterDocument = $this->getContentMasterDocument()) {
-                if($contentMasterDocument instanceof Document\PageSnippet) {
+            if ($contentMasterDocument = $this->getContentMasterDocument()) {
+                if ($contentMasterDocument instanceof Document\PageSnippet) {
                     $inheritedElement = $contentMasterDocument->getElement($name);
-                    if($inheritedElement) {
+                    if ($inheritedElement) {
                         $inheritedElement = clone $inheritedElement;
                         $inheritedElement->setInherited(true);
                         $this->inheritedElements[$name] = $inheritedElement;
+
                         return $inheritedElement;
                     }
                 }
             }
         }
+
         return null;
     }
 
@@ -385,20 +410,21 @@ abstract class PageSnippet extends Model\Document {
         // this is that the path is automatically converted to ID => when setting directly from admin UI
         if (!is_numeric($contentMasterDocumentId) && !empty($contentMasterDocumentId)) {
             $contentMasterDocument = Document::getByPath($contentMasterDocumentId);
-            if($contentMasterDocument instanceof Document\PageSnippet) {
+            if ($contentMasterDocument instanceof Document\PageSnippet) {
                 $contentMasterDocumentId = $contentMasterDocument->getId();
             }
         }
 
-        if(empty($contentMasterDocumentId)) {
+        if (empty($contentMasterDocumentId)) {
             $contentMasterDocument = null;
         }
 
-        if($contentMasterDocumentId == $this->getId()) {
+        if ($contentMasterDocumentId == $this->getId()) {
             throw new \Exception("You cannot use the current document as a master document, please choose a different one.");
         }
 
         $this->contentMasterDocumentId = $contentMasterDocumentId;
+
         return $this;
     }
 
@@ -413,7 +439,8 @@ abstract class PageSnippet extends Model\Document {
     /**
      * @return Document
      */
-    public function getContentMasterDocument() {
+    public function getContentMasterDocument()
+    {
         return Document::getById($this->getContentMasterDocumentId());
     }
 
@@ -421,12 +448,14 @@ abstract class PageSnippet extends Model\Document {
      * @param $document
      * @return $this
      */
-    public function setContentMasterDocument($document) {
-        if($document instanceof Document\PageSnippet) {
+    public function setContentMasterDocument($document)
+    {
+        if ($document instanceof Document\PageSnippet) {
             $this->setContentMasterDocumentId($document->getId());
         } else {
             $this->setContentMasterDocumentId(null);
         }
+
         return $this;
     }
 
@@ -434,46 +463,56 @@ abstract class PageSnippet extends Model\Document {
      * @param  $name
      * @return bool
      */
-    public function hasElement ($name) {
+    public function hasElement($name)
+    {
         $elements = $this->getElements();
-        return array_key_exists($name,$elements);
+
+        return array_key_exists($name, $elements);
     }
 
     /**
      * @return array
      */
-    public function getElements() {
+    public function getElements()
+    {
         if ($this->elements === null) {
-            $this->setElements($this->getResource()->getElements());
+            $this->setElements($this->getDao()->getElements());
         }
+
         return $this->elements;
     }
 
     /**
      * @param array $elements
-     * @return void
+     * @return $this
      */
-    public function setElements($elements) {
+    public function setElements($elements)
+    {
         $this->elements = $elements;
+
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getVersions() {
+    public function getVersions()
+    {
         if ($this->versions === null) {
-            $this->setVersions($this->getResource()->getVersions());
+            $this->setVersions($this->getDao()->getVersions());
         }
+
         return $this->versions;
     }
 
     /**
      * @param array $versions
-     * @return void
+     * @return $this
      */
-    public function setVersions($versions) {
+    public function setVersions($versions)
+    {
         $this->versions = $versions;
+
         return $this;
     }
 
@@ -481,19 +520,22 @@ abstract class PageSnippet extends Model\Document {
      * @see Document::getFullPath
      * @return string
      */
-    public function getHref() {
+    public function getHref()
+    {
         return $this->getFullPath();
     }
 
     /**
      * @return the $scheduledTasks
      */
-    public function getScheduledTasks() {
+    public function getScheduledTasks()
+    {
         if ($this->scheduledTasks === null) {
             $taskList = new Model\Schedule\Task\Listing();
             $taskList->setCondition("cid = ? AND ctype='document'", $this->getId());
             $this->setScheduledTasks($taskList->load());
         }
+
         return $this->scheduledTasks;
     }
 
@@ -501,22 +543,25 @@ abstract class PageSnippet extends Model\Document {
      * @param $scheduledTasks
      * @return $this
      */
-    public function setScheduledTasks($scheduledTasks) {
+    public function setScheduledTasks($scheduledTasks)
+    {
         $this->scheduledTasks = $scheduledTasks;
+
         return $this;
     }
 
     /**
      *
      */
-    public function saveScheduledTasks() {
+    public function saveScheduledTasks()
+    {
         $scheduled_tasks = $this->getScheduledTasks();
-        $this->getResource()->deleteAllTasks();
+        $this->getDao()->deleteAllTasks();
 
         if (is_array($scheduled_tasks) && count($scheduled_tasks) > 0) {
             foreach ($scheduled_tasks as $task) {
                 $task->setId(null);
-                $task->setResource(null);
+                $task->setDao(null);
                 $task->setCid($this->getId());
                 $task->setCtype("document");
                 $task->save();
@@ -527,12 +572,12 @@ abstract class PageSnippet extends Model\Document {
     /**
      *
      */
-    public function __sleep() {
-
-        $finalVars = array();
+    public function __sleep()
+    {
+        $finalVars = [];
         $parentVars = parent::__sleep();
 
-        $blockedVars = array("inheritedElements");
+        $blockedVars = ["inheritedElements"];
 
         foreach ($parentVars as $key) {
             if (!in_array($key, $blockedVars)) {

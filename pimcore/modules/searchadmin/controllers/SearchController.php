@@ -2,31 +2,31 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
-use Pimcore\Model\Search\Backend\Data;
-use Pimcore\Model\Element;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Document;
+use Pimcore\Model\Element;
 use Pimcore\Model\Object;
+use Pimcore\Model\Search\Backend\Data;
 
-class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
+class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin
+{
 
 
     /**
      * @return void
      */
-    public function findAction() {
-
+    public function findAction()
+    {
         $user = $this->getUser();
 
         $query = $this->getParam("query");
@@ -35,13 +35,14 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
         }
 
         $query = str_replace("%", "*", $query);
+        $query = preg_replace("@([^ ])\-@", "$1 ", $query);
 
         $types = explode(",", $this->getParam("type"));
         $subtypes = explode(",", $this->getParam("subtype"));
         $classnames = explode(",", $this->getParam("class"));
 
         if ($this->getParam("type") == "object" && is_array($classnames) && empty($classnames[0])) {
-            $subtypes = array("object","variant","folder");
+            $subtypes = ["object", "variant", "folder"];
         }
 
         $offset = intval($this->getParam("start"));
@@ -51,11 +52,11 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
         $limit = $limit ? $limit : 50;
 
         $searcherList = new Data\Listing();
-        $conditionParts = array();
-        $db = \Pimcore\Resource::get();
+        $conditionParts = [];
+        $db = \Pimcore\Db::get();
 
         //exclude forbidden assets
-        if(in_array("asset", $types)) {
+        if (in_array("asset", $types)) {
             if (!$user->isAllowed("assets")) {
                 $forbiddenConditions[] = " `type` != 'asset' ";
             } else {
@@ -71,7 +72,7 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
 
 
         //exclude forbidden documents
-        if(in_array("document", $types)) {
+        if (in_array("document", $types)) {
             if (!$user->isAllowed("documents")) {
                 $forbiddenConditions[] = " `type` != 'document' ";
             } else {
@@ -86,7 +87,7 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
         }
 
         //exclude forbidden objects
-        if(in_array("object", $types)) {
+        if (in_array("object", $types)) {
             if (!$user->isAllowed("objects")) {
                 $forbiddenConditions[] = " `type` != 'object' ";
             } else {
@@ -115,48 +116,85 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
             //}
 
             $conditionParts[] = $queryCondition;
-        }                      
+        }
 
 
         //For objects - handling of bricks
-        $fields = array();
-        $bricks = array();
-        if($this->getParam("fields")) {
+        $fields = [];
+        $bricks = [];
+        if ($this->getParam("fields")) {
             $fields = $this->getParam("fields");
 
-            foreach($fields as $f) {
+            foreach ($fields as $f) {
                 $parts = explode("~", $f);
                 if (substr($f, 0, 1) == "~") {
-//                    $type = $parts[1];
+                    //                    $type = $parts[1];
 //                    $field = $parts[2];
 //                    $keyid = $parts[3];
                     // key value, ignore for now
-                } else if(count($parts) > 1) {
+                } elseif (count($parts) > 1) {
                     $bricks[$parts[0]] = $parts[0];
                 }
             }
-        }        
+        }
 
         // filtering for objects
         if ($this->getParam("filter") && $this->getParam("class")) {
             $class = Object\ClassDefinition::getByName($this->getParam("class"));
-            $conditionFilters = Object\Service::getFilterCondition($this->getParam("filter"), $class);
+
+            // add Localized Fields filtering
+            $params = \Zend_Json::decode($this->getParam('filter'));
+            $unlocalizedFieldsFilters = [];
+            $localizedFieldsFilters = [];
+
+            foreach ($params as $paramConditionObject) {
+                //this loop divides filter parameters to localized and unlocalized groups
+                $definitionExists = in_array('o_' . $paramConditionObject['property'], Object\Service::getSystemFields())
+                    || $class->getFieldDefinition($paramConditionObject['property']);
+                if ($definitionExists) { //TODO: for sure, we can add additional condition like getLocalizedFieldDefinition()->getFieldDefiniton(...
+                    $unlocalizedFieldsFilters[] = $paramConditionObject;
+                } else {
+                    $localizedFieldsFilters[] = $paramConditionObject;
+                }
+            }
+
+            //get filter condition only when filters array is not empty
+
+            //string statements for divided filters
+            $conditionFilters = count($unlocalizedFieldsFilters)
+                ? Object\Service::getFilterCondition(\Zend_Json::encode($unlocalizedFieldsFilters), $class)
+                : null;
+            $localizedConditionFilters = count($localizedFieldsFilters)
+                ?  Object\Service::getFilterCondition(\Zend_Json::encode($localizedFieldsFilters), $class)
+                : null;
+
             $join = "";
-            foreach($bricks as $ob) {
+            foreach ($bricks as $ob) {
                 $join .= " LEFT JOIN object_brick_query_" . $ob . "_" . $class->getId();
 
                 $join .= " `" . $ob . "`";
                 $join .= " ON `" . $ob . "`.o_id = `object_" . $class->getId() . "`.o_id";
             }
 
-            $conditionParts[] = "( id IN (SELECT `object_" . $class->getId() . "`.o_id FROM object_" . $class->getId() . $join . " WHERE " . $conditionFilters . ") )";
+            if (null !== $conditionFilters) {
+                //add condition query for non localised fields
+                $conditionParts[] = "( id IN (SELECT `object_" . $class->getId() . "`.o_id FROM object_" . $class->getId()
+                    . $join . " WHERE " . $conditionFilters . ") )";
+            }
+
+            if (null !== $localizedConditionFilters) {
+                //add condition query for localised fields
+                $conditionParts[] = "( id IN (SELECT `object_localized_data_" . $class->getId()
+                    . "`.ooo_id FROM object_localized_data_" . $class->getId() . $join . " WHERE "
+                    . $localizedConditionFilters . " GROUP BY ooo_id " . ") )";
+            }
         }
 
         if (is_array($types) and !empty($types[0])) {
             foreach ($types as $type) {
                 $conditionTypeParts[] = $db->quote($type);
             }
-            if(in_array("folder",$subtypes)){
+            if (in_array("folder", $subtypes)) {
                 $conditionTypeParts[] = $db->quote('folder');
             }
             $conditionParts[] = "( maintype IN (" . implode(",", $conditionTypeParts) . ") )";
@@ -170,13 +208,32 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
         }
 
         if (is_array($classnames) and !empty($classnames[0])) {
-            if(in_array("folder",$subtypes)){
-                $classnames[]="folder";    
+            if (in_array("folder", $subtypes)) {
+                $classnames[]="folder";
             }
             foreach ($classnames as $classname) {
                 $conditionClassnameParts[] = $db->quote($classname);
             }
             $conditionParts[] = "( subtype IN (" . implode(",", $conditionClassnameParts) . ") )";
+        }
+
+
+        //filtering for tags
+        $tagIds = $this->getParam("tagIds");
+        if ($tagIds) {
+            foreach ($tagIds as $tagId) {
+                foreach ($types as $type) {
+                    if ($this->getParam("considerChildTags") =="true") {
+                        $tag = Pimcore\Model\Element\Tag::getById($tagId);
+                        if ($tag) {
+                            $tagPath = $tag->getFullIdPath();
+                            $conditionParts[] = "id IN (SELECT cId FROM tags_assignment INNER JOIN tags ON tags.id = tags_assignment.tagid WHERE ctype = " . $db->quote($type) . " AND (id = " . intval($tagId) . " OR idPath LIKE " . $db->quote($tagPath . "%") . "))";
+                        }
+                    } else {
+                        $conditionParts[] = "id IN (SELECT cId FROM tags_assignment WHERE ctype = " . $db->quote($type) . " AND tagid = " . intval($tagId) . ")";
+                    }
+                }
+            }
         }
 
 
@@ -195,36 +252,35 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
         //$searcherList->setOrder("desc");
         //$searcherList->setOrderKey("modificationdate");
 
-        if ($this->getParam("sort")) {
+        $sortingSettings = \Pimcore\Admin\Helper\QueryParams::extractSortingSettings($this->getAllParams());
+        if ($sortingSettings['orderKey']) {
             // we need a special mapping for classname as this is stored in subtype column
             $sortMapping = [
                 "classname" => "subtype"
             ];
 
-            $sort = $this->getParam("sort");
-            if(array_key_exists($this->getParam("sort"), $sortMapping)) {
-                $sort = $sortMapping[$this->getParam("sort")];
+            $sort = $sortingSettings['orderKey'];
+            if (array_key_exists($sortingSettings['orderKey'], $sortMapping)) {
+                $sort = $sortMapping[$sortingSettings['orderKey']];
             }
-            $searcherList->setOrderKey($sort);
+            $searcherList->setOrderKey($sortingSettings['orderKey']);
         }
-        if ($this->getParam("dir")) {
-            $searcherList->setOrder($this->getParam("dir"));
+        if ($sortingSettings['order']) {
+            $searcherList->setOrder($sortingSettings['order']);
         }
-
 
 
         $hits = $searcherList->load();
 
-        $elements=array();
+        $elements=[];
         foreach ($hits as $hit) {
-
             $element = Element\Service::getElementById($hit->getId()->getType(), $hit->getId()->getId());
             if ($element->isAllowed("list")) {
                 if ($element instanceof Object\AbstractObject) {
                     $data = Object\Service::gridObjectData($element, $fields);
-                } else if ($element instanceof Document) {
+                } elseif ($element instanceof Document) {
                     $data = Document\Service::gridDocumentData($element);
-                } else if ($element instanceof Asset) {
+                } elseif ($element instanceof Asset) {
                     $data = Asset\Service::gridAssetData($element);
                 }
 
@@ -233,17 +289,16 @@ class Searchadmin_SearchController extends \Pimcore\Controller\Action\Admin {
                 //TODO: any message that view is blocked?
                 //$data = Element\Service::gridElementData($element);
             }
-
         }
 
         // only get the real total-count when the limit parameter is given otherwise use the default limit
-        if($this->getParam("limit")) {
+        if ($this->getParam("limit")) {
             $totalMatches = $searcherList->getTotalCount();
         } else {
             $totalMatches = count($elements);
         }
 
-        $this->_helper->json(array("data" => $elements, "success" => true, "total" => $totalMatches));
+        $this->_helper->json(["data" => $elements, "success" => true, "total" => $totalMatches]);
 
         $this->removeViewRenderer();
     }

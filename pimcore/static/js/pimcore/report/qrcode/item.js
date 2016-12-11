@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.qrcode.item");
@@ -226,17 +225,10 @@ pimcore.report.qrcode.item = Class.create({
             items: [this.codePanel, {
                 border: false,
                 buttons: [{
-                    text: "PNG",
+                    width: "100%",
+                    text: t("download"),
                     iconCls: "pimcore_icon_png",
                     handler: this.download.bind(this, "image")
-                },{
-                    text: "EPS",
-                    iconCls: "pimcore_icon_eps",
-                    handler: this.download.bind(this, "eps")
-                }, {
-                    text: "SVG",
-                    iconCls: "pimcore_icon_svg",
-                    handler: this.download.bind(this, "svg")
                 }]
             }]
         });
@@ -263,6 +255,9 @@ pimcore.report.qrcode.item = Class.create({
 
     generateCode: function () {
         var params = this.form.getForm().getFieldValues();
+        var url = params['url'];
+
+        delete params["url"];
         delete params["description"];
         delete params["undefined"];
 
@@ -270,7 +265,7 @@ pimcore.report.qrcode.item = Class.create({
         params["_dc"] = d.getTime();
         params["name"] = this.data.name;
 
-        var codeUrl = "/admin/reports/qrcode/code/?" + Ext.urlEncode(params);
+        var codeUrl = "/admin/reports/qrcode/code/?url=" + url + '&' + Ext.urlEncode(params);
         this.codePanel.update('<img src="' + codeUrl + '" style="padding:10px; width:228px;" />');
     },
 
@@ -299,10 +294,8 @@ pimcore.report.qrcode.item = Class.create({
         delete params["description"];
         delete params["undefined"];
 
-        params["renderer"] = format;
         params["download"] = "true";
         params["name"] = this.data.name;
-        params["moduleSize"] = 20;
 
         var codeUrl = "/admin/reports/qrcode/code/?" + Ext.urlEncode(params);
         pimcore.helpers.download(codeUrl);

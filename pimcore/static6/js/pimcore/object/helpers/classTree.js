@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.helpers.classTree");
@@ -36,7 +35,7 @@ pimcore.object.helpers.classTree = Class.create({
                 id: "0",
                 root: true,
                 text: t("base"),
-                draggable: false,
+                allowDrag: false,
                 leaf: true,
                 isTarget: true
             },
@@ -45,16 +44,15 @@ pimcore.object.helpers.classTree = Class.create({
                         ptype: 'treeviewdragdrop',
                         enableDrag: true,
                         enableDrop: false,
-                        //appendOnly: true,
                         ddGroup: "columnconfigelement"
                     }
             }
         });
 
         Ext.Ajax.request({
-            url: url, //"/admin/class/get",
+            url: url,
             params: {
-                id: classId, // this.config.classid,
+                id: classId,
                 oid: objectId
             },
             success: this.initLayoutFields.bind(this, tree)
@@ -78,7 +76,7 @@ pimcore.object.helpers.classTree = Class.create({
                     }
                     var baseNode = {
                         type: "layout",
-                        draggable: false,
+                        allowDrag: false,
                         iconCls: "pimcore_icon_" + data[keys[i]].nodeType,
                         text: text
                     };
@@ -90,7 +88,7 @@ pimcore.object.helpers.classTree = Class.create({
                     if(data[keys[i]].nodeType == "object") {
                         baseNode.expand();
                     } else {
-                        baseNode.collapse();
+                        // baseNode.collapse();
                     }
                 }
             }
@@ -135,17 +133,15 @@ pimcore.object.helpers.classTree = Class.create({
         var newNode = {
             type: "layout",
             expanded: true,
-            draggable: false,
+            expandable: initData.childs.length,
+            allowDrag: false,
             iconCls: "pimcore_icon_" + type,
             text: nodeLabel
         };
 
         newNode = this.appendChild(newNode);
 
-        //if(this.rendered) {
-            //this.renderIndent();
-            this.expand();
-        //}
+        this.expand();
 
         return newNode;
     },
@@ -177,7 +173,7 @@ pimcore.object.helpers.classTree = Class.create({
                 type: "data",
                 layout: initData,
                 leaf: isLeaf,
-                draggable: draggable,
+                allowDrag: draggable,
                 dataType: type,
                 iconCls: "pimcore_icon_" + type,
                 expanded: true
@@ -186,7 +182,6 @@ pimcore.object.helpers.classTree = Class.create({
             newNode = this.appendChild(newNode);
 
             if(this.rendered) {
-                //this.renderIndent();
                 this.expand();
             }
 

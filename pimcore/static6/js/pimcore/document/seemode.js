@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.seemode");
@@ -33,7 +32,6 @@ pimcore.document.seemode = Class.create({
         }
 
         this.setIframeSrc(path);
-        window.setTimeout(this.resizeIframe.bind(this), 1000);
     },
 
     createWindow: function () {
@@ -46,36 +44,27 @@ pimcore.document.seemode = Class.create({
             height:300,
             closeAction:'hide',
             plain: true,
-            bodyStyle: "-webkit-overflow-scrolling:touch;",
-            html: '<iframe id="pimcore_seemode" name="pimcore_seemode" src="about:blank" frameborder="0" '
+            bodyCls: "pimcore_overflow_scrolling",
+            html: '<iframe id="pimcore_seemode" name="pimcore_seemode" src="about:blank" frameborder="0" style="width: 100%;" '
                         + 'allowtransparency="false"></iframe>',
             maximized: true,
             buttons: [
                 {
                     text: t("edit_current_page"),
-                    iconCls: "pimcore_icon_tab_edit",
+                    iconCls: "pimcore_icon_edit",
                     handler: this.edit.bind(this)
                 }
             ]
         });
-        this.window.on("resize", this.onWindowResize.bind(this));
+        this.window.on("resize", this.setLayoutFrameDimensions.bind(this));
 
         pimcore.viewport.add(this.window);
     },
 
-    onWindowResize: function () {
-
-        this.resizeIframe();
-    },
-
-    resizeIframe: function () {
-
-        var width = Ext.getBody().getWidth();
-        var height = Ext.getBody().getHeight();
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
 
         Ext.get("pimcore_seemode").setStyle({
-            width: width + "px",
-            height: height + "px",
+            height: (height-94) + "px",
             backgroundColor: "#fff"
         });
     },

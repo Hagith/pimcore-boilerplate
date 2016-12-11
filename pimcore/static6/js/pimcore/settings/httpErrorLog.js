@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.httpErrorLog");
@@ -55,24 +54,25 @@ pimcore.settings.httpErrorLog = Class.create({
 
     getGrid: function () {
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize();
         var url = '/admin/misc/http-error-log?';
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
             url,
-            ["id","path", "code", "date","amount"],
+            ["uri", "code", "date","count"],
             itemsPerPage
         );
+
         var proxy = this.store.getProxy();
         proxy.extraParams["group"] = 1;
+        proxy.getReader().setRootProperty('items');
 
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
 
         var typesColumns = [
-            {header: "ID", width: 50, sortable: true, hidden: true, dataIndex: 'id'},
             {header: "Code", width: 60, sortable: true, dataIndex: 'code'},
-            {header: t("path"), width: 400, sortable: true, dataIndex: 'path'},
-            {header: t("amount"), width: 60, sortable: true, dataIndex: 'amount'},
+            {header: t("path"), width: 400, sortable: true, dataIndex: 'uri'},
+            {header: t("amount"), width: 60, sortable: true, dataIndex: 'count'},
             {header: t("date"), width: 200, sortable: true, dataIndex: 'date',
                                                                     renderer: function(d) {
                 var date = new Date(d * 1000);
@@ -83,10 +83,10 @@ pimcore.settings.httpErrorLog = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('open'),
-                    icon: "/pimcore/static6/img/icon/world_go.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/cursor.svg",
                     handler: function (grid, rowIndex) {
                         var data = grid.getStore().getAt(rowIndex);
-                        window.open(data.get("path"));
+                        window.open(data.get("uri"));
                     }.bind(this)
                 }]
             }
@@ -131,8 +131,8 @@ pimcore.settings.httpErrorLog = Class.create({
                         height: 430,
                         modal: true,
                         bodyStyle: "background:#fff;",
-                        html: '<iframe src="/admin/misc/http-error-log-detail?id=' + data.get("id")
-                                            + '" frameborder="0" width="100%" height="390"></iframe>'
+                        html: '<iframe src="/admin/misc/http-error-log-detail?uri=' + encodeURIComponent(data.get("uri"))
+                                + '" frameborder="0" width="100%" height="390"></iframe>'
                     });
                     win.show();
                 }

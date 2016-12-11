@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="UTF-8">
 
     <style type="text/css">
 
@@ -28,18 +28,20 @@
 <body>
 
 <?php
-    $thumbnail = $this->asset->getImageThumbnailSavePath() . "/asset-version-preview-" . $this->asset->getId() . "-" . time() . ".png";
+    $thumbnail = PIMCORE_SYSTEM_TEMP_DIRECTORY . "/image-version-preview-" . uniqid() . ".png";
     $convert = \Pimcore\Image::getInstance();
-    $convert->load($this->asset->getTemporaryFile(true));
+    $convert->load($this->asset->getTemporaryFile());
     $convert->contain(500,500);
     $convert->save($thumbnail, "png");
-    $thumbnail = str_replace(PIMCORE_DOCUMENT_ROOT, "", $thumbnail);
+
+    $dataUri = "data:image/png;base64," . base64_encode(file_get_contents($thumbnail));
+    unlink($thumbnail);
 ?>
 
 <table id="wrapper" cellpadding="0" cellspacing="0" border="0">
     <tr>
         <td align="center">
-            <img src="<?= $thumbnail ?>"/>
+            <img src="<?= $dataUri ?>"/>
         </td>
     </tr>
 </table>

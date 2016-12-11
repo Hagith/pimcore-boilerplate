@@ -2,15 +2,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
  
 pimcore.registerNS("pimcore.element.properties");
@@ -109,7 +108,8 @@ pimcore.element.properties = Class.create({
                             inherited: property.inherited,
                             inheritable: property.inheritable,
                             all: property,
-                            config: property.config
+                            config: property.config,
+                            description: property["description"]
                         });
                     }
                 }
@@ -126,7 +126,7 @@ pimcore.element.properties = Class.create({
                         rootProperty: 'properties'
                     }
                 },
-                fields: ['name','type',{name: "data", type: "string", convert: function (v, rec) {
+                fields: ['name','description','type',{name: "data", type: "string", convert: function (v, rec) {
                     if (rec.data.type == "document" || rec.data.type == "asset" || rec.data.type == "object") {
                         var type = rec.data.type;
                         if (type == "document") {
@@ -162,7 +162,16 @@ pimcore.element.properties = Class.create({
 
             var checkColumn = Ext.create('Ext.grid.column.Check', {
                 header: t("inheritable"),
-                dataIndex: 'inheritable'
+                dataIndex: 'inheritable',
+                listeners: {
+                    beforecheckchange: function (el, rowIndex, checked, eOpts) {
+                        if(store.getAt(rowIndex).get("inherited")) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                }
             });
 
             this.cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
@@ -173,6 +182,10 @@ pimcore.element.properties = Class.create({
                         //enable different editors per row
                         editor.editors.each(Ext.destroy, Ext);
                         editor.editors.clear();
+
+                        if(context.record.get("inherited")) {
+                            return false;
+                        }
                     }
                 }
             });
@@ -184,6 +197,7 @@ pimcore.element.properties = Class.create({
                 sm:  Ext.create('Ext.selection.RowModel', {}),
                 trackMouseOver: true,
                 store: store,
+                bodyCls: "pimcore_editable_grid",
                 plugins: [
                     this.cellEditing
                 ],
@@ -233,9 +247,18 @@ pimcore.element.properties = Class.create({
                     {
                         header: t("name"),
                         dataIndex: 'name',
-                        editor: new Ext.form.TextField({
-                            allowBlank: false
-                        }),
+                        getEditor: function() {
+                            return new Ext.form.TextField({
+                                allowBlank: false
+                            });
+                        },
+                        sortable: true,
+                        width: 230
+                    },
+                    {
+                        header: t("description"),
+                        dataIndex: 'description',
+                        editable: false,
                         sortable: true,
                         width: 230
                     },
@@ -258,7 +281,7 @@ pimcore.element.properties = Class.create({
                         width: 40,
                         items: [{
                             tooltip: t('open'),
-                            icon: "/pimcore/static6/img/icon/pencil_go.png",
+                            icon: "/pimcore/static6/img/flat-color-icons/cursor.svg",
                             handler: function (grid, rowIndex) {
                                 var pData = grid.getStore().getAt(rowIndex).data;
                                 if(pData.all && pData.all.data) {
@@ -284,7 +307,7 @@ pimcore.element.properties = Class.create({
                         width: 40,
                         items: [{
                             tooltip: t('delete'),
-                            icon: "/pimcore/static6/img/icon/cross.png",
+                            icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                             handler: function (grid, rowIndex) {
                                 grid.getStore().removeAt(rowIndex);
                             }.bind(this),
@@ -306,12 +329,7 @@ pimcore.element.properties = Class.create({
             this.propertyGrid.on("afterrender", function() {
                 this.setAutoScroll(true);
             });
-            this.propertyGrid.on("beforeedit", function (editor, context, eOpts) {
-                if (context.record.data.inherited) {
-                    return false;
-                }
-                return true;
-            });
+
             this.propertyGrid.on("rowcontextmenu", function ( grid, record, tr, rowIndex, e, eOpts ) {
                 
                 var propertyData = grid.getStore().getAt(rowIndex).data;
@@ -361,7 +379,7 @@ pimcore.element.properties = Class.create({
                 title: t('properties'),
                 border: false,
                 layout: "border",
-                iconCls: "pimcore_icon_tab_properties",
+                iconCls: "pimcore_icon_properties",
                 items: [this.propertyGrid]
             });
         }
@@ -371,8 +389,7 @@ pimcore.element.properties = Class.create({
  
     getTypeRenderer: function (value, metaData, record, rowIndex, colIndex, store) {
  
-        return '<div style="background: url(/pimcore/static6/img/icon/' + value + '.png) '
-                + 'center center no-repeat; height: 16px;" name="' + record.data.name + '">&nbsp;</div>';
+        return '<div class="pimcore_icon_' + value + '" name="' + record.data.name + '">&nbsp;</div>';
     },
  
     getCellRenderer: function (value, metaData, record, rowIndex, colIndex, store) {
@@ -528,7 +545,7 @@ pimcore.element.properties = Class.create({
             }
 
             this.add(selectedData.key, selectedData.type, selectedData.data, selectedData.config, false,
-                selectedData.inheritable);
+                selectedData.inheritable, selectedData.description);
         } catch (e) {
             console.log(e);
         }
@@ -545,10 +562,14 @@ pimcore.element.properties = Class.create({
         }
     },
  
-    add: function (key, type, value, config, inherited, inheritable) {
+    add: function (key, type, value, config, inherited, inheritable, description) {
 
         if(in_array(key, this.disallowedKeys)) {
             return;
+        }
+
+        if(typeof description != "string") {
+            description = "";
         }
 
         var store = this.propertyGrid.getStore();
@@ -600,7 +621,8 @@ pimcore.element.properties = Class.create({
             type: type,
             inherited: false,
             inheritable: inheritable,
-            config: config
+            config: config,
+            description: description
         });
 
 

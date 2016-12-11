@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.glossary");
@@ -75,7 +74,7 @@ pimcore.settings.glossary = Class.create({
 
     getRowEditor: function () {
 
-        var itemsPerPage = 20;
+        var itemsPerPage = pimcore.helpers.grid.getDefaultPageSize();
         this.store = pimcore.helpers.grid.buildDefaultStore(
             '/admin/settings/glossary?',
             [
@@ -110,7 +109,7 @@ pimcore.settings.glossary = Class.create({
             }
         });
 
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
+        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store);
 
         var casesensitiveCheck = new Ext.grid.column.Check({
             header: t("casesensitive"),
@@ -134,6 +133,7 @@ pimcore.settings.glossary = Class.create({
             {header: t("language"), flex: 50, sortable: true, dataIndex: 'language', editor: new Ext.form.ComboBox({
                 store: this.languages,
                 mode: "local",
+                editable: false,
                 triggerAction: "all"
             })},
             casesensitiveCheck,
@@ -142,6 +142,7 @@ pimcore.settings.glossary = Class.create({
                 store: pimcore.globalmanager.get("sites"),
                 valueField: "id",
                 displayField: "domain",
+                editable: false,
                 triggerAction: "all"
             }), renderer: function (siteId) {
                 var store = pimcore.globalmanager.get("sites");
@@ -177,7 +178,7 @@ pimcore.settings.glossary = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('delete'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         grid.getStore().removeAt(rowIndex);
                         this.updateRows();
@@ -218,6 +219,7 @@ pimcore.settings.glossary = Class.create({
             trackMouseOver: true,
             columnLines: true,
             bbar: this.pagingtoolbar,
+            bodyCls: "pimcore_editable_grid",
             stripeRows: true,
             tbar: toolbar,
             viewConfig: {

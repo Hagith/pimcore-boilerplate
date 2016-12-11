@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.webmastertools.settings");
@@ -26,7 +25,7 @@ pimcore.report.webmastertools.settings = Class.create({
     getLayout: function () {
 
         this.panel = new Ext.FormPanel({
-            title: "Google Webmastertools",
+            title: "Google Search Console",
             bodyStyle: "padding: 10px;",
             autoScroll: true,
             items: [
@@ -34,7 +33,7 @@ pimcore.report.webmastertools.settings = Class.create({
                     xtype: "displayfield",
                     width: 670,
                     hideLabel: true,
-                    value: "&nbsp;<br />" + t("webastertools_settings_description"),
+                    value: "&nbsp;<br />" + t("search_console_settings_description"),
                     cls: "pimcore_extra_label"
                 },
                 {
@@ -57,12 +56,11 @@ pimcore.report.webmastertools.settings = Class.create({
 
         sites.each(function (record) {
             var id = record.data.id;
-            var key = "site_" + id;
-            if(!id) {
-                id = "default";
+            if (id == "default") {
                 key = "default";
+            } else {
+                key = "site_" + id;
             }
-
             configs.push(this.getConfiguration(key, record.data.domain, id));
         }, this);
 
@@ -71,10 +69,6 @@ pimcore.report.webmastertools.settings = Class.create({
     },
 
     getConfiguration: function (key, name, id) {
-
-        id = id + "";
-        var itemId = id.replace(/\./g, '_');
-
         var config = {
             xtype: "fieldset",
             title: name,
@@ -86,7 +80,7 @@ pimcore.report.webmastertools.settings = Class.create({
                     labelWidth: 250,
                     width: 650,
                     value: this.parent.getValue("webmastertools.sites." + key + ".verification"),
-                    id: "report_settings_webmastertools_verification_" + itemId
+                    id: "report_settings_webmastertools_verification_" + id
                 }
             ]
         };
@@ -101,11 +95,11 @@ pimcore.report.webmastertools.settings = Class.create({
         var sitesData = {};
 
         sites.each(function (record) {
-            var id = record.data.id;
-            var key = "site_" + id;
-            if(!id) {
-                id = "default";
+            var id = record.get("id");
+            if (id == "default") {
                 key = "default";
+            } else {
+                key = "site_" + id;
             }
 
             sitesData[key] = {

@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool\Email;
 
 use Pimcore\Model;
-use Pimcore\File; 
+use Pimcore\File;
+use Pimcore\Logger;
 
+/**
+ * @method \Pimcore\Model\Tool\Email\Log\Dao getDao()
+ */
 class Log extends Model\AbstractModel
 {
 
@@ -135,6 +138,7 @@ class Log extends Model\AbstractModel
     public function setDocumentId($id)
     {
         $this->documentId = $id;
+
         return $this;
     }
 
@@ -145,6 +149,7 @@ class Log extends Model\AbstractModel
     public function setRequestUri($requestUri)
     {
         $this->requestUri = $requestUri;
+
         return $this;
     }
 
@@ -175,6 +180,7 @@ class Log extends Model\AbstractModel
     public function setId($id)
     {
         $this->id = (int)$id;
+
         return $this;
     }
 
@@ -185,6 +191,7 @@ class Log extends Model\AbstractModel
     public function setSubject($subject)
     {
         $this->subject = $subject;
+
         return $this;
     }
 
@@ -213,9 +220,10 @@ class Log extends Model\AbstractModel
         }
 
         $emailLog = new Model\Tool\Email\Log();
-        $emailLog->getResource()->getById($id);
+        $emailLog->getDao()->getById($id);
         $emailLog->setEmailLogExistsHtml();
         $emailLog->setEmailLogExistsText();
+
         return $emailLog;
     }
 
@@ -236,6 +244,7 @@ class Log extends Model\AbstractModel
     public function setParams($params)
     {
         $this->params = $params;
+
         return $this;
     }
 
@@ -253,11 +262,12 @@ class Log extends Model\AbstractModel
      * Sets the modification date
      *
      * @param integer $modificationDate
-     * @return void
+     * @return $this
      */
     public function setModificationDate($modificationDate)
     {
         $this->modificationDate = $modificationDate;
+
         return $this;
     }
 
@@ -280,6 +290,7 @@ class Log extends Model\AbstractModel
     public function setSentDate($sentDate)
     {
         $this->sentDate = $sentDate;
+
         return $this;
     }
 
@@ -300,6 +311,7 @@ class Log extends Model\AbstractModel
     {
         $file = PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-html.log';
         $this->emailLogExistsHtml = (is_file($file) && is_readable($file)) ? 1 : 0;
+
         return $this;
     }
 
@@ -320,6 +332,7 @@ class Log extends Model\AbstractModel
     {
         $file = PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-text.log';
         $this->emailLogExistsText = (is_file($file) && is_readable($file)) ? 1 : 0;
+
         return $this;
     }
 
@@ -364,7 +377,7 @@ class Log extends Model\AbstractModel
     {
         @unlink(PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-html.log');
         @unlink(PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-text.log');
-        $this->getResource()->delete();
+        $this->getDao()->delete();
     }
 
 
@@ -377,6 +390,7 @@ class Log extends Model\AbstractModel
     public function setCreationDate($creationDate)
     {
         $this->creationDate = $creationDate;
+
         return $this;
     }
 
@@ -397,7 +411,7 @@ class Log extends Model\AbstractModel
     {
         // set date
         if (!(int)$this->getId()) {
-            $this->getResource()->create();
+            $this->getDao()->create();
         }
         $this->update();
     }
@@ -407,20 +421,20 @@ class Log extends Model\AbstractModel
      */
     protected function update()
     {
-        $this->getResource()->update();
+        $this->getDao()->update();
         if (!is_dir(PIMCORE_LOG_MAIL_PERMANENT)) {
             File::mkdir(PIMCORE_LOG_MAIL_PERMANENT);
         }
 
         if ($html = $this->getBodyHtml()) {
             if (File::put(PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-html.log', $html) === false) {
-                \Logger::warn('Could not write html email log file. LogId: ' . $this->getId());
+                Logger::warn('Could not write html email log file. LogId: ' . $this->getId());
             }
         }
 
         if ($text = $this->getBodyText()) {
             if (File::put(PIMCORE_LOG_MAIL_PERMANENT . '/email-' . $this->getId() . '-text.log', $text) === false) {
-                \Logger::warn('Could not write text email log file. LogId: ' . $this->getId());
+                Logger::warn('Could not write text email log file. LogId: ' . $this->getId());
             }
         }
     }
@@ -432,6 +446,7 @@ class Log extends Model\AbstractModel
     public function setTo($to)
     {
         $this->to = $to;
+
         return $this;
     }
 
@@ -450,7 +465,8 @@ class Log extends Model\AbstractModel
      *
      * @return array
      */
-    public function getToAsArray(){
+    public function getToAsArray()
+    {
         return $this->buildArray($this->getTo());
     }
 
@@ -461,6 +477,7 @@ class Log extends Model\AbstractModel
     public function setCc($cc)
     {
         $this->cc = $cc;
+
         return $this;
     }
 
@@ -479,7 +496,8 @@ class Log extends Model\AbstractModel
      *
      * @return array
      */
-    public function getCcAsArray(){
+    public function getCcAsArray()
+    {
         return $this->buildArray($this->getCc());
     }
 
@@ -490,6 +508,7 @@ class Log extends Model\AbstractModel
     public function setBcc($bcc)
     {
         $this->bcc = $bcc;
+
         return $this;
     }
 
@@ -508,7 +527,8 @@ class Log extends Model\AbstractModel
      *
      * @return array
      */
-    public function getBccAsArray(){
+    public function getBccAsArray()
+    {
         return $this->buildArray($this->getBcc());
     }
 
@@ -519,6 +539,7 @@ class Log extends Model\AbstractModel
     public function setFrom($from)
     {
         $this->from = $from;
+
         return $this;
     }
 
@@ -539,6 +560,7 @@ class Log extends Model\AbstractModel
     public function setBodyHtml($html)
     {
         $this->bodyHtml = $html;
+
         return $this;
     }
 
@@ -559,6 +581,7 @@ class Log extends Model\AbstractModel
     public function setBodyText($text)
     {
         $this->bodyText = $text;
+
         return $this;
     }
 
@@ -575,17 +598,19 @@ class Log extends Model\AbstractModel
     /**
      * Helper to get the recipients as array
      */
-    protected function buildArray($data){
-        $dataArray = array();
-        $tmp = explode(',',trim($data));
+    protected function buildArray($data)
+    {
+        $dataArray = [];
+        $tmp = explode(',', trim($data));
 
-        foreach($tmp as $entry){
+        foreach ($tmp as $entry) {
             $entry  = trim($entry);
-            $tmp2   = explode(' ',$entry);
-            $dataArray[] = array('email' => trim($tmp2[0]),
-                                 'name' => str_replace(array('(',')'),'',$tmp2[1])
-            );
+            $tmp2   = explode(' ', $entry);
+            $dataArray[] = ['email' => trim($tmp2[0]),
+                                 'name' => str_replace(['(', ')'], '', $tmp2[1])
+            ];
         }
+
         return $dataArray;
     }
 }

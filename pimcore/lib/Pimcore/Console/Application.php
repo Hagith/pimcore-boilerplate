@@ -2,41 +2,34 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2015 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Console;
 
 use Pimcore\Version;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\Console\ConsoleEvents;
+use Pimcore\Tool\Admin;
 
 /**
  * The console application
  */
 class Application extends \Symfony\Component\Console\Application
 {
-    /**
-     * Namespaces to automatically scan for commands which can be autoloaded. More namespaces
-     * can be added via addAutoloadNamespace()
-     *
-     * @var array
-     */
-    protected $defaultAutoloadNamespaces = [
-        'Pimcore\\Console\\Command' => PIMCORE_DOCUMENT_ROOT . '/pimcore/lib/Pimcore/Console/Command',
-        'Website\\Console\\Command' => PIMCORE_DOCUMENT_ROOT . '/website/lib/Website/Console/Command'
-    ];
-
     /**
      * Autoloaded namespaces
      *
@@ -56,12 +49,32 @@ class Application extends \Symfony\Component\Console\Application
     {
         parent::__construct('Pimcore CLI', Version::getVersion());
 
-        foreach ($this->defaultAutoloadNamespaces as $namespace => $directory) {
-            $this->addAutoloadNamespace($namespace, $directory);
-        }
+        // init default autoload namespaces
+        $this->initDefaultAutoloadNamespaces();
 
         // allow to register commands here (e.g. through plugins)
         \Pimcore::getEventManager()->trigger('system.console.init', $this);
+
+        $dispatcher = new EventDispatcher();
+        $this->setDispatcher($dispatcher);
+
+        $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
+            if ($event->getInput()->getOption("maintenance-mode")) {
+                // enable maintenance mode if requested
+                $maintenanceModeId = 'cache-warming-dummy-session-id';
+
+                $event->getOutput()->writeln('Activating maintenance mode with ID <comment>' . $maintenanceModeId . '</comment> ...');
+
+                Admin::activateMaintenanceMode($maintenanceModeId);
+            }
+        });
+
+        $dispatcher->addListener(ConsoleEvents::TERMINATE, function (ConsoleTerminateEvent $event) {
+            if ($event->getInput()->getOption("maintenance-mode")) {
+                $event->getOutput()->writeln('Deactivating maintenance mode...');
+                Admin::deactivateMaintenanceMode();
+            }
+        });
     }
 
     /**
@@ -73,8 +86,25 @@ class Application extends \Symfony\Component\Console\Application
     {
         $inputDefinition = parent::getDefaultInputDefinition();
         $inputDefinition->addOption(new InputOption('ignore-maintenance-mode', null, InputOption::VALUE_NONE, 'Set this flag to force execution in maintenance mode'));
+        $inputDefinition->addOption(new InputOption('maintenance-mode', null, InputOption::VALUE_NONE, 'Set this flag to force maintenance mode while this task runs'));
+        $inputDefinition->addOption(new InputOption('environment', null, InputOption::VALUE_OPTIONAL, 'Explicitly set the environment, eg. production, dev, stage, ...'));
 
         return $inputDefinition;
+    }
+
+    /**
+     * Init default autoload namespaces. More namespaces can be added via addAutoloadNamespace()
+     */
+    protected function initDefaultAutoloadNamespaces()
+    {
+        $defaultAutoloadNamespaces = [
+            'Pimcore\\Console\\Command' => PIMCORE_DOCUMENT_ROOT . '/pimcore/lib/Pimcore/Console/Command',
+            'Website\\Console\\Command' => PIMCORE_DOCUMENT_ROOT . '/website/lib/Website/Console/Command'
+        ];
+
+        foreach ($defaultAutoloadNamespaces as $namespace => $directory) {
+            $this->addAutoloadNamespace($namespace, $directory);
+        }
     }
 
     /**
@@ -122,7 +152,7 @@ class Application extends \Symfony\Component\Console\Application
 
         /** @var SplFileInfo $file */
         foreach ($finder as $file) {
-            $subNamespace = trim(str_replace($directory, '', $file->getPath()), '/');
+            $subNamespace = trim(str_replace($directory, '', $file->getPath()), DIRECTORY_SEPARATOR);
             if (!empty($subNamespace)) {
                 $subNamespace = str_replace('/', '\\', $subNamespace);
                 $subNamespace = '\\' . $subNamespace;

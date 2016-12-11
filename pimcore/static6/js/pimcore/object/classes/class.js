@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.klass");
@@ -22,17 +21,19 @@ pimcore.object.classes.klass = Class.create({
 
 
 
-    initialize: function (data, parentPanel, reopen) {
+    initialize: function (data, parentPanel, reopen, editorPrefix) {
         this.parentPanel = parentPanel;
         this.data = data;
+        this.editorPrefix = editorPrefix;
+        this.reopen = reopen;
 
         this.addLayout();
         this.initLayoutFields();
-        this.reopen = reopen;
+
     },
 
     getUploadUrl: function(){
-        return this.uploadUrl + '?pimcore_admin_sid=' + pimcore.settings.sessionId + "&id=" + this.getId();
+        return this.uploadUrl + '?id=' + this.getId();
     },
 
     getExportUrl: function() {
@@ -52,7 +53,6 @@ pimcore.object.classes.klass = Class.create({
             width: 300,
             split: true,
             enableDD: true,
-            useArrows: true,
             autoScroll: true,
             root: {
                 id: "0",
@@ -68,7 +68,7 @@ pimcore.object.classes.klass = Class.create({
                       "->",
                     {
                         text: t("configure_custom_layouts"),
-                        iconCls: "pimcore_icon_class_add",
+                        iconCls: "pimcore_icon_class pimcore_icon_overlay_add",
                         hidden: (this instanceof pimcore.object.fieldcollections.field) || (this instanceof pimcore.object.objectbricks.field),
                         handler: this.configureCustomLayouts.bind(this)
                     }
@@ -94,13 +94,13 @@ pimcore.object.classes.klass = Class.create({
 
         panelButtons.push({
             text: t("import"),
-            iconCls: "pimcore_icon_class_import",
+            iconCls: "pimcore_icon_class pimcore_icon_overlay_upload",
             handler: this.upload.bind(this)
         });
 
         panelButtons.push({
             text: t("export"),
-            iconCls: "pimcore_icon_class_export",
+            iconCls: "pimcore_icon_class pimcore_icon_overlay_download",
             handler: function() {
                 pimcore.helpers.download(this.getExportUrl());
             }.bind(this)
@@ -126,7 +126,8 @@ pimcore.object.classes.klass = Class.create({
             layout: "border",
             closable: true,
             title: name,
-            id: "pimcore_class_editor_panel_" + this.getId(),
+            //id: "pimcore_class_editor_panel_" + this.getId(),
+            id: this.editorPrefix + this.getId(),
             items: [
                 this.tree,
                 this.editpanel
@@ -272,8 +273,8 @@ pimcore.object.classes.klass = Class.create({
         var groups = new Array();
         var groupNames = ["text","numeric","date","select","relation","structured","geo","other"];
         for (var i = 0; i < dataComps.length; i++) {
-
-            var dataComp = pimcore.object.classes.data[dataComps[i]];
+            var dataCompName = dataComps[i];
+            var dataComp = pimcore.object.classes.data[dataCompName];
 
             // check for disallowed types
             var allowed = false;
@@ -346,31 +347,42 @@ pimcore.object.classes.klass = Class.create({
 
         var menu = new Ext.menu.Menu();
 
-        //get all allowed data types for localized fields
-        var lftypes = ["panel","tabpanel","accordion","fieldset","text","region","button"];
+        //get all allowed layout types for localized fields
+        var lftypes = ["panel","tabpanel","accordion","fieldset", "fieldcontainer", "text","region","button"];
+        var blockTypes = ["panel","tabpanel","accordion","fieldset", "fieldcontainer", "text","region","button"];
+
         var dataComps = Object.keys(pimcore.object.classes.data);
 
         for (var i = 0; i < dataComps.length; i++) {
-            if ('object' === typeof pimcore.object.classes.data[dataComps[i]]) {
+            var dataCompName = dataComps[i];
+            if ('object' === typeof pimcore.object.classes.data[dataCompName]) {
                 continue;
             }
-            if(pimcore.object.classes.data[dataComps[i]].prototype.allowIn['localizedfield']) {
-                lftypes.push(dataComps[i]);
+            var component = pimcore.object.classes.data[dataCompName];
+            if(component.prototype.allowIn['localizedfield']) {
+                lftypes.push(dataCompName);
+            }
+
+            if(component.prototype.allowIn['block']) {
+                blockTypes.push(dataCompName);
             }
         }
+
 
         // specify which childs a layout can have
         // the child-type "data" is a placehoder for all data components
         var allowedTypes = {
             accordion: ["panel","region","tabpanel","text"],
             fieldset: ["data","text"],
-            panel: ["data","region","tabpanel","button","accordion","fieldset","panel","text","html"],
+            fieldcontainer: ["data","text"],
+            panel: ["data","region","tabpanel","button","accordion","fieldset", "fieldcontainer","panel","text","html"],
             region: ["panel","accordion","tabpanel","text","localizedfields"],
             tabpanel: ["panel", "region", "accordion","text","localizedfields"],
             button: [],
             text: [],
             root: ["panel","region","tabpanel","accordion","text"],
-            localizedfields: lftypes
+            localizedfields: lftypes,
+            block: blockTypes
         };
 
         var parentType = "root";
@@ -432,7 +444,7 @@ pimcore.object.classes.klass = Class.create({
                 var changeDataMenu = getDataMenu(allowedTypes, record.parentNode.data.editor.type, true);
                 menu.add(new Ext.menu.Item({
                     text: t('change_type'),
-                    iconCls: "pimcore_icon_change_type",
+                    iconCls: "pimcore_icon_convert",
                     hideOnClick: false,
                     menu: changeDataMenu
                 }));
@@ -445,6 +457,22 @@ pimcore.object.classes.klass = Class.create({
                     iconCls: "pimcore_icon_clone",
                     hideOnClick: true,
                     handler: this.changeDataType.bind(this, tree, record, record.data.editor.type, dataComps, false)
+                }));
+            }
+
+            menu.add(new Ext.menu.Item({
+                text: t('copy'),
+                iconCls: "pimcore_icon_copy",
+                hideOnClick: true,
+                handler: this.copyNode.bind(this, tree, record)
+            }));
+
+            if (pimcore && pimcore.classEditor && pimcore.classEditor.clipboard) {
+                menu.add(new Ext.menu.Item({
+                    text: t('paste'),
+                    iconCls: "pimcore_icon_paste",
+                    hideOnClick: true,
+                    handler: this.dropNode.bind(this, tree, record)
                 }));
             }
         }
@@ -482,6 +510,90 @@ pimcore.object.classes.klass = Class.create({
 
         return null;
     },
+
+    cloneNode:  function(tree, node) {
+        var theReference = this;
+        var nodeLabel = node.data.text;
+        var nodeType = node.data.type;
+
+        var config = {
+            text: nodeLabel,
+            type: nodeType,
+            leaf: node.data.leaf,
+            expanded: node.data.expanded
+        };
+
+
+        config.listeners = theReference.getTreeNodeListeners();
+
+        if (node.data.editor) {
+            config.iconCls = node.data.editor.getIconClass();
+        }
+
+        var newNode = node.createNode(config);
+
+        var theData = {};
+
+        if (node.data.editor) {
+            theData = Ext.apply(theData, node.data.editor.datax);
+        }
+
+        if (node.data.editor) {
+            var definitions = newNode.data.editor = pimcore.object.classes[nodeType];
+            var editorType = node.data.editor.type;
+            var editor = definitions[editorType];
+
+            newNode.data.editor = new editor(newNode, theData);
+        }
+
+        if (nodeType == "data") {
+            var availableFields = newNode.data.editor.availableSettingsFields;
+            for (var i = 0; i < availableFields.length; i++) {
+                var field = availableFields[i];
+                if (node.data.editor.datax[field]) {
+                    if (field != "name") {
+                        newNode.data.editor.datax[field] = node.data.editor.datax[field];
+                    }
+                }
+            }
+
+            newNode.data.editor.applySpecialData(node.data.editor);
+        }
+
+
+        var len = node.childNodes ? node.childNodes.length : 0;
+
+        var i = 0;
+
+        // Move child nodes across to the copy if required
+        for (i = 0; i < len; i++) {
+            var childNode = node.childNodes[i];
+            var clonedChildNode = this.cloneNode(tree, childNode);
+
+            newNode.appendChild(clonedChildNode);
+        }
+        return newNode;
+    },
+
+
+    copyNode: function(tree, record) {
+        if (!pimcore.classEditor) {
+            pimcore.classEditor = {};
+        }
+
+        var newNode = this.cloneNode(tree, record);
+        pimcore.classEditor.clipboard = newNode;
+
+    },
+
+    dropNode: function(tree, record) {
+        var node = pimcore.classEditor.clipboard;
+        var newNode = this.cloneNode(tree, node);
+
+        record.appendChild(newNode);
+        tree.updateLayout();
+    },
+
 
     setCurrentNode: function (cn) {
         this.currentNode = cn;
@@ -551,6 +663,9 @@ pimcore.object.classes.klass = Class.create({
             disabled: !this.data.allowInherit
         });
 
+        var getPhpClassName = function (name) {
+            return "Pimcore\\Model\\Object\\" + ucfirst(name);
+        };
 
         this.rootPanel = new Ext.form.FormPanel({
             title: t("basic_configuration"),
@@ -565,7 +680,22 @@ pimcore.object.classes.klass = Class.create({
                     fieldLabel: t("name"),
                     name: "name",
                     width: 500,
-                    value: this.data.name
+                    enableKeyEvents: true,
+                    value: this.data.name,
+                    listeners: {
+                        keyup: function (el) {
+                            this.rootPanel.getComponent("phpClassName").setValue(getPhpClassName(el.getValue()))
+                        }.bind(this)
+                    }
+                },
+                {
+                    xtype: "textfield",
+                    fieldLabel: t("PHP Class Name"),
+                    name: "phpClassName",
+                    itemId: "phpClassName",
+                    width: 500,
+                    disabled: true,
+                    value: getPhpClassName(this.data.name)
                 },
                 {
                     xtype: "textarea",
@@ -583,6 +713,13 @@ pimcore.object.classes.klass = Class.create({
                     name: "parentClass",
                     width: 600,
                     value: this.data.parentClass
+                },
+                {
+                    xtype: "textfield",
+                    fieldLabel: t("use_traits"),
+                    name: "useTraits",
+                    width: 600,
+                    value: this.data.useTraits
                 },
                 {
                     xtype: "textfield",
@@ -606,6 +743,13 @@ pimcore.object.classes.klass = Class.create({
                     name: "previewUrl",
                     width: 600,
                     value: this.data.previewUrl
+                },
+                {
+                    xtype: "textfield",
+                    fieldLabel: t("group"),
+                    name: "group",
+                    width: 600,
+                    value: this.data.group
                 },
                 {
                     xtype: "displayfield",
@@ -695,7 +839,8 @@ pimcore.object.classes.klass = Class.create({
             type: "layout",
             iconCls: "pimcore_icon_" + type,
             leaf: false,
-            expandable: false
+            expandable: false,
+            expanded: true
         };
         newNode = this.appendChild(newNode);
 
@@ -735,12 +880,13 @@ pimcore.object.classes.klass = Class.create({
             iconCls: "pimcore_icon_" + type
         };
 
-        newNode = this.appendChild(newNode);
+        if (type == "localizedfields") {
+            newNode.leaf = false;
+            newNode.expanded = true;
+            newNode.expandable = false;
+        }
 
-        //to hide or show the expanding icon depending if childs are available or not
-        newNode.addListener('move', function(node, oldParent, newParent) {
-            newParent.set('expandable', true);
-        });
+        newNode = this.appendChild(newNode);
 
         var editor = new pimcore.object.classes.data[type](newNode, initData);
         newNode.set("editor", editor);
@@ -752,7 +898,7 @@ pimcore.object.classes.klass = Class.create({
 
     changeDataType: function (tree, record, type, initData, removeExisting) {
         try {
-           record.data.editor.applyData();
+            this.saveCurrentNode();
 
             var nodeLabel = record.data.text;
 
@@ -784,6 +930,7 @@ pimcore.object.classes.klass = Class.create({
             }
 
 
+            var parentNode = record.parentNode;
 
             var newNode = {
                 text: nodeLabel,
@@ -793,6 +940,8 @@ pimcore.object.classes.klass = Class.create({
                 //,
                 //listeners: this.getTreeNodeListeners()
             };
+
+            newNode = parentNode.createNode(newNode);
 
             if (!removeExisting) {
                 theData.name = nodeLabel;
@@ -814,7 +963,7 @@ pimcore.object.classes.klass = Class.create({
             newNode.data.editor = editor;
             newNode.data.editor.applySpecialData(record.data.editor);
 
-            var parentNode = record.parentNode;
+
             if (removeExisting) {
                 parentNode.removeChild(record);
 
@@ -966,8 +1115,10 @@ pimcore.object.classes.klass = Class.create({
         try {
             var res = Ext.decode(response.responseText);
             if(res.success) {
+                // refresh all class stores
                 this.parentPanel.tree.getStore().load();
                 pimcore.globalmanager.get("object_types_store").load();
+                pimcore.globalmanager.get("object_types_store_create").load();
 
                 // set the current modification date, to detect modifcations on the class which are not made here
                 this.data.modificationDate = res['class'].modificationDate;

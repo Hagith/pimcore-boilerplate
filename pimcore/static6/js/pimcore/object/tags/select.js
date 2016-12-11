@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.select");
@@ -98,23 +97,17 @@ pimcore.object.tags.select = Class.create(pimcore.object.tags.abstract, {
     },
 
     getGridColumnFilter: function(field) {
-        var selectFilterFields = [];
-
-        var store = new Ext.data.JsonStore({
-            autoDestroy: true,
-            root: 'options',
+        var store = Ext.create('Ext.data.JsonStore', {
             fields: ['key',"value"],
-            data: field.layout
-        });
-
-        store.each(function (rec) {
-            selectFilterFields.push(rec.data.value);
+            data: field.layout.options
         });
 
         return {
             type: 'list',
             dataIndex: field.key,
-            options: selectFilterFields
+            labelField: "key",
+            idField: "value",
+            options: store
         };
     },
 
@@ -132,15 +125,17 @@ pimcore.object.tags.select = Class.create(pimcore.object.tags.abstract, {
             restrictTo = this.fieldConfig.restrictTo.split(",");
         }
 
-        for (var i = 0; i < this.fieldConfig.options.length; i++) {
-            var value = this.fieldConfig.options[i].value;
-            if (restrictTo) {
-                if (!in_array(value, restrictTo)) {
-                    continue;
+        if (this.fieldConfig.options) {
+            for (var i = 0; i < this.fieldConfig.options.length; i++) {
+                var value = this.fieldConfig.options[i].value;
+                if (restrictTo) {
+                    if (!in_array(value, restrictTo)) {
+                        continue;
+                    }
                 }
+                store.push([value, ts(this.fieldConfig.options[i].key)]);
+                validValues.push(value);
             }
-            store.push([value, ts(this.fieldConfig.options[i].key)]);
-            validValues.push(value);
         }
 
         var options = {

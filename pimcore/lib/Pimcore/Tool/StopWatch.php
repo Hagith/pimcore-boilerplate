@@ -2,39 +2,40 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
 
-class StopWatch {
+class StopWatch
+{
 
     /**
      * @var array
      */
-    protected static $startTime = array();
+    protected static $startTime = [];
 
     /**
      * @var array
      */
-    protected static $laps = array();
+    protected static $laps = [];
 
     /**
      * @param $component string
      * @static
      * @return void
      */
-    public static function start ($component = 'default') {
+    public static function start($component = 'default')
+    {
         self::$startTime[$component] = self::microtime_float();
-        self::$laps[$component] = array();
+        self::$laps[$component] = [];
     }
 
     /**
@@ -43,7 +44,8 @@ class StopWatch {
      * @param string $component
      * @return void
      */
-    public static function lap ($label,$component = 'default') {
+    public static function lap($label, $component = 'default')
+    {
         self::$laps[$component][$label] = self::microtime_float();
     }
 
@@ -53,7 +55,8 @@ class StopWatch {
      * @param string $component
      * @return string
      */
-    public static function getTime($html = false, $component = 'default') {
+    public static function getTime($html = false, $component = 'default')
+    {
         $text = "";
 
         $lastLap = self::$startTime[$component];
@@ -69,6 +72,7 @@ class StopWatch {
         if ($html) {
             $text = "<pre>" . $text . "</pre>";
         }
+
         return $text;
     }
 
@@ -78,16 +82,17 @@ class StopWatch {
      * @param bool $html
      * @return void
      */
-    public static function display($html = false, $component = 'default') {
-        echo self::getTime($html,$component);
+    public static function display($html = false, $component = 'default')
+    {
+        echo self::getTime($html, $component);
     }
 
     /**
      * @static
      * @return float
      */
-    public static function microtime_float() {
-        list($usec, $sec) = explode(" ", microtime());
-        return ((float)$usec + (float)$sec);
+    public static function microtime_float()
+    {
+        return microtime(true);
     }
 }

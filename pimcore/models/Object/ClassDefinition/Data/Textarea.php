@@ -2,25 +2,24 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Object|Class
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Object\ClassDefinition\Data;
 
 use Pimcore\Model;
 
-class Textarea extends Model\Object\ClassDefinition\Data {
-
+class Textarea extends Model\Object\ClassDefinition\Data
+{
     use Model\Object\ClassDefinition\Data\Extension\Text;
 
     /**
@@ -64,32 +63,38 @@ class Textarea extends Model\Object\ClassDefinition\Data {
     /**
      * @return integer
      */
-    public function getWidth() {
+    public function getWidth()
+    {
         return $this->width;
     }
 
     /**
      * @return integer
      */
-    public function getHeight() {
+    public function getHeight()
+    {
         return $this->height;
     }
 
     /**
      * @param integer $width
-     * @return void
+     * @return $this
      */
-    public function setWidth($width) {
+    public function setWidth($width)
+    {
         $this->width = $this->getAsIntegerCast($width);
+
         return $this;
     }
 
     /**
      * @param integer $height
-     * @return void
+     * @return $this
      */
-    public function setHeight($height) {
+    public function setHeight($height)
+    {
         $this->height = $this->getAsIntegerCast($height);
+
         return $this;
     }
 
@@ -98,18 +103,23 @@ class Textarea extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForResource($data, $object = null) {
+    public function getDataForResource($data, $object = null, $params = [])
+    {
         return $data;
     }
 
     /**
      * @see Object\ClassDefinition\Data::getDataFromResource
      * @param string $data
+     * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromResource($data) {
+    public function getDataFromResource($data, $object = null, $params = [])
+    {
         return $data;
     }
 
@@ -117,9 +127,11 @@ class Textarea extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForQueryResource
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForQueryResource($data, $object = null) {
+    public function getDataForQueryResource($data, $object = null, $params = [])
+    {
         return $data;
     }
 
@@ -128,19 +140,23 @@ class Textarea extends Model\Object\ClassDefinition\Data {
      * @see Object\ClassDefinition\Data::getDataForEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataForEditmode($data, $object = null) {
-        return $this->getDataForResource($data, $object);
+    public function getDataForEditmode($data, $object = null, $params = [])
+    {
+        return $this->getDataForResource($data, $object, $params);
     }
 
     /**
      * @see Model\Object\ClassDefinition\Data::getDataFromEditmode
      * @param string $data
      * @param null|Model\Object\AbstractObject $object
+     * @param mixed $params
      * @return string
      */
-    public function getDataFromEditmode($data, $object = null) {
+    public function getDataFromEditmode($data, $object = null, $params = [])
+    {
         return $data;
     }
 
@@ -148,17 +164,20 @@ class Textarea extends Model\Object\ClassDefinition\Data {
      * a image URL. See the ObjectMerger plugin documentation for details
      * @param $data
      * @param null $object
+     * @param mixed $params
      * @return array|string
      */
-    public function getDiffVersionPreview($data, $object = null) {
+    public function getDiffVersionPreview($data, $object = null, $params = [])
+    {
         if ($data) {
-            $value = array();
+            $value = [];
             $data = str_replace("\r\n", "<br>", $data);
             $data = str_replace("\n", "<br>", $data);
             $data = str_replace("\r", "<br>", $data);
 
             $value["html"] = $data;
             $value["type"] = "html";
+
             return $value;
         } else {
             return "";

@@ -15,4 +15,17 @@ website/var/versions/*
 node_modules
 vendor
 
+# tests
+/tests/output/*
+/tests/tmp/*
+
+# composer
+/composer.phar
+
+# misc
+/php-cs-fixer.phar
+
+# PhpStorm / IDEA
 .idea/workspace.xml
+# NetBeans
+nbproject

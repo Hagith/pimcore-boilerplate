@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document\Tag\Areablock;
@@ -37,11 +36,11 @@ class Item
     protected $index;
 
     /**
-     * @param Model\Document\Page $doc
-     * @param               $name
-     * @param               $index
+     * @param Model\Document\PageSnippet $doc
+     * @param string                     $name
+     * @param int                        $index
      */
-    public function __construct(Model\Document\Page $doc, $name, $index)
+    public function __construct(Model\Document\PageSnippet $doc, $name, $index)
     {
         $this->doc = $doc;
         $this->name = $name;
@@ -57,8 +56,8 @@ class Item
     public function getElement($name)
     {
         $id = sprintf('%s%s%d', $name, $this->name, $this->index);
-        $element = $this->doc->getElement( $id );
-        $element->suffixes = array( $this->name );
+        $element = $this->doc->getElement($id);
+        $element->suffixes = [ $this->name ];
 
         return $element;
     }
@@ -72,10 +71,9 @@ class Item
     public function __call($func, $args)
     {
         $element = $this->getElement($args[0]);
-        $class = "\\Pimcore\\Model\\Document\\Tag\\" . str_replace('get', '', $func);
+        $class = "Pimcore\\Model\\Document\\Tag\\" . str_replace('get', '', $func);
 
-        if(!strcasecmp(get_class($element), $class))
-        {
+        if (!strcasecmp(get_class($element), $class)) {
             return $element;
         }
     }

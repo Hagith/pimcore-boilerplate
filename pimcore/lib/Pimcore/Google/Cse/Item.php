@@ -2,20 +2,20 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Google\Cse;
 
-class Item {
+class Item
+{
 
     /**
      * @var array
@@ -81,8 +81,8 @@ class Item {
     /**
      * @param array $data
      */
-    public function __construct($data) {
-
+    public function __construct($data)
+    {
         $this->setRaw($data);
         $this->setValues($data);
     }
@@ -91,25 +91,29 @@ class Item {
      * @param array $data
      * @return $this
      */
-    public function setValues($data = array()) {
+    public function setValues($data = [])
+    {
         if (is_array($data) && count($data) > 0) {
             foreach ($data as $key => $value) {
-                $this->setValue($key,$value);
+                $this->setValue($key, $value);
             }
         }
+
         return $this;
     }
 
     /**
      * @param  $key
      * @param  $value
-     * @return void
+     * @return $this
      */
-    public function setValue($key, $value) {
+    public function setValue($key, $value)
+    {
         $method = "set" . $key;
         if (method_exists($this, $method)) {
             $this->$method($value);
         }
+
         return $this;
     }
 
@@ -120,6 +124,7 @@ class Item {
     public function setDisplayLink($displayLink)
     {
         $this->displayLink = $displayLink;
+
         return $this;
     }
 
@@ -138,6 +143,7 @@ class Item {
     public function setDocument($document)
     {
         $this->document = $document;
+
         return $this;
     }
 
@@ -156,6 +162,7 @@ class Item {
     public function setFormattedUrl($formattedUrl)
     {
         $this->formattedUrl = $formattedUrl;
+
         return $this;
     }
 
@@ -174,6 +181,7 @@ class Item {
     public function setHtmlFormattedUrl($htmlFormattedUrl)
     {
         $this->htmlFormattedUrl = $htmlFormattedUrl;
+
         return $this;
     }
 
@@ -192,6 +200,7 @@ class Item {
     public function setHtmlSnippet($htmlSnippet)
     {
         $this->htmlSnippet = $htmlSnippet;
+
         return $this;
     }
 
@@ -210,6 +219,7 @@ class Item {
     public function setHtmlTitle($htmlTitle)
     {
         $this->htmlTitle = $htmlTitle;
+
         return $this;
     }
 
@@ -228,6 +238,7 @@ class Item {
     public function setImage($image)
     {
         $this->image = $image;
+
         return $this;
     }
 
@@ -246,6 +257,7 @@ class Item {
     public function setLink($link)
     {
         $this->link = $link;
+
         return $this;
     }
 
@@ -264,6 +276,7 @@ class Item {
     public function setRaw($raw)
     {
         $this->raw = $raw;
+
         return $this;
     }
 
@@ -282,6 +295,7 @@ class Item {
     public function setSnippet($snippet)
     {
         $this->snippet = $snippet;
+
         return $this;
     }
 
@@ -300,6 +314,7 @@ class Item {
     public function setTitle($title)
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -318,6 +333,7 @@ class Item {
     public function setType($type)
     {
         $this->type = $type;
+
         return $this;
     }
 

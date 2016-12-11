@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.video");
@@ -26,14 +25,13 @@ pimcore.document.tags.video = Class.create(pimcore.document.tag, {
         this.setupWrapper();
 
         var element = Ext.get("pimcore_video_" + name);
-        element.insertHtml("afterBegin", '<div class="pimcore_video_edit_button"></div>');
 
         var button = new Ext.Button({
             iconCls: "pimcore_icon_edit_video",
             cls: "pimcore_edit_link_button",
             handler: this.openEditor.bind(this)
         });
-        button.render(Ext.get(Ext.query(".pimcore_video_edit_button", element.dom)[0]));
+        button.render(element.insertHtml("afterBegin", '<div class="pimcore_video_edit_button"></div>'));
 
         var emptyContainer = element.query(".pimcore_tag_video_empty")[0];
         if(emptyContainer) {

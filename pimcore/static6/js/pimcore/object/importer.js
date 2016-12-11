@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.importer");
@@ -28,8 +27,7 @@ pimcore.object.importer = Class.create({
 
     showUpload: function () {
 
-        pimcore.helpers.uploadDialog('/admin/object-helper/import-upload/?pimcore_admin_sid='
-                        + pimcore.settings.sessionId + "&id=" + this.importId, "Filedata", function(res) {
+        pimcore.helpers.uploadDialog('/admin/object-helper/import-upload/?id=' + this.importId, "Filedata", function(res) {
             this.getFileInfo();
         }.bind(this), function () {
             Ext.MessageBox.alert(t("error"), t("error"));
@@ -186,16 +184,15 @@ pimcore.object.importer = Class.create({
                     }.bind(this),
                     flex: 1
                 },
-                {header: t("target"),sortable: false, dataIndex: "target", editor: new Ext.form.ComboBox({
+                {header: t("target"), sortable: false, dataIndex: "target", flex: 1, editor: new Ext.form.ComboBox({
                     store: targetFields,
                     mode: "local",
                     triggerAction: "all",
-                    flex: 1
+                    valueField: 'value',
+                    displayField: 'text'
                 })}
             ],
-            viewConfig: {
-                forceFit: true
-            }
+            forceFit: true
         });
 
         var filenameMappingStore = sourceFields;
@@ -223,6 +220,8 @@ pimcore.object.importer = Class.create({
                 {
                     xtype: "checkbox",
                     name: "overwrite",
+                    inputValue: "true",
+                    uncheckedValue: "false",
                     fieldLabel: t("overwrite_object_with_same_key")
                 },
                 {
@@ -310,10 +309,9 @@ pimcore.object.importer = Class.create({
             parentId: this.parentId
         };
 
-        this.jobRequest = mergeObject(this.jobRequest, this.settingsForm.getForm().getFieldValues());
+        this.jobRequest = mergeObject(this.jobRequest, this.settingsForm.getForm().getValues());
 
         this.dataWin.close();
-
 
         this.importProgressBar = new Ext.ProgressBar({
             text: t('Initializing'),

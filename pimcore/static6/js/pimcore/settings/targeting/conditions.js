@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 /* CONDITION TYPES */
@@ -170,6 +169,7 @@ pimcore.settings.targeting.conditions = {
                 mode: "local",
                 width: 300,
                 value: data.browser,
+                editable: false,
                 triggerAction: "all"
             },{
                 xtype: "hidden",
@@ -401,7 +401,7 @@ pimcore.settings.targeting.conditions = {
                         bbar: [searchfield,{
                             xtype: "button",
                             text: t("search"),
-                            icon: "/pimcore/static6/img/icon/magnifier.png",
+                            iconCls: "pimcore_icon_search",
                             handler: function () {
 
                                 var geocoder = new google.maps.Geocoder();
@@ -419,14 +419,14 @@ pimcore.settings.targeting.conditions = {
                         },"->",{
                             xtype: "button",
                             text: t("cancel"),
-                            icon: "/pimcore/static6/img/icon/cancel.png",
+                            iconCls: "pimcore_icon_cancel",
                             handler: function () {
                                 searchWindow.close();
                             }
                         },{
                             xtype: "button",
-                            text: "OK",
-                            icon: "/pimcore/static6/img/icon/tick.png",
+                            text: t("OK"),
+                            iconCls: "pimcore_icon_save",
                             handler: function () {
                                 var point = marker.getPosition();
                                 latitude.setValue(point.lat());
@@ -638,7 +638,7 @@ pimcore.settings.targeting.conditions = {
             bodyStyle: "padding: 10px 30px 10px 30px; min-height:40px;",
             tbar: this.getTopBar(niceName, myId, panel, data),
             items: [{
-                xtype:'spinnerfield',
+                xtype:'numberfield',
                 fieldLabel: t("number"),
                 name: "number",
                 value: data.number,
@@ -672,19 +672,19 @@ pimcore.settings.targeting.conditions = {
             bodyStyle: "padding: 10px 30px 10px 30px; min-height:40px;",
             tbar: this.getTopBar(niceName, myId, panel, data),
             items: [{
-                xtype:'spinnerfield',
+                xtype:'numberfield',
                 fieldLabel: t("hours"),
                 name: "hours",
                 value: data.hours ? data.hours : 0,
                 width: 200
             },{
-                xtype:'spinnerfield',
+                xtype:'numberfield',
                 fieldLabel: t("minutes"),
                 name: "minutes",
                 value: data.minutes ? data.minutes : 0,
                 width: 200
             },{
-                xtype:'spinnerfield',
+                xtype:'numberfield',
                 fieldLabel: t("seconds"),
                 name: "seconds",
                 value: data.seconds ? data.seconds : 0,
@@ -752,7 +752,7 @@ pimcore.settings.targeting.conditions = {
             bodyStyle: "padding: 10px 30px 10px 30px; min-height:40px;",
             tbar: this.getTopBar(niceName, myId, panel, data),
             items: [{
-                xtype:'spinnerfield',
+                xtype:'numberfield',
                 fieldLabel: t("number"),
                 name: "number",
                 value: data.number,

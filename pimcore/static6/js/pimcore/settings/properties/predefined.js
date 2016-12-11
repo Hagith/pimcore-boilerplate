@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.properties.predefined");
@@ -54,7 +53,6 @@ pimcore.settings.properties.predefined = Class.create({
 
     getRowEditor: function () {
 
-        var itemsPerPage = 20;
         var url = '/admin/settings/properties?';
 
         this.store = pimcore.helpers.grid.buildDefaultStore(
@@ -71,12 +69,12 @@ pimcore.settings.properties.predefined = Class.create({
                 {name: 'inheritable'},
                 {name: 'creationDate'},
                 {name: 'modificationDate'}
-            ],
-            itemsPerPage
+            ], null, {
+                remoteSort: false,
+                remoteFilter: false
+            }
         );
         this.store.setAutoSync(true);
-        this.pagingtoolbar = pimcore.helpers.grid.buildDefaultPagingToolbar(this.store, itemsPerPage);
-
 
         this.filterField = new Ext.form.TextField({
             width: 200,
@@ -131,7 +129,7 @@ pimcore.settings.properties.predefined = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('delete'),
-                    icon: "/pimcore/static6/img/icon/cross.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/delete.svg",
                     handler: function (grid, rowIndex) {
                         grid.getStore().removeAt(rowIndex);
                     }.bind(this)
@@ -141,7 +139,7 @@ pimcore.settings.properties.predefined = Class.create({
                 width: 30,
                 items: [{
                     tooltip: t('translate'),
-                    icon: "/pimcore/static6/img/icon/translation.png",
+                    icon: "/pimcore/static6/img/flat-color-icons/collaboration.svg",
                     handler: function(grid, rowIndex){
                         var rec = grid.getStore().getAt(rowIndex);
                         try {
@@ -188,6 +186,7 @@ pimcore.settings.properties.predefined = Class.create({
             autoScroll: true,
             store: this.store,
             columnLines: true,
+            bodyCls: "pimcore_editable_grid",
             stripeRows: true,
             trackMouseOver: true,
             columns : propertiesColumns,
@@ -195,7 +194,6 @@ pimcore.settings.properties.predefined = Class.create({
             plugins: [
                 this.cellEditing
             ],
-            bbar: this.pagingtoolbar,
             tbar: [
                 {
                     text: t('add'),

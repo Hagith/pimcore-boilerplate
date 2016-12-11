@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.settings.translations");
@@ -363,7 +362,7 @@ pimcore.settings.translations = Class.create({
             Ext.MessageBox.confirm("", t("filter_active_message"), function (buttonValue) {
                 if (buttonValue == "yes") {
                     var queryString = "searchString=" + this.filterField.getValue();
-                    queryString += "&" + Ext.urlEncode(this.gridFilters.buildQuery(this.gridFilters.getFilterData()));
+                    queryString += "&extjs3=1&" + Ext.urlEncode(this.gridFilters.buildQuery(this.gridFilters.getFilterData()));
                     pimcore.helpers.download(Ext.urlAppend(this.exportUrl, queryString));
                 } else {
                     pimcore.helpers.download(this.exportUrl);

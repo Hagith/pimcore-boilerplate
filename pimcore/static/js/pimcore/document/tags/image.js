@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.image");
@@ -312,7 +311,7 @@ pimcore.document.tags.image = Class.create(pimcore.document.tag, {
         } else {
             if (typeof this.options.thumbnail == "string") {
                 path = "/admin/asset/get-image-thumbnail/id/" + this.datax.id + "/thumbnail/" + this.options.thumbnail
-                    + "?" + Ext.urlEncode(this.datax);
+                    + "?" + Ext.urlEncode(this.datax) + "&pimcore_editmode=1";
             } else if (this.options.thumbnail.width || this.options.thumbnail.height) {
                 path = "/admin/asset/get-image-thumbnail/id/" + this.datax.id + "/width/"
                     + this.options.thumbnail.width + "/height/" + this.options.thumbnail.height + "?"

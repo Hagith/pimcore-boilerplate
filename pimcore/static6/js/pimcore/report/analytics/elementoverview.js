@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.report.analytics.elementoverview");
@@ -29,7 +28,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
     },
 
     getIconCls: function () {
-        return "pimcore_icon_analytics_overview";
+        return "pimcore_icon_analytics";
     },
 
     getPanel: function () {
@@ -70,7 +69,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
         var summary = new Ext.grid.GridPanel({
             store: this.summaryStore,
             flex: 1,
-            height: 300,
+            manageHeight: false,
             autoScroll: true,
             hideHeaders: true,
             columns: [
@@ -154,12 +153,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
                 autoScroll: true,
                 items: [{
                     layout:'hbox',
-                    //layoutConfig: {
-                    //    padding: 10,
-                    //    align: "stretch"
-                    //},
-                    border: true,
-                    height: 300,
+                    border: false,
                     items: [summary,
                         {
                         xtype: 'polar',
@@ -167,7 +161,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
                         height: 300,
                         store: this.sourceStore,
                         flex: 1,
-                        autoScroll: true,
+                        scrollable: false,
                         series: [{
                             type: 'pie',
                             angleField: 'pageviews',
@@ -222,7 +216,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
                         fieldLabel: t('from'),
                         name: 'dateFrom',
                         value: fromDate,
-                        itemCls: "pimcore_analytics_filter_form_item"
+                        cls: "pimcore_analytics_filter_form_item"
                     }
                     ,
                     {
@@ -230,7 +224,7 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
                         fieldLabel: t('to'),
                         name: 'dateTo',
                         value: today,
-                        itemCls: "pimcore_analytics_filter_form_item"
+                        cls: "pimcore_analytics_filter_form_item"
                     },{
                         xtype: "combo",
                         store: pimcore.globalmanager.get("sites"),
@@ -239,12 +233,12 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
                         triggerAction: "all",
                         name: "site",
                         fieldLabel: t("site"),
-                        itemCls: "pimcore_analytics_filter_form_item"
+                        cls: "pimcore_analytics_filter_form_item"
                     },{
                         xtype: "button",
                         text: t("apply"),
-                        iconCls: "pimcore_icon_analytics_apply",
-                        itemCls: "pimcore_analytics_filter_form_item",
+                        iconCls: "pimcore_icon_save",
+                        cls: "pimcore_analytics_filter_form_item",
                         handler: function () {
                             
                             var values = this.filterPanel.getForm().getFieldValues();
@@ -363,5 +357,5 @@ pimcore.report.analytics.elementoverview = Class.create(pimcore.report.abstract,
 });
 
 // add to report broker
-pimcore.report.broker.addGroup("analytics", "google_analytics", "pimcore_icon_report_analytics_group");
+pimcore.report.broker.addGroup("analytics", "google_analytics", "pimcore_icon_analytics");
 pimcore.report.broker.addReport(pimcore.report.analytics.elementoverview, "analytics");

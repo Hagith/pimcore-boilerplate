@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.tags.href");
@@ -125,7 +124,7 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
         if (this.fieldConfig.assetsAllowed) {
             items.push({
                 xtype: "button",
-                iconCls: "pimcore_icon_upload_single",
+                iconCls: "pimcore_icon_upload",
                 cls: "pimcore_inline_upload",
                 style: "margin-left: 5px",
                 handler: this.uploadDialog.bind(this)
@@ -141,6 +140,11 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
             border: false,
             style: {
                 padding: 0
+            },
+            listeners: {
+                afterrender: function() {
+                    this.requestNicePathData();
+                }.bind(this)
             }
         });
 
@@ -153,7 +157,8 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
         var href = {
             fieldLabel: this.fieldConfig.title,
             name: this.fieldConfig.name,
-            cls: "object_field"
+            cls: "object_field",
+            labelWidth: this.fieldConfig.labelWidth ? this.fieldConfig.labelWidth : 100
         };
 
         if (this.data) {
@@ -167,6 +172,7 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
         } else {
             href.width = 300;
         }
+        href.width = href.labelWidth + href.width;
         href.disabled = true;
 
         this.component = new Ext.form.TextField(href);
@@ -182,6 +188,11 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
             border: false,
             style: {
                 padding: 0
+            },
+            listeners: {
+                afterrender: function() {
+                    this.requestNicePathData();
+                }.bind(this)
             }
         });
 
@@ -198,8 +209,8 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
                     this.data.type = "asset";
                     this.data.subtype = data["type"];
                     this.dataChanged = true;
-
                     this.component.setValue(data["fullpath"]);
+                    this.requestNicePathData();
                 }
             } catch (e) {
                 console.log(e);
@@ -217,6 +228,7 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
             this.data.subtype = data.type;
             this.dataChanged = true;
             this.component.setValue(data.path);
+            this.requestNicePathData();
 
             return true;
         } else {
@@ -260,7 +272,7 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
             menu.add(new Ext.menu.Item({
                 text: t('upload'),
                 cls: "pimcore_inline_upload",
-                iconCls: "pimcore_icon_upload_single",
+                iconCls: "pimcore_icon_upload",
                 handler: function (item) {
                     item.parentMenu.destroy();
                     this.uploadDialog();
@@ -322,8 +334,8 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
         this.data.type = data.type;
         this.data.subtype = data.subtype;
         this.dataChanged = true;
-
         this.component.setValue(data.fullpath);
+        this.requestNicePathData();
     },
 
     openElement: function () {
@@ -407,5 +419,42 @@ pimcore.object.tags.href = Class.create(pimcore.object.tags.abstract, {
             return false;
         }
         return true;
+    },
+
+    requestNicePathData: function() {
+        if (this.data.id) {
+            var targets = new Ext.util.Collection();
+            var target = Ext.clone(this.data)
+            target.nicePathKey = target.type + "_" + target.id;
+            var targetRecord = {
+                id: 0,
+                data: target
+            };
+            targets.add(targetRecord);
+
+            pimcore.helpers.requestNicePathData(
+                {
+                    type: "object",
+                    id: this.object.id
+                },
+                targets,
+                {
+                    idProperty: "nicePathKey"
+                },
+                this.fieldConfig,
+                this.getContext(),
+                function() {
+                    this.component.addCls("grid_nicepath_requested");
+                }.bind(this),
+                function (target, responseData) {
+                    this.component.removeCls("grid_nicepath_requested");
+
+                    if (typeof responseData[target["nicePathKey"]] !== "undefined") {
+                        this.component.setValue(responseData[target["nicePathKey"]]);
+                    }
+
+                }.bind(this, target)
+            );
+        }
     }
 });

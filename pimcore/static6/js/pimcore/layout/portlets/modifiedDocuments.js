@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.layout.portlets.modifiedDocuments");
@@ -24,7 +23,7 @@ pimcore.layout.portlets.modifiedDocuments = Class.create(pimcore.layout.portlets
     },
 
     getIcon: function () {
-        return "pimcore_icon_portlet_modified_documents";
+        return "pimcore_icon_document";
     },
 
     getLayout: function (portletId) {
@@ -48,7 +47,7 @@ pimcore.layout.portlets.modifiedDocuments = Class.create(pimcore.layout.portlets
             store: store,
             columns: [
                 {header: t('path'), sortable: false, dataIndex: 'path', flex: 1},
-                {header: t('date'), width: 130, sortable: false, renderer: function (d) {
+                {header: t('date'), width: 150, sortable: false, renderer: function (d) {
                     var date = new Date(d * 1000);
                     return Ext.Date.format(date,"Y-m-d H:i:s");
                 }, dataIndex: 'date'}

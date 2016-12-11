@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.element.selector.asset");
@@ -30,6 +29,10 @@ pimcore.element.selector.asset = Class.create(pimcore.element.selector.abstract,
             },
             fields: ["id","fullpath","type","subtype","filename"]
         });
+    },
+
+    getTabTitle: function() {
+        return "asset_search";
     },
 
     getForm: function () {
@@ -56,7 +59,7 @@ pimcore.element.selector.asset = Class.create(pimcore.element.selector.abstract,
                 handler: function () {
                     window.open("http://dev.mysql.com/doc/refman/5.6/en/fulltext-boolean.html");
                 },
-                iconCls: "pimcore_icon_menu_help"
+                iconCls: "pimcore_icon_help"
             })]
         };
 
@@ -91,7 +94,7 @@ pimcore.element.selector.asset = Class.create(pimcore.element.selector.abstract,
             mode: "local",
             name: "subtype",
             triggerAction: "all",
-            forceSelection: true,
+            editable: false,
             value: selectedValue
         });
 

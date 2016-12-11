@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document\Tag\Block;
@@ -34,14 +33,14 @@ class Item
     /**
      * @var string[]
      */
-    protected $suffixes = array();
+    protected $suffixes = [];
 
     /**
-     * @param Model\Document\Page $doc
-     * @param int           $index
-     * @param array         $suffixes
+     * @param Model\Document\PageSnippet $doc
+     * @param int                        $index
+     * @param array                      $suffixes
      */
-    public function __construct(Model\Document\Page $doc, $index, array $suffixes)
+    public function __construct(Model\Document\PageSnippet $doc, $index, array $suffixes)
     {
         $this->doc = $doc;
         $this->index = $index;
@@ -57,19 +56,16 @@ class Item
     public function getElement($name)
     {
         $root = $name . implode('_', $this->suffixes);
-        foreach($this->suffixes as $item)
-        {
-            if(preg_match('#[^\d]{1}(?<index>[\d]+)$#i', $item, $match))
-            {
+        foreach ($this->suffixes as $item) {
+            if (preg_match('#[^\d]{1}(?<index>[\d]+)$#i', $item, $match)) {
                 $root .= $match['index'] . '_';
             }
         }
         $root .= $this->index;
         $id = $root;
 
-        $element = $this->doc->getElement( $id );
-        if($element)
-        {
+        $element = $this->doc->getElement($id);
+        if ($element) {
             $element->suffixes = $this->suffixes;
         }
 
@@ -86,14 +82,11 @@ class Item
     public function __call($func, $args)
     {
         $element = $this->getElement($args[0]);
-        $class = "\\Pimcore\\Model\\Document\\Tag\\" . str_replace('get', '', $func);
+        $class = "Pimcore\\Model\\Document\\Tag\\" . str_replace('get', '', $func);
 
-        if(!strcasecmp(get_class($element), $class))
-        {
+        if (!strcasecmp(get_class($element), $class)) {
             return $element;
-        }
-        else if($element === NULL)
-        {
+        } elseif ($element === null) {
             return new $class;
         }
     }

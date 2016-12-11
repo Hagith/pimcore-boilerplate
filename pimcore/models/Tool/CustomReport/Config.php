@@ -2,24 +2,27 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Tool
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Tool\CustomReport;
 
 use Pimcore\Model;
 
-class Config {
+/**
+ * @method \Pimcore\Model\Tool\CustomReport\Config\Dao getDao()
+ */
+class Config extends Model\AbstractModel
+{
 
     /**
      * @var string
@@ -34,12 +37,12 @@ class Config {
     /**
      * @var string[]
      */
-    public $dataSourceConfig = array();
+    public $dataSourceConfig = [];
 
     /**
      * @var array
      */
-    public $columnConfiguration = array();
+    public $columnConfiguration = [];
 
     /**
      * @var string
@@ -69,6 +72,11 @@ class Config {
     /**
      * @var string
      */
+    public $reportClass;
+
+    /**
+     * @var string
+     */
     public $chartType;
 
     /**
@@ -92,143 +100,49 @@ class Config {
     public $yAxis;
 
     /**
+     * @var int
+     */
+    public $modificationDate;
+
+    /**
+     * @var int
+     */
+    public $creationDate;
+
+    /**
      * @param $name
-     * @return Model\Tool\CustomReport\Config
-     * @throws \Exception
+     * @return null|Config
      */
-    public static function getByName ($name) {
-        $code = new self();
-        $code->setName($name);
-        if(!$code->load()) {
-            throw new \Exception("sql report definition : " . $name . " does not exist");
+    public static function getByName($name)
+    {
+        try {
+            $report = new self();
+            $report->getDao()->getByName($name);
+        } catch (\Exception $e) {
+            return null;
         }
 
-        return $code;
-    }
-
-    /**
-     * @static
-     * @return string
-     */
-    public static function getWorkingDir () {
-        $dir = PIMCORE_CONFIGURATION_DIRECTORY . "/sqlreport";
-        if(!is_dir($dir)) {
-            \Pimcore\File::mkdir($dir);
-        }
-
-        return $dir;
-    }
-
-
-    /**
-     * @return void
-     */
-    public function save () {
-
-        $arrayConfig = object2array($this);
-        $items = $arrayConfig["columnConfiguration"];
-        $arrayConfig["columnConfiguration"] = array("columnConfiguration" => $items);
-
-        if($arrayConfig["dataSourceConfig"]) {
-            $configArray = array();
-            foreach($arrayConfig["dataSourceConfig"] as $config) {
-                $configArray[] = json_encode($config);
-            }
-            $arrayConfig["dataSourceConfig"] = array("dataSourceConfig" => $configArray);
-        } else {
-            $arrayConfig["dataSourceConfig"] = array("dataSourceConfig" => array());
-        }
-
-        $items = $arrayConfig["yAxis"];
-        $arrayConfig["yAxis"] = array("yAxis" => $items);
-
-        $config = new \Zend_Config($arrayConfig);
-        $writer = new \Zend_Config_Writer_Xml(array(
-            "config" => $config,
-            "filename" => $this->getConfigFile()
-        ));
-        $writer->write();
-
-        return true;
-    }
-
-    /**
-     * @return void
-     */
-    public function load () {
-
-        $configXml = new \Zend_Config_Xml($this->getConfigFile());
-        $configArray = $configXml->toArray();
-
-        if(array_key_exists("columnConfiguration",$configArray) && is_array($configArray["columnConfiguration"]["columnConfiguration"])) {
-            if(array_key_exists("method",$configArray["columnConfiguration"]["columnConfiguration"])) {
-                $configArray["columnConfiguration"] = array($configArray["columnConfiguration"]["columnConfiguration"]);
-            } else {
-                $configArray["columnConfiguration"] = $configArray["columnConfiguration"]["columnConfiguration"];
-            }
-        } else {
-            $configArray["columnConfiguration"] = array("columnConfiguration" => array());
-        }
-
-        if(array_key_exists("dataSourceConfig",$configArray) && is_array($configArray["dataSourceConfig"])) {
-            $dataSourceConfig = array();
-            foreach($configArray["dataSourceConfig"] as $c) {
-                if($c) {
-                    $dataSourceConfig[] = json_decode($c);
-                }
-            }
-
-            $configArray["dataSourceConfig"] = $dataSourceConfig;
-        } else {
-            $configArray["dataSourceConfig"] = array();
-        }
-
-        if(array_key_exists("yAxis",$configArray) && is_array($configArray["yAxis"])) {
-            if(!is_array($configArray["yAxis"]["yAxis"])) {
-                $configArray["yAxis"] = array($configArray["yAxis"]["yAxis"]);
-            } else {
-                $configArray["yAxis"] = $configArray["yAxis"]["yAxis"];
-            }
-        }
-
-        // to preserve compatibility to older sql reports
-        if($configArray["sql"] && empty($configArray["dataSourceConfig"])) {
-            $legacy = new \stdClass();
-            $legacy->type = "sql";
-            $legacy->sql = $configArray["sql"];
-            $configArray["dataSourceConfig"][] = $legacy;
-        }
-
-        foreach ($configArray as $key => $value) {
-            $setter = "set" . ucfirst($key);
-            if(method_exists($this, $setter)) {
-                $this->$setter($value);
-            }
-        }
-
-        return true;
+        return $report;
     }
 
     /**
      * @return array
      */
-    public static function getReportsList () {
-        $dir = Model\Tool\CustomReport\Config::getWorkingDir();
+    public static function getReportsList()
+    {
+        $reports = [];
 
-        $reports = array();
-        $files = scandir($dir);
-        foreach ($files as $file) {
-            if(strpos($file, ".xml")) {
-                $name = str_replace(".xml", "", $file);
-                $reports[] = array(
-                    "id" => $name,
-                    "text" => $name
-                );
-            }
+        $list = new Config\Listing();
+        $items = $list->load();
+
+        foreach ($items as $item) {
+            $reports[] = [
+                "id" => $item->getName(),
+                "text" => $item->getName()
+            ];
         }
 
         return $reports;
-
     }
 
     /**
@@ -236,27 +150,12 @@ class Config {
      * @param null $fullConfig
      * @return mixed
      */
-    public static function getAdapter($configuration, $fullConfig = null) {
-
+    public static function getAdapter($configuration, $fullConfig = null)
+    {
         $type = $configuration->type ? ucfirst($configuration->type) : 'Sql';
         $adapter = "\\Pimcore\\Model\\Tool\\CustomReport\\Adapter\\{$type}";
+
         return new $adapter($configuration, $fullConfig);
-    }
-
-    /**
-     * @return void
-     */
-    public function delete() {
-        if(is_file($this->getConfigFile())) {
-            unlink($this->getConfigFile());
-        }
-    }
-
-    /**
-     * @return string
-     */
-    protected function getConfigFile () {
-        return self::getWorkingDir() . "/" . $this->getName() . ".xml";
     }
 
     /**
@@ -401,7 +300,18 @@ class Config {
      */
     public function getDataSourceConfig()
     {
-        return $this->dataSourceConfig;
+        if (is_array($this->dataSourceConfig) && isset($this->dataSourceConfig[0])) {
+            $dataSourceConfig = new \stdClass();
+            $dataSourceConfigArray = $this->dataSourceConfig[0];
+
+            foreach ($dataSourceConfigArray as $key => $value) {
+                $dataSourceConfig->$key = $value;
+            }
+
+            return $dataSourceConfig;
+        }
+
+        return null;
     }
 
     /**
@@ -484,4 +394,51 @@ class Config {
         return $this->pieLabelColumn;
     }
 
+    /**
+     * @return int
+     */
+    public function getModificationDate()
+    {
+        return $this->modificationDate;
+    }
+
+    /**
+     * @param int $modificationDate
+     */
+    public function setModificationDate($modificationDate)
+    {
+        $this->modificationDate = $modificationDate;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCreationDate()
+    {
+        return $this->creationDate;
+    }
+
+    /**
+     * @param int $creationDate
+     */
+    public function setCreationDate($creationDate)
+    {
+        $this->creationDate = $creationDate;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReportClass()
+    {
+        return $this->reportClass;
+    }
+
+    /**
+     * @param string $reportClass
+     */
+    public function setReportClass($reportClass)
+    {
+        $this->reportClass = $reportClass;
+    }
 }

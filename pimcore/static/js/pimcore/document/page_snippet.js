@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.page_snippet");
@@ -157,49 +156,6 @@ pimcore.document.page_snippet = Class.create(pimcore.document.document, {
                 scale: "medium",
                 handler: this.reload.bind(this)
             });
-
-            // extras menu
-            var extrasMenu = [];
-
-            // translation menu
-            if(pimcore.settings.google_translate_api_key) {
-                var translationMenu = [];
-                for (var p=0; p<pimcore.settings.websiteLanguages.length; p++) {
-
-                    translationMenu.push({
-                        text: pimcore.available_languages[pimcore.settings.websiteLanguages[p]],
-                        handler: function (lang) {
-                            Ext.Ajax.request({
-                                url: this.urlprefix + this.getType() + '/translate/language/' + lang,
-                                method: "post",
-                                params: this.getSaveData(),
-                                success: function () {
-                                    this.edit.reload(true);
-                                }.bind(this)
-                            });
-                        }.bind(this, pimcore.settings.websiteLanguages[p])
-                    });
-                }
-
-                if(translationMenu.length > 0) {
-                    extrasMenu.push({
-                        text: t("translate_content_to"),
-                        iconCls: "pimcore_icon_translations",
-                        hideOnClick: false,
-                        menu: translationMenu
-                    });
-                }
-            }
-
-            if(extrasMenu.length > 0) {
-                this.toolbarButtons.extras = new Ext.Button({
-                    text: t('extras'),
-                    iconCls: "pimcore_icon_extras_medium",
-                    scale: "medium",
-                    hideOnClick: false,
-                    menu: extrasMenu
-                });
-            }
 
             this.toolbarButtons.remove = new Ext.Button({
                 text: t('delete'),

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.edit");
@@ -38,7 +37,7 @@ pimcore.document.edit = Class.create({
             this.reloadInProgress = true;
             this.iframeName = 'document_iframe_' + this.document.id;
 
-            var html = '<iframe id="' + this.iframeName + '" width="100%" name="' + this.iframeName
+            var html = '<iframe id="' + this.iframeName + '" style="width: 100%;" name="' + this.iframeName
                                                     + '" src="' + this.getEditLink() + '" frameborder="0"></iframe>';
 
 
@@ -55,9 +54,9 @@ pimcore.document.edit = Class.create({
                 });
             };
 
-            var tbar = [{
-                text: t("refresh"),
+            var lbar = [{
                 iconCls: "pimcore_icon_reload",
+                tooltip: t("refresh"),
                 handler: this.reload.bind(this)
             },"-",{
                 tooltip: t("highlight_editable_elements"),
@@ -105,8 +104,6 @@ pimcore.document.edit = Class.create({
                     editable: false,
                     triggerAction: 'all',
                     width: 240,
-                    cls: "pimcore_icon_persona_select",
-                    emptyText: t("edit_content_for_persona"),
                     listeners: {
                         select: function (el) {
                             if(this.document.isDirty()) {
@@ -125,7 +122,14 @@ pimcore.document.edit = Class.create({
                     }
                 });
 
-                tbar.push("->", this.persona, {
+
+                lbar.push("->", {
+                    tooltip: t("edit_content_for_persona"),
+                    iconCls: "pimcore_icon_personas",
+                    arrowVisible: false,
+                    menuAlign: "tl",
+                    menu: [this.persona]
+                }, {
                     tooltip: t("clear_content_of_selected_persona"),
                     iconCls: "pimcore_icon_cleanup",
                     handler: cleanupFunction.bind(this)
@@ -137,12 +141,12 @@ pimcore.document.edit = Class.create({
                 id: "document_content_" + this.document.id,
                 html: html,
                 title: t('edit'),
-                autoScroll: true,
-                bodyStyle: "-webkit-overflow-scrolling:touch;",
+                scrollable: false,
+                bodyCls: "pimcore_overflow_scrolling",
                 forceLayout: true,
                 hideMode: "offsets",
-                iconCls: "pimcore_icon_tab_edit",
-                tbar: tbar
+                iconCls: "pimcore_icon_edit",
+                lbar: lbar
             };
 
             if(typeof additionalConfig == "object") {
@@ -150,7 +154,7 @@ pimcore.document.edit = Class.create({
             }
 
             this.layout = new Ext.Panel(config);
-            this.layout.on("resize", this.onLayoutResize.bind(this));
+            this.layout.on("resize", this.setLayoutFrameDimensions.bind(this));
 
             this.layout.on("afterrender", function () {
 
@@ -175,14 +179,10 @@ pimcore.document.edit = Class.create({
         return this.layout;
 
     },
-    
-    onLayoutResize: function (el, width, height, rWidth, rHeight) {
-        this.setLayoutFrameDimensions(width, height);
-    },
 
-    setLayoutFrameDimensions: function (width, height) {
+    setLayoutFrameDimensions: function (el, width, height, rWidth, rHeight) {
         Ext.get(this.iframeName).setStyle({
-            height: (height-51) + "px"
+            height: (height-7) + "px"
         });
     },
 

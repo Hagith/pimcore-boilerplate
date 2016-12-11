@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @copyright  Copyright (c) 2009-2013 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.objectsMetadata");
@@ -23,13 +22,19 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
         object: true,
         objectbrick: true,
         fieldcollection: true,
-        localizedfield: true
+        localizedfield: true,
+        classificationstore : false,
+        block: true
     },
 
     initialize: function (treeNode, initData) {
         this.type = "objectsMetadata";
 
         this.initData(initData);
+
+        if (typeof this.datax.lazyLoading == "undefined") {
+            this.datax.lazyLoading = true;
+        }
 
         // overwrite default settings
         this.availableSettingsFields = ["name","title","tooltip","mandatory","noteditable","invisible",
@@ -74,7 +79,8 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
                 fieldLabel: t("maximum_items"),
                 name: "maxItems",
                 value: this.datax.maxItems,
-                disabled: this.isInCustomLayoutEditor()
+                disabled: this.isInCustomLayoutEditor(),
+                minValue: 0
             },
             {
                 xtype: "checkbox",
@@ -96,6 +102,13 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
                 value: t('lazy_loading_warning'),
                 cls: "pimcore_extra_label_bottom",
                 style: "color:red; font-weight: bold;"
+            },
+            {
+                xtype: 'textfield',
+                width: 600,
+                fieldLabel: t("path_formatter_class"),
+                name: 'pathFormatterClass',
+                value: this.datax.pathFormatterClass
             }
         ]);
 
@@ -105,6 +118,7 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
             width: 400,
             store: pimcore.globalmanager.get("object_types_store"),
             valueField: 'id',
+            editable: true,
             displayField: 'text',
             fieldLabel: t('objectsMetadata_allowed_class'),
             name: 'allowedClassId',
@@ -243,6 +257,7 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
                 allowBlank: false,
                 lazyRender: true,
                 mode: 'local',
+                editable: false,
                 store: new Ext.data.ArrayStore({
                     id: 'value',
                     fields: [
@@ -256,7 +271,7 @@ pimcore.object.classes.data.objectsMetadata = Class.create(pimcore.object.classe
                 displayField: 'label'
             });
 
-            typesColumns.push({header: t("type"), width: 70, sortable: true, dataIndex: 'type', editor: typeComboBox,
+            typesColumns.push({header: t("type"), width: 100, sortable: true, dataIndex: 'type', editor: typeComboBox,
                 renderer: function(value) {
                     return types[value];
                 }});

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.nonownerobjects");
@@ -23,8 +22,10 @@ pimcore.object.classes.data.nonownerobjects = Class.create(pimcore.object.classe
         object: true,
         objectbrick: false,
         fieldcollection: false,
-        localizedfield: false
-    },        
+        localizedfield: false,
+        classificationstore : false,
+        classificationstore : false
+    },
 
     initialize: function (treeNode, initData) {
         this.type = "nonownerobjects";
@@ -68,6 +69,13 @@ pimcore.object.classes.data.nonownerobjects = Class.create(pimcore.object.classe
                 fieldLabel: t("height"),
                 name: "height",
                 value: this.datax.height
+            },
+            {
+                xtype: 'textfield',
+                width: 600,
+                fieldLabel: t("path_formatter_class"),
+                name: 'pathFormatterClass',
+                value: this.datax.pathFormatterClass
             }
         ]);
 
@@ -87,6 +95,7 @@ pimcore.object.classes.data.nonownerobjects = Class.create(pimcore.object.classe
             value: this.datax.ownerClassName,
             disabled: this.isInCustomLayoutEditor(),
             forceSelection:true,
+            editable: true,
             listeners: {
                 change: function(field, classNamevalue, oldValue) {
                     this.datax.ownerClassName=classNamevalue;
@@ -124,13 +133,14 @@ pimcore.object.classes.data.nonownerobjects = Class.create(pimcore.object.classe
             valueField: 'key' ,
             lastQuery: '',
             name: 'ownerFieldName',
+            editable: false,
             disabled: this.isInCustomLayoutEditor(),
             listeners: {
                 focus: function(){
                     if (this.datax.ownerClassName != null) {
                         this.fieldCombo.store.load({params:{name:this.datax.ownerClassName}});
-                    }   
-                }.bind(this) 
+                    }
+                }.bind(this)
             }
         });
 

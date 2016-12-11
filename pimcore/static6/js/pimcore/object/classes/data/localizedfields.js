@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.localizedfields");
@@ -23,8 +22,10 @@ pimcore.object.classes.data.localizedfields = Class.create(pimcore.object.classe
     allowIn: {
         object: true,
         objectbrick: false,
-        fieldcollection: false,
-        localizedfield: false
+        fieldcollection: true,
+        localizedfield: false,
+        classificationstore : false,
+        block: true
     },
 
     initialize: function (treeNode, initData) {
@@ -58,13 +59,11 @@ pimcore.object.classes.data.localizedfields = Class.create(pimcore.object.classe
         this.specificPanel.removeAll();
 
         this.layout = new Ext.Panel({
-            bodyStyle: "padding: 10px;",
             items: [
                 {
                     xtype: "form",
                     title: t("general_settings"),
                     bodyStyle: "padding: 10px;",
-                    style: "margin: 10px 0 10px 0",
                     defaults: {
                         labelWidth: 140,
                         width: 300
@@ -132,7 +131,6 @@ pimcore.object.classes.data.localizedfields = Class.create(pimcore.object.classe
                 width: 300
             },
             bodyStyle: "padding: 10px;",
-            style: "margin: 10px 0 10px 0",
             items: [
                 {
                     xtype: "numberfield",

@@ -2,22 +2,22 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Tool;
 
-use Pimcore\File; 
+use Pimcore\File;
 
-class Archive {
+class Archive
+{
 
     /**
      * @param $sourceDir
@@ -27,50 +27,59 @@ class Archive {
      * @return \ZipArchive
      * @throws \Exception
      */
-    public static function createZip($sourceDir,$destinationFile,$excludeFilePattern = array(), $options = array()){
-        list($sourceDir,$destinationFile,$items) = self::prepareArchive($sourceDir,$destinationFile);
-        $mode = $options['mode'] ? $options['mode'] : \ZIPARCHIVE::OVERWRITE;
+    public static function createZip($sourceDir, $destinationFile, $excludeFilePattern = [], $options = [])
+    {
+        list($sourceDir, $destinationFile, $items) = self::prepareArchive($sourceDir, $destinationFile);
+        $mode = $options['mode'];
 
-        if(substr($sourceDir,-1,1) != DIRECTORY_SEPARATOR){
+        if (!$mode) {
+            $mode = (is_file($destinationFile)) ? \ZipArchive::OVERWRITE : \ZipArchive::CREATE;
+        }
+
+        if (substr($sourceDir, -1, 1) != DIRECTORY_SEPARATOR) {
             $sourceDir .= DIRECTORY_SEPARATOR;
         }
 
-        if(is_dir($sourceDir) && is_readable($sourceDir)){
+        if (is_dir($sourceDir) && is_readable($sourceDir)) {
             $items = rscandir($sourceDir);
-        }else{
+        } else {
             throw new \Exception("$sourceDir doesn't exits or is not readable!");
         }
 
-        if(!$destinationFile || !is_string($destinationFile)){
+        if (!$destinationFile || !is_string($destinationFile)) {
             throw new \Exception('No destinationFile provided!');
-        }else{
+        } else {
             @unlink($destinationFile);
         }
 
         $destinationDir = dirname($destinationFile);
-        if(!is_dir($destinationDir)){
+        if (!is_dir($destinationDir)) {
             File::mkdir($destinationDir);
         }
 
         $zip = new \ZipArchive();
-        $zip->open($destinationFile, $mode);
-        foreach($items as $item){
-            $zipPath = str_replace($sourceDir,'',$item);
+        $opened = $zip->open($destinationFile, $mode);
 
-            foreach($excludeFilePattern as $excludePattern){
-                if(preg_match($excludePattern,$zipPath)){
+        if ($opened !== true) {
+            throw new \Exception("Couldn't open archive file. Error: " . $opened);
+        }
+        foreach ($items as $item) {
+            $zipPath = str_replace($sourceDir, '', $item);
+
+            foreach ($excludeFilePattern as $excludePattern) {
+                if (preg_match($excludePattern, $zipPath)) {
                     continue 2;
                 }
             }
 
-            if(is_dir($item)){
+            if (is_dir($item)) {
                 $zip->addEmptyDir($zipPath);
-            }elseif(is_file($item)){
-                $zip->addFile($item,$zipPath);
+            } elseif (is_file($item)) {
+                $zip->addFile($item, $zipPath);
             }
         }
 
-        if(!$zip->close()){
+        if (!$zip->close()) {
             throw new \Exception("Couldn't close zip file!");
         }
 
@@ -85,36 +94,38 @@ class Archive {
      * @return \Phar
      * @throws \Exception
      */
-    public static function createPhar($sourceDir,$destinationFile,$excludeFilePattern = array(), $options = array()){
-        list($sourceDir,$destinationFile,$items) = self::prepareArchive($sourceDir,$destinationFile);
+    public static function createPhar($sourceDir, $destinationFile, $excludeFilePattern = [], $options = [])
+    {
+        list($sourceDir, $destinationFile, $items) = self::prepareArchive($sourceDir, $destinationFile);
 
         $alias = $options['alias'] ? $options['alias'] : 'archive.phar';
 
-        $phar = new \Phar($destinationFile,0,$alias);
-        if($options['compress']){
+        $phar = new \Phar($destinationFile, 0, $alias);
+        if ($options['compress']) {
             $phar = $phar->convertToExecutable(\Phar::TAR, \Phar::GZ);
         }
 
-        foreach($items as $item){
-            $zipPath = str_replace($sourceDir,'',$item);
+        foreach ($items as $item) {
+            $zipPath = str_replace($sourceDir, '', $item);
 
-            foreach((array)$excludeFilePattern as $excludePattern){
-                if(preg_match($excludePattern,$zipPath)){
+            foreach ((array)$excludeFilePattern as $excludePattern) {
+                if (preg_match($excludePattern, $zipPath)) {
                     continue 2;
                 }
             }
 
-            if(is_dir($item)){
+            if (is_dir($item)) {
                 $phar->addEmptyDir($zipPath);
-            }elseif(is_file($item)){
-                $phar->addFile($item,$zipPath);
+            } elseif (is_file($item)) {
+                $phar->addFile($item, $zipPath);
             }
         }
 
-        if($metaData = $options['metaData']){
+        if ($metaData = $options['metaData']) {
             $phar->setMetadata($metaData);
         }
         $phar->stopBuffering();
+
         return $phar;
     }
 
@@ -124,28 +135,29 @@ class Archive {
      * @return array
      * @throws \Exception
      */
-    protected static function prepareArchive($sourceDir,$destinationFile){
-        if(substr($sourceDir,-1,1) != DIRECTORY_SEPARATOR){
+    protected static function prepareArchive($sourceDir, $destinationFile)
+    {
+        if (substr($sourceDir, -1, 1) != DIRECTORY_SEPARATOR) {
             $sourceDir .= DIRECTORY_SEPARATOR;
         }
 
-        if(is_dir($sourceDir) && is_readable($sourceDir)){
+        if (is_dir($sourceDir) && is_readable($sourceDir)) {
             $items = rscandir($sourceDir);
-        }else{
+        } else {
             throw new \Exception("$sourceDir doesn't exits or is not readable!");
         }
 
-        if(!$destinationFile || !is_string($destinationFile)){
+        if (!$destinationFile || !is_string($destinationFile)) {
             throw new \Exception('No destinationFile provided!');
-        }else{
+        } else {
             @unlink($destinationFile);
         }
 
         $destinationDir = dirname($destinationFile);
-        if(!is_dir($destinationDir)){
+        if (!is_dir($destinationDir)) {
             File::mkdir($destinationDir);
         }
-        return array($sourceDir,$destinationFile,$items);
-    }
 
+        return [$sourceDir, $destinationFile, $items];
+    }
 }

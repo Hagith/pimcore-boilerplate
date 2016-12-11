@@ -2,17 +2,16 @@
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document\Hardlink;
@@ -20,7 +19,8 @@ namespace Pimcore\Model\Document\Hardlink;
 use Pimcore\Model;
 use Pimcore\Model\Document;
 
-trait Wrapper {
+trait Wrapper
+{
 
     /**
      * @var Document\Hardlink
@@ -33,29 +33,31 @@ trait Wrapper {
     protected $sourceDocument;
 
     // OVERWRITTEN METHODS
-    public function save() {
+    public function save()
+    {
         $this->raiseHardlinkError();
     }
 
-    protected function update() {
+    protected function update()
+    {
         $this->raiseHardlinkError();
     }
 
-    public function delete() {
+    public function delete()
+    {
         $this->raiseHardlinkError();
     }
 
-    public function getProperties() {
-
-        if($this->properties == null) {
-
-            if($this->getHardLinkSource()->getPropertiesFromSource()) {
-                $sourceProperties = $this->getResource()->getProperties();
+    public function getProperties()
+    {
+        if ($this->properties == null) {
+            if ($this->getHardLinkSource()->getPropertiesFromSource()) {
+                $sourceProperties = $this->getDao()->getProperties();
             } else {
-                $sourceProperties = array();
+                $sourceProperties = [];
             }
 
-            if($this->getSourceDocument()) {
+            if ($this->getSourceDocument()) {
                 // if we have a source document, that means that this document is not directly linked, it's a
                 // child of a hardlink that uses "childFromSource", so in this case we use the source properties
                 // this is especially important for the navigation, otherwise all children will have the same
@@ -63,18 +65,18 @@ trait Wrapper {
                 $sourceProperties = $this->getSourceDocument()->getProperties();
             }
 
-            $hardLinkProperties = array();
+            $hardLinkProperties = [];
             $hardLinkSourceProperties = $this->getHardLinkSource()->getProperties();
             foreach ($hardLinkSourceProperties as $key => $prop) {
                 $prop = clone $prop;
                 $prop->setInherited(true);
 
                 // if the property doesn't exist in the source-properties just add it
-                if(!array_key_exists($key, $sourceProperties)) {
+                if (!array_key_exists($key, $sourceProperties)) {
                     $hardLinkProperties[$key] = $prop;
                 } else {
                     // if the property does exist in the source properties but it is inherited, then overwrite it with the hardlink property
-                    if($sourceProperties[$key]->isInherited()) {
+                    if ($sourceProperties[$key]->isInherited()) {
                         $hardLinkProperties[$key] = $prop;
                     }
                 }
@@ -88,38 +90,39 @@ trait Wrapper {
         return $this->properties;
     }
 
-    public function getChilds() {
-
+    public function getChildren($unpublished = false)
+    {
         if ($this->childs === null) {
             $hardLink = $this->getHardLinkSource();
-            $childs = array();
+            $children = [];
 
-            if($hardLink->getChildsFromSource() && $hardLink->getSourceDocument() && !\Pimcore::inAdmin()) {
-                foreach(parent::getChilds() as $c) {
+            if ($hardLink->getChildrenFromSource() && $hardLink->getSourceDocument() && !\Pimcore::inAdmin()) {
+                foreach (parent::getChildren() as $c) {
                     $sourceDocument = $c;
                     $c = Service::wrap($c);
 
-                    if($c) {
+                    if ($c) {
                         $c->setHardLinkSource($hardLink);
                         $c->setSourceDocument($sourceDocument);
                         $c->setPath(preg_replace("@^" . preg_quote($hardLink->getSourceDocument()->getRealFullpath()) . "@", $hardLink->getRealFullpath(), $c->getRealPath()));
 
-                        $childs[] = $c;
+                        $children[] = $c;
                     }
                 }
             }
 
-            $this->setChilds($childs);
+            $this->setChildren($children);
         }
 
         return $this->childs;
     }
 
-    public function hasChilds() {
+    public function hasChildren()
+    {
         $hardLink = $this->getHardLinkSource();
 
-        if($hardLink->getChildsFromSource() && $hardLink->getSourceDocument() && !\Pimcore::inAdmin()) {
-            return parent::hasChilds();
+        if ($hardLink->getChildrenFromSource() && $hardLink->getSourceDocument() && !\Pimcore::inAdmin()) {
+            return parent::hasChildren();
         }
 
         return false;
@@ -129,7 +132,8 @@ trait Wrapper {
      * @throws \Exception
      * @return void
      */
-    protected function raiseHardlinkError () {
+    protected function raiseHardlinkError()
+    {
         throw new \Exception("Method no supported by hardlinked documents");
     }
 
@@ -140,6 +144,7 @@ trait Wrapper {
     public function setHardLinkSource($hardLinkSource)
     {
         $this->hardLinkSource = $hardLinkSource;
+
         return $this;
     }
 

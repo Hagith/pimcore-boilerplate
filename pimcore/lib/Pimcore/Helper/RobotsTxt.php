@@ -7,7 +7,7 @@
 
 namespace Pimcore\Helper;
 
-use Pimcore\Model\Cache;
+use Pimcore\Cache;
 
 class RobotsTxt
 {
@@ -19,7 +19,7 @@ class RobotsTxt
     /**
      * @var array
      */
-    private $_rules = array();
+    private $_rules = [];
 
     /**
      * @param $domain
@@ -33,12 +33,11 @@ class RobotsTxt
 
             if (!$robotsTxt = Cache::load($cacheKey)) {
                 $robotsTxt = \Pimcore\Tool::getHttpData($robotsUrl);
-                Cache::save($robotsTxt, $cacheKey, array("system"), 3600, 999, true);
+                Cache::save($robotsTxt, $cacheKey, ["system"], 3600, 999, true);
             }
 
             $this->_rules = $this->_makeRules($robotsTxt);
         } catch (\Exception $e) {
-
         }
     }
 
@@ -51,7 +50,7 @@ class RobotsTxt
     {
         if (!isset($this->_rules[$userAgent])) {
             $rules = isset($this->_rules['*']) ?
-                $this->_rules['*'] : array();
+                $this->_rules['*'] : [];
         } else {
             $rules = $this->_rules[$userAgent];
         }
@@ -62,7 +61,6 @@ class RobotsTxt
 
         $urlArray = parse_url($url);
         if (isset($urlArray['path'])) {
-
             $url = $urlArray['path'];
 
             if (isset($urlArray['query'])) {
@@ -93,7 +91,7 @@ class RobotsTxt
      */
     private function _makeRules($robotsTxt)
     {
-        $rules = array();
+        $rules = [];
         $lines = explode("\n", $robotsTxt);
 
         $lines = array_filter($lines, function ($l) {
@@ -113,10 +111,10 @@ class RobotsTxt
                     $pathRegEx = $this->_getRegExByPath($second);
                     $allow = (preg_match('#^dis#i', $first) !== 1);
 
-                    $rules[$userAgent][] = array(
+                    $rules[$userAgent][] = [
                         'path' => $pathRegEx,
                         'allow' => $allow,
-                    );
+                    ];
                 }
             }
         }

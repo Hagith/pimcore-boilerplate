@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.document.tags.input");
@@ -30,9 +29,15 @@ pimcore.document.tags.input = Class.create(pimcore.document.tag, {
 
         // set min height for IE, as he isn't able to update :after css selector
         this.element.update("|"); // dummy content to get appropriate height
-        this.element.applyStyles({
-            "min-height": this.element.getHeight() + "px"
-        });
+        if(this.element.getHeight()) {
+            this.element.applyStyles({
+                "min-height": this.element.getHeight() + "px"
+            });
+        } else {
+            this.element.applyStyles({
+                "min-height": this.element.getStyle("font-size")
+            });
+        }
 
         this.element.update(data + "<br>");
 
@@ -60,10 +65,9 @@ pimcore.document.tags.input = Class.create(pimcore.document.tag, {
             text = htmlentities(text, "ENT_NOQUOTES", null, false);
 
             try {
-                document.execCommand("insertHTML", false, text);
+                pimcore.edithelpers.pasteHtmlAtCaret(text);
             } catch (e) {
-                // IE <= 10
-                document.selection.createRange().pasteHTML(text);
+                console.log(e);
             }
         }.bind(this));
 
@@ -80,6 +84,14 @@ pimcore.document.tags.input = Class.create(pimcore.document.tag, {
                 "white-space": "nowrap",
                 overflow: "auto"
             });
+        }
+        if (options["placeholder"]) {
+            this.element.dom.setAttribute('data-placeholder', options["placeholder"]);
+        }
+
+        if(options["validator"]) {
+            this.element.isValid = options["validator"];
+            this.validateElement();
         }
     },
 
@@ -99,6 +111,8 @@ pimcore.document.tags.input = Class.create(pimcore.document.tag, {
         if(value != origValue) {
             this.element.update(this.getValue());
         }
+
+        this.validateElement(value);
     },
 
     getValue: function () {
@@ -132,5 +146,31 @@ pimcore.document.tags.input = Class.create(pimcore.document.tag, {
         } else {
             this.element.dom.setAttribute("contenteditable", true);
         }
+    },
+
+    /**
+     *
+     * validation for dedicated validator which could be added in an element view helper as the validator option
+     *
+     *
+     * @returns {pimcore.document.tags.input}
+     */
+    validateElement: function(value){
+
+        if(this.element.isValid && typeof this.element.isValid == 'function') {
+
+            value = !value ? this.element.dom.innerText : value;
+
+            var validatorMessage = this.element.isValid(strip_tags(value));
+            if(true !== validatorMessage) {
+                this.element.addCls('invalid-document-element');
+                this.element.setStyle('border', '1px solid #f40204');
+            } else {
+                this.element.removeCls('invalid-document-element');
+                this.element.setStyle('border', '');
+            }
+        }
+
+        return this;
     }
 });

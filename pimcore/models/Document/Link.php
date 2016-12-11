@@ -1,18 +1,17 @@
-<?php 
+<?php
 /**
  * Pimcore
  *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
  * @category   Pimcore
  * @package    Document
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Model\Document;
@@ -21,6 +20,9 @@ use Pimcore\Model;
 use Pimcore\Model\Document;
 use Pimcore\Model\Asset;
 
+/**
+ * @method \Pimcore\Model\Document\Link\Dao getDao()
+ */
 class Link extends Model\Document
 {
 
@@ -81,17 +83,16 @@ class Link extends Model\Document
      */
     public function resolveDependencies()
     {
-
         $dependencies = parent::resolveDependencies();
 
         if ($this->getLinktype() == "internal") {
             if ($this->getObject() instanceof Document || $this->getObject() instanceof Asset) {
                 $key = $this->getInternalType() . "_" . $this->getObject()->getId();
 
-                $dependencies[$key] = array(
+                $dependencies[$key] = [
                     "id" => $this->getObject()->getId(),
                     "type" => $this->getInternalType()
-                );
+                ];
             }
         }
 
@@ -103,10 +104,10 @@ class Link extends Model\Document
      *
      * @return array
      */
-    public function getCacheTags($tags = array())
+    public function getCacheTags($tags = [])
     {
-        $tags = is_array($tags) ? $tags : array();
-        
+        $tags = is_array($tags) ? $tags : [];
+
         $tags = parent::getCacheTags($tags);
 
         if ($this->getLinktype() == "internal") {
@@ -116,6 +117,7 @@ class Link extends Model\Document
                 }
             }
         }
+
         return $tags;
     }
 
@@ -132,12 +134,12 @@ class Link extends Model\Document
             if ($this->getObject() instanceof Document || $this->getObject() instanceof Asset) {
                 $path = $this->getObject()->getFullPath();
             }
-        }
-        else {
+        } else {
             $path = $this->getDirect();
         }
 
         $this->href = $path;
+
         return $path;
     }
 
@@ -147,7 +149,8 @@ class Link extends Model\Document
      *
      * @return string
      */
-    public function getLink () {
+    public function getLink()
+    {
         $path = $this->getHref();
 
         if (strlen($this->getParameters()) > 0) {
@@ -182,6 +185,7 @@ class Link extends Model\Document
     public function setTarget($target)
     {
         $this->setProperty("navigation_target", "text", $target, false);
+
         return $this;
     }
 
@@ -217,37 +221,39 @@ class Link extends Model\Document
 
     /**
      * @param integer $internal
-     * @return void
+     * @return $this
      */
     public function setInternal($internal)
     {
         if (!empty($internal)) {
             $this->internal = (int) $internal;
             $this->setObjectFromId();
-        }
-        else {
+        } else {
             $this->internal = null;
         }
+
         return $this;
     }
 
     /**
      * @param string $direct
-     * @return void
+     * @return $this
      */
     public function setDirect($direct)
     {
         $this->direct = $direct;
+
         return $this;
     }
 
     /**
      * @param string $linktype
-     * @return void
+     * @return $this
      */
     public function setLinktype($linktype)
     {
         $this->linktype = $linktype;
+
         return $this;
     }
 
@@ -267,11 +273,12 @@ class Link extends Model\Document
      *
      * @deprecated
      * @param string $name
-     * @return void
+     * @return $this
      */
     public function setName($name)
     {
         $this->setProperty("navigation_name", "text", $name, false);
+
         return $this;
     }
 
@@ -286,11 +293,12 @@ class Link extends Model\Document
 
     /**
      * @param string $type
-     * @return void
+     * @return $this
      */
     public function setInternalType($type)
     {
         $this->internalType = $type;
+
         return $this;
     }
 
@@ -306,15 +314,17 @@ class Link extends Model\Document
                 return $this->object;
             }
         }
+
         return false;
     }
 
     /**
-     * @return void
+     * @return $this
      */
     public function setObject($object)
     {
         $this->object = $object;
+
         return $this;
     }
 
@@ -323,10 +333,10 @@ class Link extends Model\Document
      */
     public function setObjectFromId()
     {
-        if($this->internal) {
+        if ($this->internal) {
             if ($this->internalType == "document") {
                 $this->object = Document::getById($this->internal);
-            } else if ($this->internalType == "asset") {
+            } elseif ($this->internalType == "asset") {
                 $this->object = Asset::getById($this->internal);
             }
         }
@@ -353,6 +363,7 @@ class Link extends Model\Document
     public function setParameters($parameters)
     {
         $this->setProperty("navigation_parameters", "text", $parameters, false);
+
         return $this;
     }
 
@@ -374,6 +385,7 @@ class Link extends Model\Document
     public function setAnchor($anchor)
     {
         $this->setProperty("navigation_anchor", "text", $anchor, false);
+
         return $this;
     }
 
@@ -382,7 +394,7 @@ class Link extends Model\Document
      */
     public function getTitle()
     {
-        return $this->title;
+        return $this->getProperty("navigation_title");
     }
 
     /**
@@ -391,7 +403,8 @@ class Link extends Model\Document
      */
     public function setTitle($title)
     {
-        $this->title = $title;
+        $this->setProperty("navigation_title", "text", $title, false);
+
         return $this;
     }
 
@@ -413,6 +426,7 @@ class Link extends Model\Document
     public function setAccesskey($accesskey)
     {
         $this->setProperty("accesskey", "text", $accesskey, false);
+
         return $this;
     }
 
@@ -434,6 +448,7 @@ class Link extends Model\Document
     public function setRel($rel)
     {
         $this->setProperty("navigation_relation", "text", $rel, false);
+
         return $this;
     }
 
@@ -455,6 +470,7 @@ class Link extends Model\Document
     public function setTabindex($tabindex)
     {
         $this->setProperty("navigation_tabindex", "text", $tabindex, false);
+
         return $this;
     }
 
@@ -465,9 +481,8 @@ class Link extends Model\Document
      */
     public function getHtml()
     {
-
-        $attributes = array("rel", "tabindex", "accesskey", "title", "name", "target");
-        $attribs = array();
+        $attributes = ["rel", "tabindex", "accesskey", "title", "name", "target"];
+        $attribs = [];
         foreach ($attributes as $a) {
             $attribs[] = $a . '="' . $this->$a . '"';
         }
@@ -478,9 +493,9 @@ class Link extends Model\Document
     /**
      *
      */
-    public function __sleep() {
-
-        $finalVars = array();
+    public function __sleep()
+    {
+        $finalVars = [];
         $parentVars = parent::__sleep();
 
         $blockedVars = ["object"];

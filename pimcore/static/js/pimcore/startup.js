@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 
@@ -77,8 +76,11 @@ Ext.onReady(function () {
     Ext.Ajax.disableCaching = true;
     Ext.Ajax.timeout = 900000;
     Ext.Ajax.defaultHeaders = {
-        'X-pimcore-csrf-token': pimcore.settings["csrfToken"]
+        'X-pimcore-csrf-token': pimcore.settings["csrfToken"],
+        'X-pimcore-extjs-version-major': 3,
+        'X-pimcore-extjs-version-minor': 4
     };
+
     Ext.Ajax.on('requestexception', function (conn, response, options) {
         console.log("xhr request failed");
 
@@ -126,7 +128,7 @@ Ext.onReady(function () {
 
         xhrActive--;
         if (xhrActive < 1) {
-            Ext.get("pimcore_logo").dom.innerHTML = '<img class="logo" src="/pimcore/static/img/logo.png"/>';
+            Ext.get("pimcore_logo").dom.innerHTML = '<img class="logo" src="/pimcore/static6/img/logo-white.svg"/>';
         }
     });
     Ext.Ajax.on("beforerequest", function () {
@@ -138,7 +140,7 @@ Ext.onReady(function () {
     Ext.Ajax.on("requestcomplete", function (conn, response, options) {
         xhrActive--;
         if (xhrActive < 1) {
-            Ext.get("pimcore_logo").dom.innerHTML = '<img class="logo" src="/pimcore/static/img/logo.png"/>';
+            Ext.get("pimcore_logo").dom.innerHTML = '<img class="logo" src="/pimcore/static6/img/logo-white.svg"/>';
         }
 
         // redirect to login-page if session is expired
@@ -181,7 +183,7 @@ Ext.onReady(function () {
         successProperty:'success',
         root:'data'
     }, [
-        {name:'id'},
+        {name:'id', type: 'string'},
         {name:'name', allowBlank:false},
         {name:'module', allowBlank:true},
         {name:'controller', allowBlank:true},
@@ -226,7 +228,7 @@ Ext.onReady(function () {
         successProperty:'success',
         idProperty:'id'
     }, [
-        {name:'id'},
+        {name:'id', type: 'string'},
         {name:'text', allowBlank:false},
         {name:"translatedText", convert:function (v, rec) {
             return ts(rec.text);
@@ -243,6 +245,23 @@ Ext.onReady(function () {
     storeo.load();
 
     pimcore.globalmanager.add("object_types_store", storeo);
+
+
+    // classes
+    var proxyoc = new Ext.data.HttpProxy({
+        url:'/admin/class/get-tree?createAllowed=true'
+    });
+
+    var storeoc = new Ext.data.Store({
+        id:'object_types',
+        restful:false,
+        proxy:proxyoc,
+        reader:readero
+    });
+    storeoc.load();
+
+    pimcore.globalmanager.add("object_types_store_create", storeoc);
+
 
     // current user
     pimcore.globalmanager.add("user", new pimcore.user(pimcore.currentuser));
@@ -455,19 +474,22 @@ Ext.onReady(function () {
                     var cv;
                     var cvTree;
                     for (var cvs = 0; cvs < pimcore.settings.customviews.length; cvs++) {
-                        cv = pimcore.settings.customviews[cvs];
 
-                        cvTree = new pimcore.object.customviews.tree({
-                            allowedClasses:cv.allowedClasses,
-                            rootId:cv.rootId,
-                            rootVisible:cv.showroot,
-                            treeId:"pimcore_panel_tree_customviews_" + cv.id,
-                            treeIconCls:"pimcore_object_customviews_icon_" + cv.id,
-                            treeTitle:ts(cv.name),
-                            parentPanel:Ext.getCmp("pimcore_panel_tree_left"),
-                            index:(cvs + 10),
-                            loaderBaseParams:{}
-                        });
+                        cv = pimcore.settings.customviews[cvs];
+                        if (!cv.treetype || cv.treetype == "object")
+                        {
+                            cvTree = new pimcore.object.customviews.tree({
+                                allowedClasses: cv.allowedClasses,
+                                rootId: cv.rootId,
+                                rootVisible: cv.showroot,
+                                treeId: "pimcore_panel_tree_customviews_" + cv.id,
+                                treeIconCls: "pimcore_object_customviews_icon_" + cv.id,
+                                treeTitle: ts(cv.name),
+                                parentPanel: Ext.getCmp("pimcore_panel_tree_left"),
+                                index: (cvs + 10),
+                                loaderBaseParams: {}
+                            });
+                        }
                     }
                 }
             }

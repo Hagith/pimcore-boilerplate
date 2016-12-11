@@ -2,53 +2,41 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 namespace Pimcore\Controller\Plugin;
 
-use Pimcore\Model\Cache;
+use Pimcore\Cache;
 use Pimcore\Model\Tool;
+use Pimcore\Model\Tool\Tag;
+use Pimcore\Model\Site;
 
-class TagManagement extends \Zend_Controller_Plugin_Abstract {
+class TagManagement extends \Zend_Controller_Plugin_Abstract
+{
 
     /**
      *
      */
-    public function dispatchLoopShutdown() {
-        
-        if(!\Pimcore\Tool::isHtmlResponse($this->getResponse())) {
+    public function dispatchLoopShutdown()
+    {
+        if (!\Pimcore\Tool::isHtmlResponse($this->getResponse())) {
             return;
         }
 
-        $cacheKey = "outputfilter_tagmngt";
-        $tags = Cache::load($cacheKey);
-        if(!is_array($tags)) {
-            $dir = Tool\Tag\Config::getWorkingDir();
+        $list = new Tag\Config\Listing();
+        $tags = $list->load();
 
-            $tags = array();
-            $files = scandir($dir);
-            foreach ($files as $file) {
-                if(strpos($file, ".xml")) {
-                    $name = str_replace(".xml", "", $file);
-                    $tags[] = Tool\Tag\Config::getByName($name);
-                }
-            }
-            Cache::save($tags, $cacheKey, array("tagmanagement"), null, 100);
-        }
-
-        if(empty($tags)) {
+        if (empty($tags)) {
             return;
         }
-
 
         $html = null;
         $body = $this->getResponse()->getBody();
@@ -61,62 +49,80 @@ class TagManagement extends \Zend_Controller_Plugin_Abstract {
             $textPattern = $tag->getTextPattern();
 
             // site check
-            if(\Site::isSiteRequest() && $tag->getSiteId()) {
-                if(\Site::getCurrentSite()->getId() != $tag->getSiteId()) {
+            if (Site::isSiteRequest() && $tag->getSiteId()) {
+                if (Site::getCurrentSite()->getId() != $tag->getSiteId()) {
                     continue;
                 }
-            } else if (!\Site::isSiteRequest() && $tag->getSiteId()) {
+            } elseif (!Site::isSiteRequest() && $tag->getSiteId() && $tag->getSiteId() != "default") {
                 continue;
             }
 
-            $requestPath = rtrim($this->getRequest()->getPathInfo(),"/");
+            $requestPath = rtrim($this->getRequest()->getPathInfo(), "/");
 
-            if( ($method == strtolower($this->getRequest()->getMethod()) || empty($method)) &&
+            if (($method == strtolower($this->getRequest()->getMethod()) || empty($method)) &&
                 (empty($pattern) || @preg_match($pattern, $requestPath)) &&
-                (empty($textPattern) || strpos($body,$textPattern) !== false)
+                (empty($textPattern) || strpos($body, $textPattern) !== false)
             ) {
-
                 $paramsValid = true;
                 foreach ($tag->getParams() as $param) {
-                    if(!empty($param["name"])) {
-                        if(!empty($param["value"])) {
-                            if(!array_key_exists($param["name"], $requestParams) || $requestParams[$param["name"]] != $param["value"]) {
+                    if (!empty($param["name"])) {
+                        if (!empty($param["value"])) {
+                            if (!array_key_exists($param["name"], $requestParams) || $requestParams[$param["name"]] != $param["value"]) {
                                 $paramsValid = false;
                             }
                         } else {
-                            if(!array_key_exists($param["name"], $requestParams)) {
+                            if (!array_key_exists($param["name"], $requestParams)) {
                                 $paramsValid = false;
                             }
                         }
                     }
                 }
 
-                if(is_array($tag->getItems()) && $paramsValid) {
+                if (is_array($tag->getItems()) && $paramsValid) {
                     foreach ($tag->getItems() as $item) {
-                        if(!empty($item["element"]) && !empty($item["code"]) && !empty($item["position"])) {
-
-                            if(!$html) {
-                                include_once("simple_html_dom.php");
-                                $html = str_get_html($body);
-                            }
-
-                            if($html) {
-                                $element = $html->find($item["element"],0);
-                                if($element) {
-                                    if($item["position"] == "end") {
-                                        $element->innertext = $element->innertext . "\n\n" . $item["code"] . "\n\n";
-                                    } else {
-                                        // beginning
-                                        $element->innertext = "\n\n" . $item["code"] . "\n\n" . $element->innertext;
-                                    }
-
-                                    // we havve to reinitialize the html object, otherwise it causes problems with nested child selectors
-                                    $body = $html->save();
-
+                        if (!empty($item["element"]) && !empty($item["code"]) && !empty($item["position"])) {
+                            if (in_array($item["element"], ["body", "head"])) {
+                                // check if the code should be inserted using one of the presets
+                                // because this can be done much faster than using a html parser
+                                if ($html) {
+                                    // reset simple_html_dom if set
                                     $html->clear();
                                     unset($html);
-
                                     $html = null;
+                                }
+
+                                if ($item["position"] == "end") {
+                                    $regEx = "@</" . $item["element"] . ">@i";
+                                    $body = preg_replace($regEx, "\n\n" . $item["code"] . "\n\n</" . $item["element"] . ">", $body, 1);
+                                } else {
+                                    $regEx = "/<" . $item["element"] . "([^a-zA-Z])?( [^>]+)?>/";
+                                    $body = preg_replace($regEx, "<" . $item["element"] . "$1$2>\n\n" . $item["code"] . "\n\n", $body, 1);
+                                }
+                            } else {
+                                // use simple_html_dom
+                                if (!$html) {
+                                    include_once("simple_html_dom.php");
+                                    $html = str_get_html($body);
+                                }
+
+                                if ($html) {
+                                    $element = $html->find($item["element"], 0);
+                                    if ($element) {
+                                        if ($item["position"] == "end") {
+                                            $element->innertext = $element->innertext . "\n\n" . $item["code"] . "\n\n";
+                                        } else {
+                                            // beginning
+                                            $element->innertext = "\n\n" . $item["code"] . "\n\n" . $element->innertext;
+                                        }
+
+                                        // we havve to reinitialize the html object, otherwise it causes problems with nested child selectors
+                                        $body = $html->save();
+
+                                        $html->clear();
+                                        unset($html);
+
+                                        $html = null;
+                                    }
                                 }
                             }
                         }
@@ -125,7 +131,7 @@ class TagManagement extends \Zend_Controller_Plugin_Abstract {
             }
         }
 
-        if($html && method_exists($html, "clear")) {
+        if ($html && method_exists($html, "clear")) {
             $html->clear();
             unset($html);
         }
@@ -133,4 +139,3 @@ class TagManagement extends \Zend_Controller_Plugin_Abstract {
         $this->getResponse()->setBody($body);
     }
 }
-

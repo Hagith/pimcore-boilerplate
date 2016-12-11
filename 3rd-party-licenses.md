@@ -4,16 +4,9 @@ The overal pimcore project is licensed under the terms of a modified BSD Licence
 
 
 ## ExtJS by Sencha Inc.
-pimcore includes the GPLv3 version of the ExtJS JavaScript framework (version 3) under the Open Source License Exception for Applications (FLOSS).
-
-There are two FLOSS exceptions available for use with this release for
-open source applications that are distributed under a license other than GPL. 
-
-* Open Source License Exception for Applications ( [view archived copy](https://www.pimcore.org/download/license/extjs-floss-exception-applications.png) )
-* Open Source License Exception for Development ( [view archived copy](https://www.pimcore.org/download/license/extjs-floss-exception-development.png) )
-
-Further information:
-http://www.sencha.com/license/
+License: GPLv3  
+pimcore includes the GPLv3 version of the ExtJS JavaScript framework.  
+http://www.sencha.com/license/  
 
 ## Zend Framework by Zend Technologies Ltd.
 License: New BSD License  
@@ -22,6 +15,10 @@ http://framework.zend.com/license
 ## jQuery by The jQuery Project
 License: MIT or GPLv2  
 http://jquery.org/license
+
+## Symfony 
+License: MIT License  
+http://symfony.com/license
 
 ## CKEditor by Frederico Knabben
 License: LGPL / GPLv2 / MPL  
@@ -35,22 +32,96 @@ http://www.opensource.org/licenses/mit-license.php
 License: MIT  
 https://raw.github.com/sstephenson/prototype/master/LICENSE
 
-## LESS by Alexis Sellier
+## LESS CSS by Alexis Sellier
 License: Apache 2.0  
 http://www.opensource.org/licenses/Apache-2.0
 
-## CSV Reader By Luke Visinoni
-License: LGPL
-http://opensource.org/licenses/lgpl-license
-
-## Sabre by Rooftop Solutions
-License: Modified BSD License
-http://code.google.com/p/sabredav/wiki/License
+## sabre/dav by fruux GmbH
+License: BSD-3-Clause
+http://opensource.org/licenses/BSD-3-Clause
 
 ## simplehtmldom
 License: MIT  
 http://opensource.org/licenses/mit-license.php
- 
-## password_compat
+
+## famfamfam.com Silk Icons by Mark James
+License: Creative Commons Attribution 2.5 License 
+http://www.famfamfam.com/lab/icons/silk/
+
+## whoops 
 License: MIT  
-http://www.opensource.org/licenses/mit-license.html
+http://opensource.org/licenses/mit-license.php 
+
+## CssToInlineStyles by Tijs Verkoyen
+License: BSD-3-Clause
+http://opensource.org/licenses/BSD-3-Clause
+
+## HybridAuth
+License: MIT or GPL-3.0+
+http://hybridauth.sourceforge.net/licenses.html 
+
+## Google APIs Client Library for PHP 
+License: Apache 2.0  
+http://www.opensource.org/licenses/Apache-2.0
+
+## Less.php by Josh Schmidt 
+License: Apache 2.0  
+http://www.opensource.org/licenses/Apache-2.0
+
+## GeoIP2 PHP API by MaxMind, Inc.
+License: Apache 2.0  
+http://www.opensource.org/licenses/Apache-2.0
+
+## PHP-FIG (PSR) Libraries 
+License: MIT  
+http://opensource.org/licenses/mit-license.php
+
+## Monolog
+License: MIT  
+http://opensource.org/licenses/mit-license.php
+
+## PEAR Net_URL2 
+License: BSD-3-Clause
+http://opensource.org/licenses/BSD-3-Clause
+
+## Adminer 
+License: Apache 2.0 or GPLv2
+http://www.opensource.org/licenses/Apache-2.0
+
+## ramsey/uuid
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## opcache-gui
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## php-encryption
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## Embera
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## QR Code by endroid
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## Credis
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## PHP-DI
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+## Carbon
+License: MIT
+http://opensource.org/licenses/mit-license.php
+
+
+
+## Disclaimer 
+This information has no guarantee of completeness and is subject to change.  
+Please also check packages listed in [composer.json](composer.json). 

@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.object.classes.data.datetime");
@@ -23,7 +22,9 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
         object:true,
         objectbrick:true,
         fieldcollection:true,
-        localizedfield:true
+        localizedfield:true,
+        classificationstore : true,
+        block: true
     },
 
     initialize:function (treeNode, initData) {
@@ -44,7 +45,7 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
     },
 
     getIconClass:function () {
-        return "pimcore_icon_date";
+        return "pimcore_icon_datetime";
     },
 
     getLayout:function ($super) {
@@ -58,7 +59,7 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
         });
 
         var date = {
-            itemCls:"object_field",
+            cls:"object_field",
             width:300
         };
 
@@ -94,11 +95,11 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
 
         this.component = new Ext.form.FieldSet({
             layout: 'hbox',
-            fieldLabel:t("default_value"),
+            title: t("default_value"),
             style: "border: none !important",
             combineErrors:false,
             items:[this.datefield, this.timefield],
-            itemCls:"object_field"
+            cls:"object_field"
         });
 
 
@@ -110,11 +111,10 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
                 xtype:"checkbox",
                 fieldLabel:t("use_current_date"),
                 name:"useCurrentDate",
-                value:this.datax.defaultValue,
                 checked:this.datax.useCurrentDate,
                 disabled: this.isInCustomLayoutEditor(),
                 listeners:{
-                    check:this.toggleDefaultDate.bind(this)
+                    change:this.toggleDefaultDate.bind(this)
                 }
             }, {
                 xtype: "displayfield",

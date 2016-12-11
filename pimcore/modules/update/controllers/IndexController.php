@@ -2,92 +2,86 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
-use Pimcore\Update; 
+use Pimcore\Update;
 
-class Update_IndexController extends \Pimcore\Controller\Action\Admin {
-
-
-    public function init() {
+class Update_IndexController extends \Pimcore\Controller\Action\Admin
+{
+    public function init()
+    {
         parent::init();
 
-        // clear the opcache (as of PHP 5.5)
-        if(function_exists("opcache_reset")) {
-            opcache_reset();
-        }
-
-        // clear the APC opcode cache (<= PHP 5.4)
-        if(function_exists("apc_clear_cache")) {
-            apc_clear_cache();
-        }
-
-        // clear the Zend Optimizer cache (Zend Server <= PHP 5.4)
-        if (function_exists('accelerator_reset')) {
-            return accelerator_reset();
-        }
+        Update::clearOPCaches();
 
         $this->checkPermission("update");
     }
 
-    public function checkFilePermissionsAction () {
-        
-        $success = false;
-        if(Update::isWriteable()) {
-            $success = true;
-        }
-
-        $this->_helper->json(array(
-            "success" => $success
-        ));
+    public function checkComposerInstalledAction()
+    {
+        $this->_helper->json([
+            "success" => Update::isComposerAvailable()
+        ]);
     }
-    
-    public function getAvailableUpdatesAction () {
 
+    public function checkFilePermissionsAction()
+    {
+        $this->_helper->json([
+            "success" => Update::isWriteable()
+        ]);
+    }
+
+    public function getAvailableUpdatesAction()
+    {
         $availableUpdates = Update::getAvailableUpdates();
         $this->_helper->json($availableUpdates);
     }
-    
-    public function getJobsAction () {
 
+    public function getJobsAction()
+    {
         $jobs = Update::getJobs($this->getParam("toRevision"));
-        
+
         $this->_helper->json($jobs);
     }
-    
-    public function jobParallelAction () {
-        if($this->getParam("type") == "download") {
+
+    public function jobParallelAction()
+    {
+        if ($this->getParam("type") == "download") {
             Update::downloadData($this->getParam("revision"), $this->getParam("url"));
         }
-        
-        $this->_helper->json(array("success" => true));
+
+        $this->_helper->json(["success" => true]);
     }
-    
-    public function jobProceduralAction () {
-        
-        $status = array("success" => true);
-        
-        if($this->getParam("type") == "files") {
+
+    public function jobProceduralAction()
+    {
+        $status = ["success" => true];
+
+        if ($this->getParam("type") == "files") {
             Update::installData($this->getParam("revision"));
-        } else if ($this->getParam("type") == "clearcache") {
-            \Pimcore\Model\Cache::clearAll();
-        } else if ($this->getParam("type") == "preupdate") {
+        } elseif ($this->getParam("type") == "clearcache") {
+            \Pimcore\Cache::clearAll();
+        } elseif ($this->getParam("type") == "preupdate") {
             $status = Update::executeScript($this->getParam("revision"), "preupdate");
-        } else if ($this->getParam("type") == "postupdate") {
+        } elseif ($this->getParam("type") == "postupdate") {
             $status = Update::executeScript($this->getParam("revision"), "postupdate");
-        } else if ($this->getParam("type") == "cleanup") {
+        } elseif ($this->getParam("type") == "cleanup") {
             Update::cleanup();
+        } elseif ($this->getParam("type") == "composer-dump-autoload") {
+            $status = Update::composerDumpAutoload();
         }
 
-        $this->_helper->json($status);
+        // we use pure PHP here, otherwise this can cause issues with dependencies that changed during the update
+        header("Content-type: application/json");
+        echo json_encode($status);
+        exit;
     }
 }

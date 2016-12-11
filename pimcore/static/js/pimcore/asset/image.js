@@ -1,15 +1,14 @@
 /**
  * Pimcore
  *
- * LICENSE
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Pimcore Enterprise License (PEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.pimcore.org/license
- *
- * @copyright  Copyright (c) 2009-2014 pimcore GmbH (http://www.pimcore.org)
- * @license    http://www.pimcore.org/license     New BSD License
+ * @copyright  Copyright (c) 2009-2016 pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PEL
  */
 
 pimcore.registerNS("pimcore.asset.image");
@@ -79,25 +78,9 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
         if (!this.editPanel) {
 
             this.editPanel = new Ext.Panel({
-                title: t("edit_image"),
-                tbar: [
-                    {
-                        text: t("simple"),
-                        iconCls: "pimcore_icon_image_editor_simple",
-                        handler: function () {
-                            Ext.get("asset_image_edit_" + this.id).dom.src = this.getEditUrlPixlr("express");
-                        }.bind(this)
-                    },"-",
-                    {
-                        text: t("advanced"),
-                        iconCls: "pimcore_icon_image_editor_advanced",
-                        handler: function () {
-                            Ext.get("asset_image_edit_" + this.id).dom.src = this.getEditUrlPixlr("editor");
-                        }.bind(this)
-                    }
-                ],
-                html: '<iframe src="' + this.getEditUrlPixlr("express") + '" frameborder="0" id="asset_image_edit_'
-                                                                            + this.id + '"></iframe>',
+                title: t("edit"),
+                html: '<iframe src="/admin/asset/image-editor/id/' + this.id + '" frameborder="0" ' +
+                    'style="width: 100%;" id="asset_image_edit_' + this.id + '"></iframe>',
                 iconCls: "pimcore_icon_tab_edit"
             });
             this.editPanel.on("resize", function (el, width, height, rWidth, rHeight) {
@@ -109,34 +92,6 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
         }
 
         return this.editPanel;
-    },
-
-    getEditUrlPixlr: function (type) {
-        
-        var parts = this.data.filename.split(".");
-        var imageType = parts[parts.length-1].toLowerCase();
-        var validImageTypes = ["png","jpg","gif"];
-        
-        if(!in_array(imageType,validImageTypes)) {
-            imageType = "png";
-        }
-
-        var imageUrl = document.location.protocol + "//" + window.location.hostname
-                                                  + "/admin/asset/get-image-thumbnail/id/"
-                                                  + this.id + "/width/1000/aspectratio/true/pimcore_admin_sid/"
-                                                  + pimcore.settings.sessionId + "/" + this.data.filename;
-        var targetUrl = document.location.protocol + "//" + window.location.hostname
-                                                   + "/admin/asset/save-image-pixlr/?pimcore_admin_sid="
-                                                   + pimcore.settings.sessionId + "&id=" + this.id;
-        var editorUrl = "https://www.pixlr.com/" + type + "/?image=" + escape(imageUrl) + "&title="
-                                                 + this.data.filename + "&locktitle=true&locktarget=true&locktype="
-                                                 + imageType + "&wmode=transparent&target=" + escape(targetUrl);
-
-        if (type == "editor") {
-            editorUrl = editorUrl + "&redirect=false";
-        }
-
-        return editorUrl;
     },
 
     getDisplayPanel: function () {
@@ -167,16 +122,16 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
                 details.push(dimensionPanel);
             }
 
+            var downloadDefaultWidth = 800;
+
             if(this.data.imageInfo && this.data.imageInfo) {
                 if(this.data.imageInfo.dimensions && this.data.imageInfo.dimensions.width) {
                     downloadDefaultWidth = intval(this.data.imageInfo.dimensions.width);
                 }
             }
 
-            var downloadDefaultWidth = 800;
-
             this.downloadBox = new Ext.form.FormPanel({
-                title: t("convert_to") + " & " + t("download"),
+                title: t("custom_download"),
                 bodyStyle: "padding: 10px;",
                 layout: "pimcoreform",
                 style: "margin: 10px 0 10px 0",
@@ -189,6 +144,18 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
                     mode: "local",
                     value: "JPEG",
                     width: 80
+                },{
+                    xtype: "combo",
+                    triggerAction: "all",
+                    width: 120,
+                    name: "resize_mode",
+                    itemId: "resize_mode",
+                    fieldLabel: t("resize_mode"),
+                    forceSelection: true,
+                    store: [["scaleByWidth", t("scalebywidth")], ["scaleByHeight", t("scalebyheight")], ["resize", t("resize")]],
+                    mode: "local",
+                    value: "scaleByWidth",
+                    editable: false
                 }, {
                     xtype: "spinnerfield",
                     name: "width",
@@ -203,19 +170,14 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
                     name: "quality",
                     fieldLabel: t("quality"),
                     value: 95
-                },{
-                    xtype: "checkbox",
-                    name: "aspectratio",
-                    fieldLabel: t("aspect_ratio"),
-                    checked: true
                 }],
                 buttons: [{
                     text: t("download"),
                     iconCls: "pimcore_icon_download",
                     handler: function () {
                         var config = this.downloadBox.getForm().getFieldValues();
-                        pimcore.helpers.download("/admin/asset/get-image-thumbnail/id/" + this.id
-                                                                    + "/download/true?config=" + Ext.encode(config));
+                        pimcore.helpers.download("/admin/asset/download-image-thumbnail/id/" + this.id
+                                                                    + "/?config=" + Ext.encode(config));
                     }.bind(this)
                 }]
             });
@@ -223,7 +185,7 @@ pimcore.asset.image = Class.create(pimcore.asset.asset, {
 
             if(this.data.imageInfo && this.data.imageInfo.exif) {
                 var exifPanel = new Ext.grid.PropertyGrid({
-                    title: t("exif_data"),
+                    title: "EXIF",
                     source: this.data.imageInfo.exif,
                     clicksToEdit: 1000,
                     autoHeight: true
