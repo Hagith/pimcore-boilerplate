@@ -5,10 +5,14 @@ charset = utf-8
 end_of_line = lf
 indent_style = space
 indent_size = 4
-
-[*.php]
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+[*.{js,json,scss}]
+indent_size = 2
+
+[website/views/**.php]
+indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
