@@ -26,6 +26,6 @@ vendor
 /php-cs-fixer.phar
 
 # PhpStorm / IDEA
-.idea/workspace.xml
+.idea
 # NetBeans
 nbproject
