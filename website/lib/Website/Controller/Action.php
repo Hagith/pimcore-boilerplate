@@ -14,7 +14,7 @@ class Action extends Frontend
     const LANG_PARAM_NAME = 'lang';
 
     /**
-     * @var \Website\Document\Page
+     * @var \Website\Model\Document\Page
      */
     public $document;
 
@@ -35,6 +35,10 @@ class Action extends Frontend
 
     public function init()
     {
+        if (self::$isInitial) {
+            \Zend_View_Helper_PaginationControl::setDefaultViewPartial('partial/pagination.php');
+        }
+
         parent::init();
 
         if (\Zend_Registry::isRegistered('Zend_Locale')) {
@@ -47,8 +51,6 @@ class Action extends Frontend
         $this->view->language = $this->locale->getLanguage();
         $this->language = $this->locale->getLanguage();
         $this->translate = $this->initTranslation();
-
-        \Zend_View_Helper_PaginationControl::setDefaultViewPartial('partial/pagination.php');
     }
 
     /**
@@ -92,7 +94,7 @@ class Action extends Frontend
      */
     protected function setPreferredLanguage($locale)
     {
-        if($locale != $this->getPreferredLanguage()) {
+        if ($locale != $this->getPreferredLanguage()) {
             $expires = mktime(0, 0, 0, date('m'), date('d'), date('Y') + 5);
             setcookie(self::LANG_PARAM_NAME, $locale, $expires, '/');
         }

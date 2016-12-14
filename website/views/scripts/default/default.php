@@ -1,18 +1,18 @@
 <div class="jumbotron">
-    <h1>pimcore</h1>
+    <a href="http://www.pimcore.org/">
+        <img src="/pimcore/static6/img/logo-gray.svg" style="width: 200px;"/>
+    </a>
 
     <p class="claim">
-        The premier Open-Source
-        <br/>
-        Multi-Channel Experience and Engagement Management Platform
+        THE OPEN-SOURCE ENTERPRISE PLATFORM FOR PIM, CMS, DAM & COMMERCE
     </p>
 
-    <a href="http://www.pimcore.org/wiki/pages/viewpage.action?pageId=14551535"
+    <a target="_blank" href="https://www.pimcore.org/wiki/pages/viewpage.action?pageId=16854186"
        class="btn btn-primary">
         <i class="glyphicon glyphicon-download"></i>
         Install Sample Data / Boilerplate
     </a>
-    <a href="http://www.pimcore.org/wiki/display/PIMCORE3/Develop+with+pimcore"
+    <a target="_blank" href="http://www.pimcore.org/wiki/display/PIMCORE4/Develop+with+pimcore"
        class="btn btn-primary">
         <i class="glyphicon glyphicon-book"></i>
         Getting Started

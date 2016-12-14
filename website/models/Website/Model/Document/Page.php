@@ -1,6 +1,6 @@
 <?php
 
-namespace Website\Document;
+namespace Website\Model\Document;
 
 use Pimcore\Model\Document;
 
