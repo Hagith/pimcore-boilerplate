@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="WEB_MODULE" version="4">
-  <component name="NewModuleRootManager">
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/pimcore/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/website/lib" isTestSource="false" />
@@ -10,17 +10,5 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library name="PHARS">
-        <CLASSES>
-          <root url="phar://$MODULE_DIR$/pimcore/lib/Zend/Service/WindowsAzure/CommandLine/Scaffolders/DefaultScaffolder.phar" />
-          <root url="phar://$MODULE_DIR$/pimcore/lib/geoip2.phar" />
-        </CLASSES>
-        <SOURCES>
-          <root url="phar://$MODULE_DIR$/pimcore/lib/Zend/Service/WindowsAzure/CommandLine/Scaffolders/DefaultScaffolder.phar" />
-          <root url="phar://$MODULE_DIR$/pimcore/lib/geoip2.phar" />
-        </SOURCES>
-      </library>
-    </orderEntry>
   </component>
 </module>
