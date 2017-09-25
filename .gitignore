@@ -1,23 +1,7 @@
+.env
+node_modules
+vendor
 
-# remove this for your own development
-/website/
-/tools/
-/plugins/
-
-# tests
-/tests/output/*
-/tests/tmp/*
-
-# composer
-/composer.phar
-/composer.lock
-/vendor/*
-!/vendor/.dummy
-
-# misc
-/php-cs-fixer.phar
-
-# PhpStorm / IDEA
+# IDE
 .idea
-# NetBeans
 nbproject

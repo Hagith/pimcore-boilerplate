@@ -1,0 +1,14 @@
+var/assets/*
+var/cache/*
+var/composer/*
+var/config/*.mmdb
+var/config/portal/*
+var/config/system.php
+var/email/*
+var/log/*
+var/recyclebin/*
+var/static/*
+var/system/*
+var/tmp/*
+var/versions/*
+!.dummy
