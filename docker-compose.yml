@@ -2,15 +2,13 @@ version: '3'
 
 services:
   app:
-    build:
-      context:
-        ./
+    image: pimcore-boilerplate:latest
     links:
       - mysql
     volumes:
       - ./:/var/www/html
-    ports:
-      - "8080:80"
+    environment:
+      - VIRTUAL_HOST
 
   mysql:
     image: mysql:5.7.19
@@ -22,6 +20,24 @@ services:
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - database:/var/lib/mysql
+
+  proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    links:
+      - app
+
+  node:
+    image: node:6.11.3
+    environment:
+      - NODE_ENV
+    user: node
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
 
 volumes:
   database:

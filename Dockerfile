@@ -27,3 +27,5 @@ COPY . .
 RUN chmod -R 0777 website/var \
     && composer dump-autoload -o \
     && composer run-script post-install-cmd
+
+VOLUME ["/var/www/html"]
