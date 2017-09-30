@@ -1,0 +1,55 @@
+{
+  "name": "docker-boilerplate",
+  "version": "1.0.0",
+  "author": "Rafal Galka <rafal.galka@modernweb.pl>",
+  "license": "GPL-3.0",
+  "description": "THE OPEN-SOURCE ENTERPRISE CMS/CMF, PIM, DAM, ECOMMERCE-SUITE",
+  "keywords": [
+    "pimcore",
+    "webpack"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hagith/pimcore-boilerplate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hagith/pimcore-boilerplate/issues"
+  },
+  "homepage": "https://github.com/Hagith/pimcore-boilerplate#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "autoprefixer": "^7.1.4",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.0",
+    "browser-sync": "^2.18.13",
+    "browser-sync-webpack-plugin": "^1.2.0",
+    "css-loader": "^0.28.7",
+    "extract-text-webpack-plugin": "^3.0.0",
+    "file-loader": "^0.11.2",
+    "node-sass": "^4.5.3",
+    "postcss-loader": "^2.0.6",
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.18.2",
+    "webpack": "^3.6.0"
+  },
+  "scripts": {
+    "build": "webpack --config website/config/webpack.config.js",
+    "watch": "webpack --config website/config/webpack.config.js -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ]
+  },
+  "browserslist": [
+    "> 1% in alt-EU",
+    "last 2 versions"
+  ],
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  }
+}

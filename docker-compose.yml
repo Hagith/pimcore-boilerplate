@@ -8,6 +8,7 @@ services:
     volumes:
       - ./:/var/www/html
     environment:
+      - PIMCORE_ENVIRONMENT=${APP_ENV}
       - VIRTUAL_HOST
 
   mysql:
@@ -33,11 +34,24 @@ services:
   node:
     image: node:6.11.3
     environment:
-      - NODE_ENV
+      - NODE_ENV=${APP_ENV}
+      - APP_VIRTUAL_HOST=${VIRTUAL_HOST}
+      - BROWSERSYNC_PORT
     user: node
     working_dir: /usr/src/app
     volumes:
       - ./:/usr/src/app
+    links:
+      - app
+    expose:
+      - "${BROWSER_SYNC_PORT}"
+      - "3001"
+      - "8080"
+    ports:
+      - "${BROWSER_SYNC_PORT}:${BROWSER_SYNC_PORT}"
+      - "3001:3001"
+      - "8080:8080"
+    command: npm run watch
 
 volumes:
   database:
