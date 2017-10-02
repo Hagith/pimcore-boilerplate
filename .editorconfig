@@ -5,16 +5,13 @@ charset = utf-8
 end_of_line = lf
 indent_style = space
 indent_size = 4
-
-[*.php]
 insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.md]
 trim_trailing_whitespace = false
 
-[composer.json]
-indent_style = space
+[*.{json,yml}]
 indent_size = 2
 
 [Makefile]
