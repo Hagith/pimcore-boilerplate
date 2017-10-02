@@ -1,11 +1,12 @@
 {
-  "name": "docker-boilerplate",
+  "name": "pimcore-boilerplate",
   "version": "1.0.0",
   "author": "Rafal Galka <rafal.galka@modernweb.pl>",
   "license": "GPL-3.0",
   "description": "THE OPEN-SOURCE ENTERPRISE CMS/CMF, PIM, DAM, ECOMMERCE-SUITE",
   "keywords": [
     "pimcore",
+    "docker",
     "webpack"
   ],
   "repository": {
