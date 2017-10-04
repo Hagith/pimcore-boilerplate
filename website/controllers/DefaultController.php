@@ -6,5 +6,6 @@ class DefaultController extends Action
 {
     public function defaultAction()
     {
+        $this->enableLayout();
     }
 }

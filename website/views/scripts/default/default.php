@@ -1,17 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-  <?php if (\Pimcore\Config::getEnvironment() !== 'development'): ?>
-    <link rel="stylesheet" href="/website/var/static/bundle.css">
-  <?php endif; ?>
-
-  <title>Example</title>
-</head>
-<body>
-
 <div id="site">
   <header>
     <a href="http://www.pimcore.org/" id="logo">pimcore</a>
@@ -42,8 +28,3 @@
     </div>
   <?php endif; ?>
 </div>
-
-<script src="/website/var/static/bundle.js"></script>
-
-</body>
-</html>

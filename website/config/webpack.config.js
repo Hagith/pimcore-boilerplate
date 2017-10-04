@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const SuppressChunksPlugin = require('suppress-chunks-webpack-plugin').default;
 
 // jwilder/nginx-proxy allows to define multiple virtual hosts
 // see: https://github.com/jwilder/nginx-proxy#multiple-hosts
@@ -9,18 +10,21 @@ const VIRTUAL_HOST = (process.env.APP_VIRTUAL_HOST).split(',')[0] || 'localhost'
 const ENV = process.env.NODE_ENV || 'production';
 
 const extractStyles = new ExtractTextPlugin({
-  filename: 'bundle.css',
+  filename: '[name].css',
   disable: ENV === 'development',
 });
 
 module.exports = {
   devtool: 'cheap-module-source-map',
   context: path.resolve(__dirname, '..'),
-  entry: './static/index.js',
+  entry: {
+    website: ['./static/scripts/index.js', './static/styles/website.scss'],
+    editmode: './static/styles/editmode.scss',
+  },
   output: {
     publicPath: '/website/var/static/',
     path: path.resolve(__dirname, '../var/static'),
-    filename: 'bundle.js',
+    filename: '[name].js',
   },
   module: {
     rules: [
@@ -74,6 +78,9 @@ module.exports = {
   },
   plugins: [
     extractStyles,
+    new SuppressChunksPlugin([
+      { name: 'editmode', match: /\.js.*$/ },
+    ]),
     new BrowserSyncPlugin({
       open: false,
       notify: false,

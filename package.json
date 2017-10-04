@@ -27,15 +27,20 @@
     "browser-sync-webpack-plugin": "^1.2.0",
     "css-loader": "^0.28.7",
     "extract-text-webpack-plugin": "^3.0.0",
-    "file-loader": "^0.11.2",
+    "file-loader": "^1.1.4",
     "node-sass": "^4.5.3",
     "postcss-loader": "^2.0.6",
+    "rimraf": "^2.6.2",
     "sass-loader": "^6.0.6",
     "style-loader": "^0.18.2",
+    "suppress-chunks-webpack-plugin": "0.0.4",
     "webpack": "^3.6.0"
   },
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "webpack --config website/config/webpack.config.js",
+    "clean": "rimraf website/var/static/*",
+    "prewatch": "npm run clean",
     "watch": "webpack --config website/config/webpack.config.js -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
