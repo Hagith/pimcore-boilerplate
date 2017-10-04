@@ -43,8 +43,6 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./:/usr/src/app
-    links:
-      - app
     expose:
       - "${BROWSER_SYNC_PORT}"
       - "3001"
